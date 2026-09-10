@@ -1,6 +1,5 @@
 import 'server-only';
 import { cache } from 'react';
-import { notFound } from 'next/navigation';
 import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { BRIEFINGS, HANDSOFF, MENTORADA, STATUS_ATIVA } from './config';
@@ -27,7 +26,7 @@ function paraMentorada(page: NotionPage): Mentorada {
   return {
     id: page.id,
     nome: texto(page, MENTORADA.nome) || titulo(page),
-    mentoria: texto(page, MENTORADA.mentoria),
+    mentoria: MENTORADA.mentoria.map((n) => texto(page, n)).find(Boolean) ?? '',
     status: texto(page, MENTORADA.status),
     areaDaClienteIds: relationIds(page, MENTORADA.areaDaCliente),
   };
@@ -108,22 +107,6 @@ async function mentoradaIdsPelasRelations(tutoraPageId: string): Promise<Set<str
   );
 
   return ids;
-}
-
-/**
- * Porta de entrada de toda página de mentorada.
- *
- * Um ID que não está na carteira vira 404 — a mesma resposta de um ID que não
- * existe, para não confirmar a existência da mentorada de outra tutora.
- */
-export async function exigirMentorada(
-  tutoraPageId: string,
-  mentoradaId: string,
-): Promise<Mentorada> {
-  const carteira = await carteiraDaTutora(tutoraPageId);
-  const mentorada = carteira.find((m) => m.id === normalizarId(mentoradaId));
-  if (!mentorada) notFound();
-  return mentorada;
 }
 
 /** IDs do Notion circulam com e sem hífen; a comparação precisa dos dois. */

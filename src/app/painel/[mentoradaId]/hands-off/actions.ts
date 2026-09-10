@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { exigirSessao } from '@/lib/session';
-import { exigirMentorada } from '@/lib/notion/carteira';
+import { exigirMentorada } from '@/lib/notion/guard';
 import { criarHandsoff } from '@/lib/notion/handsoff';
 
 export type EstadoHandsoff = { erro?: string };

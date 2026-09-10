@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
-import { exigirMentorada } from '@/lib/notion/carteira';
+import { exigirMentorada } from '@/lib/notion/guard';
 import { briefings, handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';

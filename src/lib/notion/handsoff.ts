@@ -28,11 +28,16 @@ function paragrafo(texto: string) {
   };
 }
 
-function heading(texto: string) {
+/** O template do Notion usa callout por seção, com a resposta aninhada dentro. */
+function secao(titulo: string, ajuda: string, conteudo: unknown[]) {
+  const rotulo = ajuda ? `${titulo} (${ajuda})` : titulo;
   return {
     object: 'block',
-    type: 'heading_3',
-    heading_3: { rich_text: [{ type: 'text', text: { content: texto } }] },
+    type: 'callout',
+    callout: {
+      rich_text: [{ type: 'text', text: { content: rotulo } }],
+      children: conteudo,
+    },
   };
 }
 
@@ -58,18 +63,12 @@ export async function criarHandsoff(
     tarefas: dados.tarefas,
   };
 
-  const children = HANDSOFF_SECOES.flatMap((secao) => {
-    const valor = valores[secao.key];
-    const blocos: unknown[] = [heading(secao.titulo)];
-
-    if (Array.isArray(valor)) {
-      const itens = valor.filter((v) => v.trim());
-      blocos.push(...(itens.length ? itens.map(bullet) : [paragrafo('—')]));
-    } else {
-      blocos.push(paragrafo(valor.trim() || '—'));
-    }
-
-    return blocos;
+  const children = HANDSOFF_SECOES.map((s) => {
+    const valor = valores[s.key];
+    const conteudo = Array.isArray(valor)
+      ? (valor.filter((v) => v.trim()).map(bullet) ?? [])
+      : [paragrafo(valor.trim() || '—')];
+    return secao(s.titulo, s.ajuda, conteudo.length ? conteudo : [paragrafo('—')]);
   });
 
   const page = await createPage({

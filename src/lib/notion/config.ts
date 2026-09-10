@@ -38,7 +38,20 @@ export type SectionKey = keyof typeof DATABASES;
 export const MENTORADA = {
   nome: 'Cliente',
   status: 'Status',
-  mentoria: 'Mentoria',
+  /**
+   * A mentoria aparece duas vezes na base: um rollup `"Mentoria "` (com espaço
+   * no fim) e uma fórmula `"Mentoria"`. As duas derivam de `Área da cliente`,
+   * então hoje voltam vazias — quando essa base for compartilhada, uma das duas
+   * passa a responder. Lemos as duas, na ordem, e ficamos com a primeira que
+   * tiver valor.
+   */
+  mentoria: ['Mentoria ', 'Mentoria'],
+  /**
+   * ⚠️ Aponta para uma base NÃO compartilhada com a integração, então o Notion
+   * devolve `[]` sempre. É a raiz de três buracos de uma vez: sem ela não há
+   * rótulo de mentoria, não há mapa da cliente, e o planejamento não se liga à
+   * mentorada. Conectar essa base resolve os três.
+   */
   areaDaCliente: 'Área da cliente',
   /**
    * ⚠️ ESTA PROPRIEDADE AINDA NÃO EXISTE NO NOTION.

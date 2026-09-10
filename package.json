@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "tutora:add": "node scripts/add-tutora.mjs",
-    "notion:doctor": "node scripts/notion-doctor.mjs"
+    "notion:doctor": "node scripts/notion-doctor.mjs",
+    "notion:smoke": "tsx --conditions=react-server scripts/smoke.mts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -27,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

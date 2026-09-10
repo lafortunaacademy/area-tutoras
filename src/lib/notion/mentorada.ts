@@ -1,5 +1,5 @@
 import 'server-only';
-import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
+import { queryDatabase, getPage, getDatabase, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { BRIEFINGS, HANDSOFF, MAPA, PLANEJAMENTO } from './config';
 import { data, formatarData, relationIds, texto, titulo } from './props';
@@ -69,16 +69,24 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
 /**
  * Objetivos da mentorada — ou `null` quando o Notion não deixa recortar.
  *
- * `Área da mentorada` aponta para uma base que não foi compartilhada com a
- * integração, então o Notion esconde a propriedade do schema e a query devolve
- * `validation_error`. Nesse caso devolvemos `null` em vez de cair para uma
- * consulta sem filtro: sem o recorte, a tela mostraria os 404 objetivos de
- * todas as mentoradas na página de uma só.
+ * `Área da mentorada` aponta para uma base não compartilhada com a integração.
+ * O Notion aceita o filtro (200) mas devolve zero linhas em todas as 404, e
+ * some com a propriedade do schema. Ou seja: "nenhum objetivo" e "não consigo
+ * separar por mentorada" chegariam aqui do mesmo jeito — uma lista vazia.
+ *
+ * Distinguir importa: a primeira frase é falsa e a segunda é a verdade. Por
+ * isso conferimos o schema antes e devolvemos `null` quando a propriedade não
+ * está lá, para a tela poder dizer o que está acontecendo de fato.
  */
 export async function planejamento(
   mentorada: Mentorada,
 ): Promise<ItemPlanejamento[] | null> {
   const dbId = await resolverDatabaseId('planejamento');
+
+  const schema = await getDatabase(dbId);
+  if (!Object.values(schema.properties).some((p) => p.name === PLANEJAMENTO.areaDaMentorada)) {
+    return null;
+  }
 
   let linhas;
   try {

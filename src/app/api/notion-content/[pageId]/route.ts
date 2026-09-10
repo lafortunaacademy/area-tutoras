@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessao } from '@/lib/session';
-import { exigirMentorada, normalizarId } from '@/lib/notion/carteira';
+import { normalizarId } from '@/lib/notion/carteira';
+import { exigirMentorada } from '@/lib/notion/guard';
 import { pageIdsPermitidos } from '@/lib/notion/mentorada';
 import { lerBlocos } from '@/lib/notion/blocks';
 
