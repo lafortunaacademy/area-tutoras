@@ -1,5 +1,5 @@
 import 'server-only';
-import { queryDatabase, getPage, type NotionPage } from './client';
+import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { BRIEFINGS, HANDSOFF, MAPA, PLANEJAMENTO } from './config';
 import { data, formatarData, relationIds, texto, titulo } from './props';
@@ -67,15 +67,30 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
 }
 
 /**
- * O filtro leva só a mentorada: `Área de tutora` é rollup e a API não filtra por
- * ela. Quem garante que esta tutora pode ver esta mentorada é `exigirMentorada`,
- * antes de chegar aqui.
+ * Objetivos da mentorada — ou `null` quando o Notion não deixa recortar.
+ *
+ * `Área da mentorada` aponta para uma base que não foi compartilhada com a
+ * integração, então o Notion esconde a propriedade do schema e a query devolve
+ * `validation_error`. Nesse caso devolvemos `null` em vez de cair para uma
+ * consulta sem filtro: sem o recorte, a tela mostraria os 404 objetivos de
+ * todas as mentoradas na página de uma só.
  */
-export async function planejamento(mentorada: Mentorada): Promise<ItemPlanejamento[]> {
+export async function planejamento(
+  mentorada: Mentorada,
+): Promise<ItemPlanejamento[] | null> {
   const dbId = await resolverDatabaseId('planejamento');
-  const linhas = await queryDatabase(dbId, {
-    filter: { property: PLANEJAMENTO.areaDaMentorada, relation: { contains: mentorada.id } },
-  });
+
+  let linhas;
+  try {
+    linhas = await queryDatabase(dbId, {
+      filter: { property: PLANEJAMENTO.areaDaMentorada, relation: { contains: mentorada.id } },
+    });
+  } catch (erro) {
+    const semRecorte =
+      erro instanceof NotionError && (erro.code === 'validation_error' || erro.status === 400);
+    if (semRecorte) return null;
+    throw erro;
+  }
 
   return linhas.map((p) => ({
     id: p.id,
@@ -89,15 +104,18 @@ export async function planejamento(mentorada: Mentorada): Promise<ItemPlanejamen
   }));
 }
 
-/**
- * Briefings são POR TUTORA, não por mentorada: a base não tem relation para a
- * mentorada. Por isso esta função recebe a tutora e não a mentorada — e a tela
- * correspondente é /painel/briefings, fora da página de qualquer mentorada.
- */
-export async function briefingsDaTutora(tutoraPageId: string): Promise<ItemBriefing[]> {
+export async function briefings(
+  mentorada: Mentorada,
+  tutoraPageId: string,
+): Promise<ItemBriefing[]> {
   const dbId = await resolverDatabaseId('briefings');
   const linhas = await queryDatabase(dbId, {
-    filter: { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
+    filter: {
+      and: [
+        { property: BRIEFINGS.mentorada, relation: { contains: mentorada.id } },
+        { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
+      ],
+    },
     sorts: [{ property: BRIEFINGS.data, direction: 'descending' }],
   });
 
@@ -143,15 +161,17 @@ export async function pageIdsPermitidos(
   mentorada: Mentorada,
   tutoraPageId: string,
 ): Promise<Set<string>> {
-  const [mapa, plano, hands] = await Promise.all([
+  const [mapa, plano, brief, hands] = await Promise.all([
     mapaDaCliente(mentorada),
-    planejamento(mentorada).catch(() => []),
+    planejamento(mentorada).catch(() => null),
+    briefings(mentorada, tutoraPageId).catch(() => []),
     handsoffs(mentorada, tutoraPageId).catch(() => []),
   ]);
 
   return new Set([
     ...mapa.map((i) => i.id),
-    ...plano.map((i) => i.id),
+    ...(plano ?? []).map((i) => i.id),
+    ...brief.map((i) => i.id),
     ...hands.map((i) => i.id),
   ]);
 }

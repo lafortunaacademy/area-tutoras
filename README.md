@@ -16,29 +16,40 @@ Praticamente nada. Só duas coisas, ambas em `supabase/migrations/0001_init.sql`
 Nenhum conteúdo do Notion — nem mentorada, nem briefing, nem hands-off — é
 copiado para cá.
 
-## O que o Notion tem hoje (conferido em 2026-09-10)
+## O que o Notion tem hoje (conferido pela API em 2026-09-10)
 
-| base | ligação com a tutora | ligação com a mentorada |
-| --- | --- | --- |
-| Área das tutoras | **não existe** | é a própria linha |
-| Planejamento estratégico | `Área de tutora` — **rollup**, não filtrável | `Área da mentorada` — relation ✅ |
-| Briefings | `Para a tutora:` — relation ✅ | **não existe** |
-| Hands-off | `Feito pela tutora:` — relation ✅ | `Mentorada` — relation ✅ |
+As bases aparecem na página de cada mentorada como **visualização vinculada**, e
+a API não resolve a base de origem por trás delas (`validation_error`). Os IDs
+reais foram descobertos pegando uma linha de cada view e lendo o
+`parent.database_id` — e estão fixados em `NOTION_DB_*` no `.env.local`. Busca
+por título não acha nenhuma delas.
 
-Duas consequências que o código não tem como contornar sozinho:
+| base | linhas | liga na tutora | liga na mentorada |
+| --- | --- | --- | --- |
+| Área das tutoras | 45 (44 ativas) | **não existe** | é a própria linha |
+| Tutoras | 15 | é a própria linha | não existe |
+| Planejamento estratégico: objetivos | 404 | `Área de tutora ` — rollup | `Área da mentorada` — relation **cega** |
+| Briefings | 8 | `Para a tutora:` ✅ | `Mentorada` ✅ |
+| Hands-off | 3 | `Feito pela tutora:` ✅ | `Mentorada` ✅ |
 
-1. **A carteira sai só do Hands-off.** Como é a única base com relation nas duas
-   pontas, a carteira de uma tutora é o conjunto de mentoradas com quem ela já
-   registrou uma sessão. Uma mentorada recém-atribuída, antes do primeiro
-   hands-off, não aparece.
-2. **Briefing não é recortável por mentorada.** Ele sabe para qual tutora é, não
-   sobre quem. Por isso vive em `/painel/briefings` e não na página da mentorada.
+Duas lacunas, as duas fora do alcance do código:
 
-**A correção é uma propriedade só:** criar em *Área das tutoras* uma relation
-`Tutora` apontando para a base *Tutoras*. O código já tenta esse caminho
-primeiro — no minuto em que a propriedade existir, a carteira passa a sair dali
-e o furo do item 1 fecha sozinho. Para o item 2, seria uma relation
-`Área da mentorada` em *Briefings*.
+1. **A carteira é derivada, e cobre pouco.** Sem relation entre mentorada e
+   tutora, a carteira só pode ser o conjunto de mentoradas com quem a tutora já
+   tem hands-off ou briefing. Hoje isso dá **4 das 15 tutoras**, com 1 ou 2
+   mentoradas cada, de 44 ativas. As outras 11 entram e veem lista vazia.
+   → **Criar a relation `Tutora` em *Área das tutoras*, apontando para *Tutoras*.**
+   O código já tenta esse caminho primeiro e passa a usá-lo sozinho.
+
+2. **Planejamento não é recortável.** `Área da mentorada` existe e é relation,
+   mas aponta para uma base que não foi compartilhada com a integração — o
+   Notion então esconde a propriedade do schema e devolve a relation vazia nas
+   404 linhas. `planejamento()` devolve `null` nesse caso e a tela explica, em
+   vez de listar os objetivos de todo mundo.
+   → **Conectar essa base à integração** (abrir a coluna `Área da mentorada` no
+   Notion para ver qual é).
+
+`npm run notion:doctor` mostra o estado dessas duas lacunas a qualquer momento.
 
 ## Isolamento entre tutoras
 

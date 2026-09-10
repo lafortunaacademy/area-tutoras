@@ -22,14 +22,13 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
-// Espelha src/lib/notion/config.ts. Mantido aqui em JS puro para o script
-// rodar sem passar pelo bundler.
+// Espelha src/lib/notion/config.ts. Mantido em JS puro para rodar sem bundler.
+// "Mapas das clientes" saiu: na prática o mapa vem pela relation da mentorada.
 const BASES = {
-  tutoras: { titulo: 'Tutoras', props: [] },
-  areaDasTutoras: { titulo: 'Área das tutoras', props: ['Cliente', 'Status', 'Mentoria', 'Área da cliente', 'Tutora'] },
-  mapas: { titulo: 'Mapas das clientes', props: ['Nome', 'Área da mentorada'] },
-  planejamento: { titulo: 'Planejamento estratégico', props: ['Objetivo', 'Status', 'Trimestre', 'Mês', 'Pilar', 'Tutoria', 'Ano', 'Área da mentorada', 'Área de tutora'] },
-  briefings: { titulo: 'Briefings', props: ['Briefing', 'Data', 'Mentoria', 'Para a tutora:', 'Área da mentorada'] },
+  tutoras: { titulo: 'Tutoras', props: ['Tutora', 'Status'] },
+  areaDasTutoras: { titulo: 'Área das tutoras', props: ['Cliente', 'Status', 'Mentoria', 'Tutora'] },
+  planejamento: { titulo: 'Planejamento estratégico: objetivos', props: ['Objetivo', 'Status', 'Trimestre', 'Mês', 'Pilar', 'Tutoria', 'Ano', 'Área da mentorada'] },
+  briefings: { titulo: 'Briefings', props: ['Briefing', 'Data', 'Mentoria', 'Para a tutora:', 'Mentorada'] },
   handsoff: { titulo: 'Hands-off', props: ['Nome', 'Data da sessão', 'Feito pela tutora:', 'Mentorada'] },
 };
 

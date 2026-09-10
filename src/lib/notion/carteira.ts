@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { HANDSOFF, MENTORADA, STATUS_ATIVA } from './config';
+import { BRIEFINGS, HANDSOFF, MENTORADA, STATUS_ATIVA } from './config';
 import { relationIds, texto, titulo } from './props';
 
 /**
@@ -80,11 +80,12 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
 
 /** Junta os IDs de mentorada que aparecem ligados a esta tutora em cada base. */
 async function mentoradaIdsPelasRelations(tutoraPageId: string): Promise<Set<string>> {
-  // Só entra base cujas DUAS pontas sejam relation. Planejamento fica de fora
-  // porque `Área de tutora` é rollup, e Briefings porque não tem ponta para a
-  // mentorada. Sobra Hands-off.
+  // Só entra base cujas DUAS pontas sejam relation utilizável. Planejamento
+  // fica de fora: a relation para a mentorada aponta para uma base não
+  // compartilhada e volta sempre vazia.
   const fontes = [
     { secao: 'handsoff', tutora: HANDSOFF.feitoPelaTutora, mentorada: HANDSOFF.mentorada },
+    { secao: 'briefings', tutora: BRIEFINGS.paraATutora, mentorada: BRIEFINGS.mentorada },
   ] as const;
 
   const ids = new Set<string>();

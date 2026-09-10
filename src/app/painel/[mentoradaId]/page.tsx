@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/carteira';
-import { handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
+import { briefings, handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
 import { ItemExpansivel } from '@/components/ItemExpansivel';
@@ -23,9 +23,10 @@ export default async function MentoradaPage({
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.
-  const [mapa, plano, hands] = await Promise.all([
+  const [mapa, plano, brief, hands] = await Promise.all([
     mapaDaCliente(mentorada).catch(() => []),
     planejamento(mentorada).catch((e) => e as Error),
+    briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
   ]);
 
@@ -67,6 +68,13 @@ export default async function MentoradaPage({
       <Secao titulo="Planejamento estratégico">
         {plano instanceof Error ? (
           <AvisoNotion erro={plano} />
+        ) : plano === null ? (
+          <Vazio>
+            Ainda não consigo separar os objetivos por mentorada: a base de
+            planejamento se liga a ela por uma relation que aponta para uma base
+            que não foi compartilhada com a integração. Mostrar sem esse recorte
+            traria os objetivos de todas as mentoradas.
+          </Vazio>
         ) : plano.length === 0 ? (
           <Vazio>Nenhum objetivo cadastrado.</Vazio>
         ) : (
@@ -96,6 +104,24 @@ export default async function MentoradaPage({
               </tbody>
             </table>
           </div>
+        )}
+      </Secao>
+
+      <Secao titulo="Briefings">
+        {brief.length === 0 ? (
+          <Vazio>Nenhum briefing para você nesta mentorada.</Vazio>
+        ) : (
+          <ul className="space-y-2">
+            {brief.map((item) => (
+              <ItemExpansivel
+                key={item.id}
+                pageId={item.id}
+                mentoradaId={mentorada.id}
+                titulo={item.titulo}
+                meta={<span className="shrink-0 text-xs text-texto-suave">{item.data}</span>}
+              />
+            ))}
+          </ul>
         )}
       </Secao>
 

@@ -9,12 +9,22 @@
  * token: ele confere cada nome contra o schema real e aponta divergências.
  */
 
-/** Títulos das bases no Notion, usados pelo resolver para descobrir os IDs. */
+/**
+ * Títulos das bases no Notion.
+ *
+ * ⚠️ Na prática o resolver NÃO acha nenhuma delas por título: na página de cada
+ * mentorada as bases aparecem como visualização vinculada, e a busca da API não
+ * enxerga a base de origem. Os IDs reais estão fixados em `NOTION_DB_*` no
+ * .env.local — foram descobertos pegando uma linha de cada view e lendo o
+ * `parent.database_id` dela. Os títulos abaixo ficam como documentação e como
+ * último recurso.
+ */
 export const DATABASES = {
   tutoras: 'Tutoras',
   areaDasTutoras: 'Área das tutoras',
   mapas: 'Mapas das clientes',
-  planejamento: 'Planejamento estratégico',
+  /** O título real é "Planejamento estratégico: objetivos". */
+  planejamento: 'Planejamento estratégico: objetivos',
   briefings: 'Briefings',
   handsoff: 'Hands-off',
 } as const;
@@ -23,9 +33,7 @@ export type SectionKey = keyof typeof DATABASES;
 
 /**
  * Propriedades da base "Área das tutoras" (uma linha por mentorada).
- *
- * Conferido no Notion em 2026-09-10: a base tem só Status, Cliente, Mentoria
- * (rollup) e Área da cliente (relation) — mais uma Mentoria oculta.
+ * 45 linhas, 44 ativas. Conferido pela API em 2026-09-10.
  */
 export const MENTORADA = {
   nome: 'Cliente',
@@ -36,11 +44,12 @@ export const MENTORADA = {
    * ⚠️ ESTA PROPRIEDADE AINDA NÃO EXISTE NO NOTION.
    *
    * É a relation "Área das tutoras → Tutoras" que ligaria cada mentorada à sua
-   * tutora. Sem ela, não existe caminho direto e barato para montar a carteira,
-   * e `carteira.ts` cai no caminho derivado (bem mais frágil — veja lá).
+   * tutora. Sem ela a carteira só pode ser derivada de quem já tem hands-off ou
+   * briefing registrado — o que hoje cobre 4 das 15 tutoras. As outras 11
+   * entram no app e veem uma lista vazia.
    *
-   * No minuto em que a Fernanda criar essa relation, o caminho direto passa a
-   * funcionar sozinho: o código já tenta por ele primeiro.
+   * No minuto em que ela existir, o caminho direto passa a funcionar sozinho:
+   * o código já tenta por ele primeiro.
    */
   tutora: 'Tutora',
 } as const;
@@ -49,12 +58,16 @@ export const MENTORADA = {
 export const STATUS_ATIVA = 'Ativa';
 
 /**
- * Propriedades da base "Planejamento estratégico".
+ * Propriedades da base "Planejamento estratégico: objetivos" (404 linhas).
  *
- * `Área de tutora` é ROLLUP, não relation — a API não filtra por ela de forma
- * confiável. Serve para exibir, nunca para recortar. O recorte sai de
- * `Área da mentorada`, que é relation de verdade, depois da carteira já ter
- * autorizado a mentorada.
+ * ⚠️ Esta base é a única que o app AINDA NÃO CONSEGUE recortar por mentorada.
+ * `Área da mentorada` existe e é relation, mas aponta para uma base que não foi
+ * compartilhada com a integração — então o Notion devolve a relation vazia em
+ * todas as 404 linhas, e a propriedade nem aparece no schema da base. Enquanto
+ * essa outra base não for conectada, mostrar planejamento numa página de
+ * mentorada mostraria os objetivos de todo mundo. Veja `planejamento()`.
+ *
+ * `Área de tutora ` (com espaço no fim, sim) é rollup — só leitura.
  */
 export const PLANEJAMENTO = {
   objetivo: 'Objetivo',
@@ -65,30 +78,30 @@ export const PLANEJAMENTO = {
   tutoria: 'Tutoria',
   ano: 'Ano',
   areaDaMentorada: 'Área da mentorada',
-  /** Rollup — só leitura. Não usar em filtro. */
-  areaDeTutora: 'Área de tutora',
+  /** Rollup, e o nome tem um espaço no fim de verdade. Só leitura. */
+  areaDeTutora: 'Área de tutora ',
 } as const;
 
 /**
- * Propriedades da base "Briefings".
+ * Propriedades da base "Briefings" (8 linhas).
  *
- * ⚠️ Não existe relation para a mentorada. Um briefing sabe para QUAL TUTORA
- * ele é, mas não sobre qual mentorada — então briefing não pode ser recortado
- * por mentorada, só por tutora. É por isso que a seção vive em /painel/briefings
- * e não dentro da página de uma mentorada.
+ * Tem relation nas duas pontas — `Mentorada` e `Para a tutora:` —, então
+ * briefing É recortável por mentorada. (A coluna `Mentorada` fica oculta na
+ * view que aparece na página da mentorada; por isso ela não se vê na tela.)
+ *
+ * `Data` é created_time, não uma data editável.
  */
 export const BRIEFINGS = {
   titulo: 'Briefing',
   data: 'Data',
   mentoria: 'Mentoria',
   paraATutora: 'Para a tutora:',
+  mentorada: 'Mentorada',
 } as const;
 
 /**
  * Propriedades da base "Hands-off" (a única base em que o app ESCREVE).
- *
- * A única base com relations de verdade nas DUAS pontas — tutora e mentorada.
- * Hoje é ela que sustenta a carteira derivada.
+ * Conferida pela API: os quatro nomes abaixo batem exatamente.
  */
 export const HANDSOFF = {
   nome: 'Nome',
