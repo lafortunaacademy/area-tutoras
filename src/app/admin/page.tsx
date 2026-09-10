@@ -19,7 +19,7 @@ export default async function AdminPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Tutoras</h1>
+          <h1 className="display text-2xl">Tutoras</h1>
           <p className="mt-1 text-sm text-texto-suave">
             Veja a área exatamente como cada tutora vê, sem logar como ela.
           </p>

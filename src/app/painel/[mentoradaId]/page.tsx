@@ -40,7 +40,7 @@ export default async function MentoradaPage({
       </Link>
 
       <div className="mb-10">
-        <h1 className="text-xl font-semibold tracking-tight">{mentorada.nome}</h1>
+        <h1 className="display text-2xl">{mentorada.nome}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {mentorada.mentoria ? <Etiqueta texto={mentorada.mentoria} /> : null}
           {mentorada.status ? <Etiqueta texto={mentorada.status} /> : null}
@@ -154,9 +154,7 @@ function Secao({
   return (
     <section className="mb-10">
       <div className="mb-3 flex items-center justify-between gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-texto-suave">
-          {titulo}
-        </h2>
+        <h2 className="rotulo text-[11px] text-texto-suave">{titulo}</h2>
         {acao}
       </div>
       {children}

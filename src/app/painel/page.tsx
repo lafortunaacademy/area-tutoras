@@ -18,7 +18,7 @@ export default async function PainelPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-xl font-semibold tracking-tight">Suas mentoradas</h1>
+        <h1 className="display text-2xl">Suas mentoradas</h1>
         <p className="mt-1 text-sm text-texto-suave">
           {mentoradas.length === 0
             ? 'Nenhuma mentorada ativa ligada a você no Notion.'

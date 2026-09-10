@@ -12,10 +12,10 @@ export default async function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-texto-suave">
+          <p className="rotulo text-xs text-texto-suave">
             La Fortuna Academy
           </p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Área das tutoras</h1>
+          <h1 className="display mt-3 text-3xl">Área das tutoras</h1>
           <p className="mt-2 text-sm text-texto-suave">
             Entre com o e-mail cadastrado. Enviamos um link de acesso — sem senha.
           </p>

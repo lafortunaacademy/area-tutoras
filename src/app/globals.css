@@ -1,50 +1,59 @@
 @import "tailwindcss";
 
 /*
- * Identidade visual — PROVISÓRIA.
+ * Identidade visual da La Fortuna Academy.
  *
- * Ainda não recebi o guia de marca da La Fortuna Academy, então a paleta abaixo
- * é um lugar-guardado: tons quentes e sóbrios, legíveis em claro e escuro.
- * Trocar a marca de verdade é mexer só neste bloco.
+ * A marca não tem guia escrito: as cores abaixo foram amostradas do Notion
+ * dela — a capa marrom-chocolate com o monograma creme, e os cartões em taupe.
+ * São leituras de tela, então valem como ponto de partida muito próximo, não
+ * como valor oficial. Se um dia aparecer o arquivo da marca, é só corrigir os
+ * hex deste bloco; nenhum outro arquivo tem cor escrita na mão.
+ *
+ *   chocolate  #4a3728   capa, cor principal
+ *   taupe      #a99885   cartões, apoio
+ *   creme      #f3ece1   monograma, fundo claro
+ *   café       #2a2019   texto
  */
 :root {
-  --fundo: #faf8f5;
+  --fundo: #f7f2ea;
   --superficie: #ffffff;
-  --superficie-2: #f4f0ea;
-  --borda: #e4ddd3;
-  --texto: #241f1b;
-  --texto-suave: #6b6259;
-  --marca: #7c2d4a;
-  --marca-suave: #f6e9ee;
-  --marca-contraste: #ffffff;
-  --destaque: #b8860b;
-  --ok: #2f6f4f;
-  --ok-suave: #e6f1ea;
-  --andamento: #9a6a00;
-  --andamento-suave: #fbf0d9;
-  --parado: #8a3b3b;
-  --parado-suave: #f8e8e8;
-  --sombra: 0 1px 2px rgb(36 31 27 / 0.06), 0 8px 24px -12px rgb(36 31 27 / 0.18);
+  --superficie-2: #f0e8dc;
+  --borda: #e0d5c6;
+  --texto: #2a2019;
+  --texto-suave: #6e6153;
+  --marca: #4a3728;
+  --marca-suave: #ede4d8;
+  --marca-contraste: #f7f2ea;
+  --destaque: #a99885;
+  --ok: #4a6b4f;
+  --ok-suave: #e6eee6;
+  --andamento: #8a6a2f;
+  --andamento-suave: #f4ead6;
+  --parado: #8a4038;
+  --parado-suave: #f4e4e1;
+  --sombra: 0 1px 2px rgb(42 32 25 / 0.06), 0 8px 24px -12px rgb(42 32 25 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --fundo: #16130f;
-    --superficie: #1e1a16;
-    --superficie-2: #262019;
-    --borda: #362e26;
-    --texto: #f2ede6;
-    --texto-suave: #a89c8e;
-    --marca: #e79ab4;
-    --marca-suave: #33202a;
-    --marca-contraste: #1e1a16;
-    --destaque: #d9b04a;
-    --ok: #7fc7a0;
-    --ok-suave: #1c2b23;
-    --andamento: #ddb35a;
+    --fundo: #17120e;
+    --superficie: #201a15;
+    --superficie-2: #2a231c;
+    --borda: #3a3129;
+    --texto: #f2ebe1;
+    --texto-suave: #a99885;
+    /* O chocolate é escuro demais para carregar destaque no escuro: no dark a
+       marca é lida pelo lado claro da mesma família. */
+    --marca: #d9c5ac;
+    --marca-suave: #2e2419;
+    --marca-contraste: #201a15;
+    --destaque: #c9a227;
+    --ok: #86ad8c;
+    --ok-suave: #1e2a20;
+    --andamento: #d3ab63;
     --andamento-suave: #2d2416;
-    --parado: #e29a9a;
-    --parado-suave: #2e1d1d;
+    --parado: #d99a91;
+    --parado-suave: #2e1d1b;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
   }
 }
@@ -67,6 +76,16 @@
   --color-parado: var(--parado);
   --color-parado-suave: var(--parado-suave);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
+}
+
+/*
+ * `@theme inline` inlineia os valores nas utilities do Tailwind, mas não emite
+ * a custom property no :root — então CSS escrito à mão não enxerga
+ * `var(--font-display)`. As classes abaixo apontam direto para a variável que a
+ * next/font define no body.
+ */
+:root {
 }
 
 body {
@@ -74,6 +93,23 @@ body {
   color: var(--texto);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * O serifado de alto contraste é a assinatura da marca — aparece no monograma e
+ * nos rótulos dos cartões. Fica reservado para títulos; o corpo continua em
+ * sans, que é o que se lê bem numa tabela densa.
+ */
+.display {
+  font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rotulo {
+  font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
 }
 
 ::selection {

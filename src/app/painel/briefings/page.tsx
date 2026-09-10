@@ -21,7 +21,7 @@ export default async function BriefingsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-xl font-semibold tracking-tight">Seus briefings</h1>
+        <h1 className="display text-2xl">Seus briefings</h1>
         <p className="mt-1 text-sm text-texto-suave">
           Todos os briefings endereçados a você.
         </p>

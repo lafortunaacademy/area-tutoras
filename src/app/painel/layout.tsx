@@ -12,10 +12,10 @@ export default async function PainelLayout({ children }: { children: React.React
       <header className="border-b border-borda bg-superficie">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/painel" className="group">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-texto-suave">
+            <p className="rotulo text-[10px] text-texto-suave">
               La Fortuna Academy
             </p>
-            <p className="text-sm font-semibold tracking-tight group-hover:text-marca">
+            <p className="display text-base group-hover:text-marca">
               Área das tutoras
             </p>
           </Link>
