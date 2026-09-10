@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { BRIEFINGS, HANDSOFF, MENTORADA, PLANEJAMENTO, STATUS_ATIVA } from './config';
+import { HANDSOFF, MENTORADA, STATUS_ATIVA } from './config';
 import { relationIds, texto, titulo } from './props';
 
 /**
@@ -36,11 +36,17 @@ function paraMentorada(page: NotionPage): Mentorada {
 /**
  * A carteira da tutora.
  *
- * Caminho preferido: a base "Área das tutoras" tem uma relation para a tutora
- * responsável, e o filtro é direto. Se essa propriedade não existir (o Notion
- * responde `validation_error`), a carteira é derivada das bases que
- * comprovadamente têm o vínculo: Planejamento estratégico, Briefings e
- * Hands-off. As duas rotas produzem a mesma coisa; a segunda só custa mais.
+ * Caminho direto: a base "Área das tutoras" tem uma relation para a tutora, e o
+ * filtro é uma query só. É o caminho certo — mas essa relation AINDA NÃO EXISTE
+ * no Notion (conferido em 2026-09-10), então hoje o Notion responde
+ * `validation_error` e o código cai no caminho derivado.
+ *
+ * Caminho derivado: só a base Hands-off liga tutora e mentorada por relations
+ * filtráveis, então a carteira é o conjunto de mentoradas com quem a tutora já
+ * registrou pelo menos uma sessão. Isso tem um furo conhecido: uma mentorada
+ * recém-atribuída, antes do primeiro hands-off, não aparece. Não dá para
+ * contornar no código — a informação não existe no Notion. A saída é criar a
+ * relation `Tutora` em "Área das tutoras"; aí o caminho direto assume sozinho.
  */
 export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Mentorada[]> => {
   const areaId = await resolverDatabaseId('areaDasTutoras');
@@ -74,9 +80,10 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
 
 /** Junta os IDs de mentorada que aparecem ligados a esta tutora em cada base. */
 async function mentoradaIdsPelasRelations(tutoraPageId: string): Promise<Set<string>> {
+  // Só entra base cujas DUAS pontas sejam relation. Planejamento fica de fora
+  // porque `Área de tutora` é rollup, e Briefings porque não tem ponta para a
+  // mentorada. Sobra Hands-off.
   const fontes = [
-    { secao: 'planejamento', tutora: PLANEJAMENTO.areaDeTutora, mentorada: PLANEJAMENTO.areaDaMentorada },
-    { secao: 'briefings', tutora: BRIEFINGS.paraATutora, mentorada: BRIEFINGS.mentorada },
     { secao: 'handsoff', tutora: HANDSOFF.feitoPelaTutora, mentorada: HANDSOFF.mentorada },
   ] as const;
 

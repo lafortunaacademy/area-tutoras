@@ -16,6 +16,30 @@ Praticamente nada. Só duas coisas, ambas em `supabase/migrations/0001_init.sql`
 Nenhum conteúdo do Notion — nem mentorada, nem briefing, nem hands-off — é
 copiado para cá.
 
+## O que o Notion tem hoje (conferido em 2026-09-10)
+
+| base | ligação com a tutora | ligação com a mentorada |
+| --- | --- | --- |
+| Área das tutoras | **não existe** | é a própria linha |
+| Planejamento estratégico | `Área de tutora` — **rollup**, não filtrável | `Área da mentorada` — relation ✅ |
+| Briefings | `Para a tutora:` — relation ✅ | **não existe** |
+| Hands-off | `Feito pela tutora:` — relation ✅ | `Mentorada` — relation ✅ |
+
+Duas consequências que o código não tem como contornar sozinho:
+
+1. **A carteira sai só do Hands-off.** Como é a única base com relation nas duas
+   pontas, a carteira de uma tutora é o conjunto de mentoradas com quem ela já
+   registrou uma sessão. Uma mentorada recém-atribuída, antes do primeiro
+   hands-off, não aparece.
+2. **Briefing não é recortável por mentorada.** Ele sabe para qual tutora é, não
+   sobre quem. Por isso vive em `/painel/briefings` e não na página da mentorada.
+
+**A correção é uma propriedade só:** criar em *Área das tutoras* uma relation
+`Tutora` apontando para a base *Tutoras*. O código já tenta esse caminho
+primeiro — no minuto em que a propriedade existir, a carteira passa a sair dali
+e o furo do item 1 fecha sozinho. Para o item 2, seria uma relation
+`Área da mentorada` em *Briefings*.
+
 ## Isolamento entre tutoras
 
 Diferente de um portal em que cada cliente tem a própria árvore de páginas,

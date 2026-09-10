@@ -21,16 +21,26 @@ export const DATABASES = {
 
 export type SectionKey = keyof typeof DATABASES;
 
-/** Propriedades da base "Área das tutoras" (uma linha por mentorada). */
+/**
+ * Propriedades da base "Área das tutoras" (uma linha por mentorada).
+ *
+ * Conferido no Notion em 2026-09-10: a base tem só Status, Cliente, Mentoria
+ * (rollup) e Área da cliente (relation) — mais uma Mentoria oculta.
+ */
 export const MENTORADA = {
   nome: 'Cliente',
   status: 'Status',
   mentoria: 'Mentoria',
   areaDaCliente: 'Área da cliente',
   /**
-   * Relation da mentorada para a tutora responsável. Se essa propriedade não
-   * existir na base, a carteira é derivada do Planejamento estratégico —
-   * veja `carteira.ts`.
+   * ⚠️ ESTA PROPRIEDADE AINDA NÃO EXISTE NO NOTION.
+   *
+   * É a relation "Área das tutoras → Tutoras" que ligaria cada mentorada à sua
+   * tutora. Sem ela, não existe caminho direto e barato para montar a carteira,
+   * e `carteira.ts` cai no caminho derivado (bem mais frágil — veja lá).
+   *
+   * No minuto em que a Fernanda criar essa relation, o caminho direto passa a
+   * funcionar sozinho: o código já tenta por ele primeiro.
    */
   tutora: 'Tutora',
 } as const;
@@ -38,7 +48,14 @@ export const MENTORADA = {
 /** Valor de `Status` que conta como mentorada ativa. */
 export const STATUS_ATIVA = 'Ativa';
 
-/** Propriedades da base "Planejamento estratégico". */
+/**
+ * Propriedades da base "Planejamento estratégico".
+ *
+ * `Área de tutora` é ROLLUP, não relation — a API não filtra por ela de forma
+ * confiável. Serve para exibir, nunca para recortar. O recorte sai de
+ * `Área da mentorada`, que é relation de verdade, depois da carteira já ter
+ * autorizado a mentorada.
+ */
 export const PLANEJAMENTO = {
   objetivo: 'Objetivo',
   status: 'Status',
@@ -48,19 +65,31 @@ export const PLANEJAMENTO = {
   tutoria: 'Tutoria',
   ano: 'Ano',
   areaDaMentorada: 'Área da mentorada',
+  /** Rollup — só leitura. Não usar em filtro. */
   areaDeTutora: 'Área de tutora',
 } as const;
 
-/** Propriedades da base "Briefings". */
+/**
+ * Propriedades da base "Briefings".
+ *
+ * ⚠️ Não existe relation para a mentorada. Um briefing sabe para QUAL TUTORA
+ * ele é, mas não sobre qual mentorada — então briefing não pode ser recortado
+ * por mentorada, só por tutora. É por isso que a seção vive em /painel/briefings
+ * e não dentro da página de uma mentorada.
+ */
 export const BRIEFINGS = {
   titulo: 'Briefing',
   data: 'Data',
   mentoria: 'Mentoria',
   paraATutora: 'Para a tutora:',
-  mentorada: 'Área da mentorada',
 } as const;
 
-/** Propriedades da base "Hands-off" (a única base em que o app ESCREVE). */
+/**
+ * Propriedades da base "Hands-off" (a única base em que o app ESCREVE).
+ *
+ * A única base com relations de verdade nas DUAS pontas — tutora e mentorada.
+ * Hoje é ela que sustenta a carteira derivada.
+ */
 export const HANDSOFF = {
   nome: 'Nome',
   dataDaSessao: 'Data da sessão',

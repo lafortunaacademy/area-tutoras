@@ -21,6 +21,9 @@ export default async function PainelLayout({ children }: { children: React.React
           </Link>
 
           <div className="flex items-center gap-4 text-sm">
+            <Link href="/painel/briefings" className="text-texto-suave transition hover:text-marca">
+              Briefings
+            </Link>
             <span className="hidden text-texto-suave sm:inline">{sessao.tutora.nome}</span>
             {sessao.real.is_admin ? (
               <Link href="/admin" className="text-texto-suave transition hover:text-marca">

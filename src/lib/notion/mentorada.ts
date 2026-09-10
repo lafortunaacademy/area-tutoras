@@ -66,18 +66,15 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
   }
 }
 
-export async function planejamento(
-  mentorada: Mentorada,
-  tutoraPageId: string,
-): Promise<ItemPlanejamento[]> {
+/**
+ * O filtro leva só a mentorada: `Área de tutora` é rollup e a API não filtra por
+ * ela. Quem garante que esta tutora pode ver esta mentorada é `exigirMentorada`,
+ * antes de chegar aqui.
+ */
+export async function planejamento(mentorada: Mentorada): Promise<ItemPlanejamento[]> {
   const dbId = await resolverDatabaseId('planejamento');
   const linhas = await queryDatabase(dbId, {
-    filter: {
-      and: [
-        { property: PLANEJAMENTO.areaDaMentorada, relation: { contains: mentorada.id } },
-        { property: PLANEJAMENTO.areaDeTutora, relation: { contains: tutoraPageId } },
-      ],
-    },
+    filter: { property: PLANEJAMENTO.areaDaMentorada, relation: { contains: mentorada.id } },
   });
 
   return linhas.map((p) => ({
@@ -92,18 +89,15 @@ export async function planejamento(
   }));
 }
 
-export async function briefings(
-  mentorada: Mentorada,
-  tutoraPageId: string,
-): Promise<ItemBriefing[]> {
+/**
+ * Briefings são POR TUTORA, não por mentorada: a base não tem relation para a
+ * mentorada. Por isso esta função recebe a tutora e não a mentorada — e a tela
+ * correspondente é /painel/briefings, fora da página de qualquer mentorada.
+ */
+export async function briefingsDaTutora(tutoraPageId: string): Promise<ItemBriefing[]> {
   const dbId = await resolverDatabaseId('briefings');
   const linhas = await queryDatabase(dbId, {
-    filter: {
-      and: [
-        { property: BRIEFINGS.mentorada, relation: { contains: mentorada.id } },
-        { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
-      ],
-    },
+    filter: { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
     sorts: [{ property: BRIEFINGS.data, direction: 'descending' }],
   });
 
@@ -149,17 +143,15 @@ export async function pageIdsPermitidos(
   mentorada: Mentorada,
   tutoraPageId: string,
 ): Promise<Set<string>> {
-  const [mapa, plano, brief, hands] = await Promise.all([
+  const [mapa, plano, hands] = await Promise.all([
     mapaDaCliente(mentorada),
-    planejamento(mentorada, tutoraPageId).catch(() => []),
-    briefings(mentorada, tutoraPageId).catch(() => []),
+    planejamento(mentorada).catch(() => []),
     handsoffs(mentorada, tutoraPageId).catch(() => []),
   ]);
 
   return new Set([
     ...mapa.map((i) => i.id),
     ...plano.map((i) => i.id),
-    ...brief.map((i) => i.id),
     ...hands.map((i) => i.id),
   ]);
 }

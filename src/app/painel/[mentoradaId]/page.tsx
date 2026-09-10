@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/carteira';
-import { briefings, handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
+import { handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
 import { ItemExpansivel } from '@/components/ItemExpansivel';
@@ -23,10 +23,9 @@ export default async function MentoradaPage({
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.
-  const [mapa, plano, brief, hands] = await Promise.all([
+  const [mapa, plano, hands] = await Promise.all([
     mapaDaCliente(mentorada).catch(() => []),
-    planejamento(mentorada, tutoraId).catch((e) => e as Error),
-    briefings(mentorada, tutoraId).catch(() => []),
+    planejamento(mentorada).catch((e) => e as Error),
     handsoffs(mentorada, tutoraId).catch(() => []),
   ]);
 
@@ -97,26 +96,6 @@ export default async function MentoradaPage({
               </tbody>
             </table>
           </div>
-        )}
-      </Secao>
-
-      <Secao titulo="Briefings">
-        {brief.length === 0 ? (
-          <Vazio>Nenhum briefing para você nesta mentorada.</Vazio>
-        ) : (
-          <ul className="space-y-2">
-            {brief.map((item) => (
-              <ItemExpansivel
-                key={item.id}
-                pageId={item.id}
-                mentoradaId={mentorada.id}
-                titulo={item.titulo}
-                meta={
-                  <span className="shrink-0 text-xs text-texto-suave">{item.data}</span>
-                }
-              />
-            ))}
-          </ul>
         )}
       </Secao>
 

@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation';
 import { getSessao, supabaseConfigurado } from '@/lib/session';
+
+// Depende da sessão do request: nunca pode virar HTML estático.
+export const dynamic = 'force-dynamic';
 import { FormularioLogin } from './FormularioLogin';
 
 export default async function LoginPage() {
