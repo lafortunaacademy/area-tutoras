@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
+/*
+ * Identidade visual — PROVISÓRIA.
+ *
+ * Ainda não recebi o guia de marca da La Fortuna Academy, então a paleta abaixo
+ * é um lugar-guardado: tons quentes e sóbrios, legíveis em claro e escuro.
+ * Trocar a marca de verdade é mexer só neste bloco.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --fundo: #faf8f5;
+  --superficie: #ffffff;
+  --superficie-2: #f4f0ea;
+  --borda: #e4ddd3;
+  --texto: #241f1b;
+  --texto-suave: #6b6259;
+  --marca: #7c2d4a;
+  --marca-suave: #f6e9ee;
+  --marca-contraste: #ffffff;
+  --destaque: #b8860b;
+  --ok: #2f6f4f;
+  --ok-suave: #e6f1ea;
+  --andamento: #9a6a00;
+  --andamento-suave: #fbf0d9;
+  --parado: #8a3b3b;
+  --parado-suave: #f8e8e8;
+  --sombra: 0 1px 2px rgb(36 31 27 / 0.06), 0 8px 24px -12px rgb(36 31 27 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-tema="claro"]) {
+    --fundo: #16130f;
+    --superficie: #1e1a16;
+    --superficie-2: #262019;
+    --borda: #362e26;
+    --texto: #f2ede6;
+    --texto-suave: #a89c8e;
+    --marca: #e79ab4;
+    --marca-suave: #33202a;
+    --marca-contraste: #1e1a16;
+    --destaque: #d9b04a;
+    --ok: #7fc7a0;
+    --ok-suave: #1c2b23;
+    --andamento: #ddb35a;
+    --andamento-suave: #2d2416;
+    --parado: #e29a9a;
+    --parado-suave: #2e1d1d;
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
   }
 }
 
+@theme inline {
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-borda: var(--borda);
+  --color-texto: var(--texto);
+  --color-texto-suave: var(--texto-suave);
+  --color-marca: var(--marca);
+  --color-marca-suave: var(--marca-suave);
+  --color-marca-contraste: var(--marca-contraste);
+  --color-destaque: var(--destaque);
+  --color-ok: var(--ok);
+  --color-ok-suave: var(--ok-suave);
+  --color-andamento: var(--andamento);
+  --color-andamento-suave: var(--andamento-suave);
+  --color-parado: var(--parado);
+  --color-parado-suave: var(--parado-suave);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--marca-suave);
+  color: var(--texto);
 }

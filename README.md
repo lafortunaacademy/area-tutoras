@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Área das tutoras — La Fortuna Academy
 
-## Getting Started
+App web da área de membros das tutoras. **O Notion é a fonte de verdade**: toda
+página busca os dados ao vivo a cada carregamento. Uma edição feita no Notion
+aparece no app no próximo refresh — não existe "publicar".
 
-First, run the development server:
+## O que fica salvo no banco do app
+
+Praticamente nada. Só duas coisas, ambas em `supabase/migrations/0001_init.sql`:
+
+| tabela | o que guarda |
+| --- | --- |
+| `tutoras` | e-mail de login → ID da página da tutora na base **Tutoras** do Notion |
+| `notion_resolved_ids` | os IDs das databases do Notion (descobrir é caro; o conteúdo, nunca) |
+
+Nenhum conteúdo do Notion — nem mentorada, nem briefing, nem hands-off — é
+copiado para cá.
+
+## Isolamento entre tutoras
+
+Diferente de um portal em que cada cliente tem a própria árvore de páginas,
+aqui as bases do Notion são **compartilhadas**. O recorte de cada tutora existe
+só como relation (`Para a tutora:`, `Feito pela tutora:`, `Área de tutora`).
+
+Isso muda o desenho da segurança: não existe "consulta da tutora", existe
+consulta **filtrada** — e um filtro esquecido vazaria a base inteira. Por isso:
+
+- `src/lib/notion/carteira.ts` é a única fonte da lista de mentoradas que uma
+  tutora pode ver. Toda página de mentorada entra por `exigirMentorada()`, que
+  devolve **404** para um ID fora da carteira — a mesma resposta de um ID
+  inexistente, para não confirmar a existência da mentorada de outra tutora.
+- Toda consulta em `src/lib/notion/mentorada.ts` leva **os dois** IDs no filtro
+  (mentorada *e* tutora), mesmo depois de a carteira já ter autorizado.
+- A rota de conteúdo sob demanda refaz a autorização do zero e só lê uma página
+  que esteja na lista que o próprio servidor montou.
+
+## Modo admin / "ver como"
+
+A flag `is_admin` na linha da própria pessoa libera `/admin`, que lista as
+tutoras com um botão **Ver como**. O botão grava um cookie `httpOnly` com o ID
+assinado por HMAC — mas a assinatura sozinha não autoriza nada: a cada
+requisição, `getSessao()` reconfere no banco que quem está logada continua
+sendo admin. Perder o admin derruba o preview na hora.
+
+## Escrita de volta no Notion
+
+O app escreve em um lugar só: **Hands-off**. A tutora preenche o formulário e o
+app cria a página na base, no mesmo formato de sempre (um heading por seção,
+bullets onde o Notion usa bullets).
+
+Isso é uma **Server Action** (`hands-off/actions.ts`) — mutação de verdade, que
+justifica a re-renderização que o Next faz.
+
+Já o "expandi um card, me traz o conteúdo de dentro" é uma **Route Handler**
+GET (`/api/notion-content/[pageId]`), *não* uma Server Action: Server Action
+chamada de Client Component re-renderiza a rota inteira a cada chamada, o que é
+desperdício puro para leitura.
+
+## Performance
+
+Listagem nunca pré-carrega conteúdo pesado. A página da mentorada busca só as
+*linhas* de cada base; os blocos de um item só são lidos quando a tutora abre
+aquele item — e só uma vez por item.
+
+## Robustez com a API do Notion
+
+- **Visualização vinculada (linked view):** quando uma base aparece na página
+  como view linkada, a API não resolve o database por trás dela. O resolver
+  tenta primeiro `search` por título (que enxerga a base de verdade), depois
+  varre a árvore, e a saída final é fixar o ID em `NOTION_DB_*` no `.env.local`.
+- **Fórmula e rollup:** a mesma propriedade volta como número (`1000`), como
+  texto já formatado (`"R$ 1.000,00"`) ou como array. Os três caminhos caem em
+  `src/lib/notion/props.ts`.
+- **429 e 5xx:** o client tenta de novo com backoff, respeitando `retry-after`.
+
+## Colocar para rodar
 
 ```bash
+cp .env.local.example .env.local   # preencher
+npm run notion:doctor              # confere os nomes contra o Notion real
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Supabase** — criar o projeto, rodar `supabase/migrations/0001_init.sql`,
+   copiar URL + anon key + service_role para o `.env.local`. Em
+   Authentication > URL Configuration, adicionar `/auth/callback` às redirect
+   URLs.
+2. **Notion** — a integração precisa ser criada **no workspace da La Fortuna
+   Academy** (não no seu), e a página *Área das tutoras* precisa ser
+   compartilhada com ela.
+3. **Cadastrar as tutoras:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run tutora:add -- --email ana@exemplo.com --nome "Ana Souza" --notion <page-id-dela-na-base-Tutoras>
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sua própria linha leva `--admin`.
 
-## Learn More
+## Onde mexer quando algo mudar no Notion
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`src/lib/notion/config.ts` é o único arquivo que conhece nomes de bases e de
+propriedades. Renomeou algo no Notion? Muda ali, e mais em lugar nenhum.
+`npm run notion:doctor` aponta o que está divergindo.
