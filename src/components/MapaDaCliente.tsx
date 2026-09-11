@@ -24,32 +24,34 @@ export function MapaDaCliente({
   const longos = item.campos.filter((c) => c.longo);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-borda bg-superficie">
-      <div className="grid gap-6 p-6 sm:grid-cols-[180px_1fr] sm:gap-8 xl:grid-cols-[220px_1fr]">
-        <div>
-          <Retrato nome={nome} foto={item.foto ?? foto} />
-        </div>
+    <div className="overflow-hidden rounded-xl border border-borda bg-superficie p-6">
+      {/* Primeira faixa: retrato e os campos de bater o olho, lado a lado. O
+          retrato estica até a altura da grade, então os dois terminam juntos. */}
+      <div className="grid gap-6 sm:grid-cols-[minmax(140px,200px)_1fr] sm:gap-8">
+        <Retrato nome={nome} foto={item.foto ?? foto} />
 
-        <div className="min-w-0">
-          {curtos.length > 0 ? (
-            <dl className="grid gap-x-10 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
-              {curtos.map((c) => (
-                <Campo key={c.nome} nome={c.nome} valor={c.valor} />
-              ))}
-            </dl>
-          ) : null}
-
-          {longos.length > 0 ? (
-            <dl
-              className={`grid gap-x-10 gap-y-4 xl:grid-cols-2 ${curtos.length > 0 ? 'mt-6 border-t border-borda pt-6' : ''}`}
-            >
-              {longos.map((c) => (
-                <Campo key={c.nome} nome={c.nome} valor={c.valor} />
-              ))}
-            </dl>
-          ) : null}
-        </div>
+        {curtos.length > 0 ? (
+          <dl className="grid content-start gap-x-10 gap-y-5 sm:grid-cols-2 xl:grid-cols-3">
+            {curtos.map((c) => (
+              <Campo key={c.nome} nome={c.nome} valor={c.valor} />
+            ))}
+          </dl>
+        ) : null}
       </div>
+
+      {/* Segunda faixa: texto corrido ocupando a largura inteira do card, e não
+          só a coluna da direita — é onde estão as respostas longas. */}
+      {longos.length > 0 ? (
+        <dl
+          className={`grid gap-x-10 gap-y-5 sm:grid-cols-2 xl:grid-cols-3 ${
+            curtos.length > 0 ? 'mt-6 border-t border-borda pt-6' : 'mt-6'
+          }`}
+        >
+          {longos.map((c) => (
+            <Campo key={c.nome} nome={c.nome} valor={c.valor} />
+          ))}
+        </dl>
+      ) : null}
     </div>
   );
 }
@@ -93,7 +95,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
       <img
         src={foto}
         alt={nome}
-        className="aspect-[3/4] w-full rounded-xl border border-borda object-cover"
+        className="h-full max-h-72 min-h-44 w-full rounded-xl border border-borda object-cover"
       />
     );
   }
@@ -108,7 +110,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
   return (
     <div
       aria-hidden
-      className="flex aspect-[3/4] w-full items-center justify-center rounded-xl bg-marca-suave"
+      className="flex h-full max-h-72 min-h-44 w-full items-center justify-center rounded-xl bg-marca-suave"
     >
       <span className="display text-3xl text-marca">{iniciais}</span>
     </div>

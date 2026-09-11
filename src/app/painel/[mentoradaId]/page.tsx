@@ -84,10 +84,9 @@ export default async function MentoradaPage({
           <AvisoNotion erro={plano} />
         ) : plano === null ? (
           <Vazio>
-            Ainda não consigo separar os objetivos por mentorada: a base de
-            planejamento se liga a ela por uma relation que aponta para uma base
-            que não foi compartilhada com a integração. Mostrar sem esse recorte
-            traria os objetivos de todas as mentoradas.
+            {mentorada.areaDaClienteIds.length === 0
+              ? 'Esta mentorada ainda não tem área individual vinculada no Notion, e os objetivos se ligam a ela por ali. É o mesmo motivo da foto e da mentoria não aparecerem.'
+              : 'Não consigo separar os objetivos por mentorada: a base de planejamento se liga a ela por uma relation que a integração não alcança. Mostrar sem esse recorte traria os objetivos de todas.'}
           </Vazio>
         ) : plano.length === 0 ? (
           <Vazio>Nenhum objetivo cadastrado.</Vazio>
