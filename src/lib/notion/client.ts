@@ -153,6 +153,7 @@ export async function createPage(body: {
   parent: { database_id: string };
   properties: Record<string, unknown>;
   children?: unknown[];
+  icon?: unknown;
 }): Promise<NotionPage> {
   return call<NotionPage>('/pages', { method: 'POST', body });
 }

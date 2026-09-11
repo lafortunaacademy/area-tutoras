@@ -1,7 +1,7 @@
 import 'server-only';
 import { createPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { HANDSOFF, HANDSOFF_SECOES, type HandsoffSecaoKey } from './config';
+import { HANDSOFF, HANDSOFF_ICONE, HANDSOFF_SECOES, type HandsoffSecaoKey } from './config';
 import type { Mentorada } from './carteira';
 
 /**
@@ -73,6 +73,7 @@ export async function criarHandsoff(
 
   const page = await createPage({
     parent: { database_id: dbId },
+    icon: { type: 'icon', icon: HANDSOFF_ICONE },
     properties: {
       // O título nomeia a TUTORA, nunca a mentorada: o registro já vive dentro
       // da área dela, e repetir o nome da mentorada ali só ocupa espaço. Quem

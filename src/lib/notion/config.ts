@@ -126,6 +126,15 @@ export const HANDSOFF = {
 } as const;
 
 /**
+ * Ícone da página de Hands-off, igual ao dos registros criados à mão.
+ *
+ * Sem ele a página nasce com o ícone genérico de documento e salta aos olhos na
+ * listagem do Notion qual veio do app e qual veio de dentro do Notion. A ideia é
+ * o contrário: que não dê para diferenciar.
+ */
+export const HANDSOFF_ICONE = { name: 'info-alternate', color: 'brown' } as const;
+
+/**
  * Quanto a tutora recebe por sessão, conforme a mentoria da mentorada.
  *
  * Não existe no Notion: veio da Luíza em 2026-09-11. Enquanto não virar um campo
