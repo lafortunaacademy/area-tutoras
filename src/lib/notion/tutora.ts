@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { getPage, queryDatabase } from './client';
 import { resolverDatabaseId } from './resolver';
 import { HANDSOFF, TUTORA, VALOR_POR_SESSAO } from './config';
@@ -34,6 +35,13 @@ export type MesDeSessoes = {
   sessoes: number;
   valor: number | null;
 };
+
+/** id da tutora -> nome, para rotular quem assinou cada hands-off. */
+export const nomesDasTutoras = cache(async (): Promise<Map<string, string>> => {
+  const dbId = await resolverDatabaseId('tutoras');
+  const linhas = await queryDatabase(dbId, { limite: 200 });
+  return new Map(linhas.map((p) => [p.id, texto(p, TUTORA.nome)]));
+});
 
 export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora | null> {
   const page = await getPage(tutoraPageId).catch(() => null);

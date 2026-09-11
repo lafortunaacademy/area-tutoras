@@ -12,7 +12,7 @@ import {
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
 import { MapaDaCliente } from '@/components/MapaDaCliente';
-import { ItemExpansivel } from '@/components/ItemExpansivel';
+import { CardNotion } from '@/components/CardNotion';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,7 +129,7 @@ export default async function MentoradaPage({
         ) : (
           <ul className="space-y-2">
             {brief.map((item) => (
-              <ItemExpansivel
+              <CardNotion
                 key={item.id}
                 pageId={item.id}
                 mentoradaId={mentorada.id}
@@ -162,24 +162,27 @@ export default async function MentoradaPage({
         ) : (
           <ul className="space-y-2">
             {hands.map((item) => (
-              <ItemExpansivel
+              <CardNotion
                 key={item.id}
                 pageId={item.id}
                 mentoradaId={mentorada.id}
                 titulo={item.titulo}
                 meta={
-                  <span className="shrink-0 text-xs text-texto-suave">{item.dataSessao}</span>
+                  <span className="shrink-0 text-xs text-texto-suave">
+                    {[item.tutora, item.dataSessao].filter(Boolean).join(' · ')}
+                  </span>
                 }
-              >
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-block text-xs text-marca underline underline-offset-2"
-                >
-                  Abrir no Notion
-                </a>
-              </ItemExpansivel>
+                rodape={
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-block text-xs text-marca underline underline-offset-2"
+                  >
+                    Abrir no Notion
+                  </a>
+                }
+              />
             ))}
           </ul>
         )}

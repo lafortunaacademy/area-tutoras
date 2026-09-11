@@ -4,6 +4,7 @@ import { resolverDatabaseId } from './resolver';
 import { BRIEFINGS, HANDSOFF, MAPA, MAPA_CAMPOS, PLANEJAMENTO, ehLegenda } from './config';
 import { arquivoUrl, data, formatarData, iconeUrl, relationIds, texto, titulo } from './props';
 import type { Mentorada } from './carteira';
+import { nomesDasTutoras } from './tutora';
 
 /**
  * Conteúdo de uma mentorada, sempre buscado ao vivo.
@@ -44,6 +45,8 @@ export type ItemHandsoff = {
   id: string;
   titulo: string;
   dataSessao: string;
+  /** Quem escreveu. Vem da relation, não do título — o título é editável à mão. */
+  tutora: string;
   url: string;
 };
 
@@ -205,38 +208,59 @@ export async function handsoffs(
     sorts: [{ property: HANDSOFF.dataDaSessao, direction: 'descending' }],
   });
 
+  const nomes = await nomesDasTutoras();
+
   return linhas.map((p) => ({
     id: p.id,
     titulo: texto(p, HANDSOFF.nome) || titulo(p) || 'Hands-off',
     dataSessao: formatarData(data(p, HANDSOFF.dataDaSessao)),
+    tutora: relationIds(p, HANDSOFF.feitoPelaTutora)
+      .map((id) => nomes.get(id))
+      .find(Boolean) ?? '',
     url: p.url,
   }));
 }
 
 /**
- * Todo ID de página que a tutora tem direito de abrir nesta mentorada.
+ * A página pedida pertence mesmo a esta mentorada?
  *
- * A rota de conteúdo sob demanda (`/api/notion-content/[pageId]`) confere o ID
- * pedido contra esta lista, montada no servidor. Nada do que o browser manda
- * entra na decisão além do próprio ID pedido.
+ * Antes isto montava a lista inteira de páginas permitidas — quatro consultas ao
+ * Notion — só para responder sim ou não sobre uma. Ficava lento a ponto de dar
+ * para ver: um clique para expandir um card esperava o app remontar tudo.
+ *
+ * Agora é uma consulta só: lê a própria página e confere de que base ela veio e
+ * para quem ela aponta. Mesma garantia, porque a resposta continua vindo do
+ * Notion e não do que o browser mandou.
  */
-export async function pageIdsPermitidos(
+export async function paginaPertenceA(
   mentorada: Mentorada,
-  tutoraPageId: string,
-): Promise<Set<string>> {
-  const [mapa, plano, brief, hands] = await Promise.all([
-    mapaDaCliente(mentorada),
-    planejamento(mentorada).catch(() => null),
-    briefings(mentorada, tutoraPageId).catch(() => []),
-    handsoffs(mentorada, tutoraPageId).catch(() => []),
+  pageId: string,
+): Promise<boolean> {
+  const page = await getPage(pageId).catch(() => null);
+  const daBase = page?.parent?.database_id;
+  if (!page || !daBase) return false;
+
+  const [briefingsId, handsoffId, mapasId, planejamentoId] = await Promise.all([
+    resolverDatabaseId('briefings'),
+    resolverDatabaseId('handsoff'),
+    resolverDatabaseId('mapas'),
+    resolverDatabaseId('planejamento'),
   ]);
 
-  return new Set([
-    ...mapa.map((i) => i.id),
-    ...(plano ?? []).map((i) => i.id),
-    ...brief.map((i) => i.id),
-    ...hands.map((i) => i.id),
-  ]);
+  const mesmaBase = (a: string, b: string) => a.replace(/-/g, '') === b.replace(/-/g, '');
+  const aponta = (prop: string, alvos: string[]) =>
+    relationIds(page, prop).some((id) =>
+      alvos.some((alvo) => alvo.replace(/-/g, '') === id.replace(/-/g, '')),
+    );
+
+  if (mesmaBase(daBase, briefingsId)) return aponta(BRIEFINGS.mentorada, [mentorada.id]);
+  if (mesmaBase(daBase, handsoffId)) return aponta(HANDSOFF.mentorada, [mentorada.id]);
+  if (mesmaBase(daBase, mapasId)) return aponta(MAPA.mentorada, [mentorada.id]);
+  if (mesmaBase(daBase, planejamentoId)) {
+    return aponta(PLANEJAMENTO.areaDaMentorada, mentorada.areaDaClienteIds);
+  }
+
+  return false;
 }
 
 export { relationIds };

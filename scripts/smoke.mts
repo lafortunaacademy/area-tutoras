@@ -14,7 +14,7 @@ for (const linha of readFileSync(new URL('../.env.local', import.meta.url), 'utf
 }
 
 const { carteiraDaTutora, normalizarId } = await import('../src/lib/notion/carteira.js');
-const { mapaDaCliente, planejamento, briefings, handsoffs, pageIdsPermitidos } = await import(
+const { mapaDaCliente, planejamento, briefings, handsoffs, paginaPertenceA } = await import(
   '../src/lib/notion/mentorada.js'
 );
 const { lerBlocos } = await import('../src/lib/notion/blocks.js');
@@ -88,11 +88,12 @@ ok(
   'todo hands-off tem data formatada em pt-BR',
 );
 
-const permitidos = await pageIdsPermitidos(mentorada, tutoraId);
-console.log(`  páginas liberadas para leitura sob demanda: ${permitidos.size}`);
+const daMentorada = await Promise.all(
+  [...brief, ...hands].map((i) => paginaPertenceA(mentorada, i.id)),
+);
 ok(
-  [...brief, ...hands].every((i) => permitidos.has(i.id)),
-  'tudo que a tela lista está na lista de páginas liberadas',
+  daMentorada.every(Boolean),
+  'tudo que a tela lista passa na checagem de "é desta mentorada?"',
 );
 
 console.log('\n— isolamento —');
@@ -101,7 +102,14 @@ const todas = await queryDatabase(AREA, { limite: 100 });
 const deFora = todas.find((p) => !carteira.some((m) => m.id === p.id));
 ok(Boolean(deFora), 'existe mentorada fora da carteira para testar');
 if (deFora) {
-  ok(!permitidos.has(deFora.id), 'mentorada de fora NÃO está entre as páginas liberadas');
+  const primeiro = [...brief, ...hands][0];
+  if (primeiro) {
+    const foraCompleta0 = { ...mentorada, id: deFora.id };
+    ok(
+      !(await paginaPertenceA(foraCompleta0, primeiro.id)),
+      'página desta mentorada NÃO passa na checagem de outra mentorada',
+    );
+  }
   const handsDeFora = await handsoffs({ ...mentorada, id: deFora.id }, tutoraId);
   ok(
     handsDeFora.length === 0,

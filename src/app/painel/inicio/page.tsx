@@ -10,6 +10,7 @@ import {
 import { formatarData } from '@/lib/notion/props';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
+import { GraficoMeses } from '@/components/GraficoMeses';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,42 +73,11 @@ export default async function InicioPage() {
         />
       </div>
 
-      <Secao titulo="Mês a mês">
+      <Secao titulo="Sessões mês a mês">
         {meses.length === 0 ? (
           <Vazio>Nenhuma sessão registrada ainda.</Vazio>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-            <table className="w-full min-w-[26rem] text-sm">
-              <thead>
-                <tr className="border-b border-borda text-left">
-                  {['Mês', 'Sessões', ...(comValor ? ['Recebido'] : [])].map((c) => (
-                    <th
-                      key={c}
-                      className="rotulo px-5 py-3 text-[10px] font-normal text-texto-suave"
-                    >
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {meses.map((m) => (
-                  <tr
-                    key={m.chave}
-                    className="border-b border-borda transition last:border-0 hover:bg-fundo"
-                  >
-                    <td className="px-5 py-3">{m.rotulo}</td>
-                    <td className="px-5 py-3 text-texto-suave">{m.sessoes}</td>
-                    {comValor ? (
-                      <td className="px-5 py-3 tabular-nums">
-                        {m.valor === null ? '—' : emReais(m.valor)}
-                      </td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <GraficoMeses meses={[...meses].reverse()} emReais={emReais} />
         )}
 
         <p className="mt-3 text-xs text-texto-suave">

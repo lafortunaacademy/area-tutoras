@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getSessao } from '@/lib/session';
 import { normalizarId } from '@/lib/notion/carteira';
 import { exigirMentorada } from '@/lib/notion/guard';
-import { pageIdsPermitidos } from '@/lib/notion/mentorada';
+import { paginaPertenceA } from '@/lib/notion/mentorada';
 import { lerBlocos } from '@/lib/notion/blocks';
 
 /**
@@ -41,8 +41,7 @@ export async function GET(
       mentoradaId,
     );
 
-    const permitidos = await pageIdsPermitidos(mentorada, sessao.tutora.notion_tutora_page_id);
-    if (!permitidos.has(alvo)) {
+    if (!(await paginaPertenceA(mentorada, alvo))) {
       return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
     }
 
