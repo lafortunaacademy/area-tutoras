@@ -19,6 +19,7 @@ const { mapaDaCliente, planejamento, briefings, handsoffs, pageIdsPermitidos } =
 );
 const { lerBlocos } = await import('../src/lib/notion/blocks.js');
 const { queryDatabase } = await import('../src/lib/notion/client.js');
+const { relationIds } = await import('../src/lib/notion/props.js');
 
 const TUTORAS = {
   'Rafaela Trajano': '3bb64a56-eca0-8061-98cf-e85c0fe1f987',
@@ -63,9 +64,15 @@ console.log(`  mapa: ${mapa.length} item(ns)`);
 
 const plano = await planejamento(mentorada);
 ok(
-  plano === null,
-  `planejamento devolve null (relation cega) em vez de lista vazia — veio ${plano === null ? 'null' : `${plano.length} item(ns)`}`,
+  plano !== null && plano.length > 0,
+  `planejamento recortado pela Área da cliente — ${plano === null ? 'null (sem vínculo)' : `${plano.length} objetivo(s)`}`,
 );
+if (plano) {
+  ok(
+    plano.every((o) => o.objetivo),
+    'todo objetivo tem título',
+  );
+}
 
 const brief = await briefings(mentorada, tutoraId);
 console.log(`  briefings: ${brief.length}`);
@@ -100,6 +107,19 @@ if (deFora) {
     handsDeFora.length === 0,
     'query de hands-off com mentorada de fora + esta tutora não devolve nada',
   );
+
+  // O planejamento é o filtro mais fácil de errar: a chave é a Área da cliente,
+  // não o ID da mentorada. Se alguém trocar por engano, o filtro não dá erro —
+  // devolve os objetivos de outra pessoa. Esta checagem pega isso.
+  const foraCompleta = { ...mentorada, id: deFora.id, areaDaClienteIds: relationIds(deFora, 'Área da cliente') };
+  if (foraCompleta.areaDaClienteIds.length > 0) {
+    const planoDeFora = await planejamento(foraCompleta);
+    const meus = new Set((plano ?? []).map((o) => o.id));
+    ok(
+      (planoDeFora ?? []).every((o) => !meus.has(o.id)),
+      'objetivos de outra mentorada não se misturam com os desta',
+    );
+  }
 }
 
 console.log('\n— blocos sob demanda —');

@@ -47,10 +47,9 @@ export const MENTORADA = {
    */
   mentoria: ['Mentoria ', 'Mentoria'],
   /**
-   * ⚠️ Aponta para uma base NÃO compartilhada com a integração, então o Notion
-   * devolve `[]` sempre. É a raiz de três buracos de uma vez: sem ela não há
-   * rótulo de mentoria, não há mapa da cliente, e o planejamento não se liga à
-   * mentorada. Conectar essa base resolve os três.
+   * Aponta para a página da mentorada na base **"Área clientes"** — que é uma
+   * base diferente desta. É por ali que passam o mapa da cliente, o rótulo da
+   * mentoria e o vínculo dos objetivos; nenhum deles usa o ID desta linha.
    */
   areaDaCliente: 'Área da cliente',
   /**
@@ -73,12 +72,9 @@ export const STATUS_ATIVA = 'Ativa';
 /**
  * Propriedades da base "Planejamento estratégico: objetivos" (404 linhas).
  *
- * ⚠️ Esta base é a única que o app AINDA NÃO CONSEGUE recortar por mentorada.
- * `Área da mentorada` existe e é relation, mas aponta para uma base que não foi
- * compartilhada com a integração — então o Notion devolve a relation vazia em
- * todas as 404 linhas, e a propriedade nem aparece no schema da base. Enquanto
- * essa outra base não for conectada, mostrar planejamento numa página de
- * mentorada mostraria os objetivos de todo mundo. Veja `planejamento()`.
+ * `Área da mentorada` é relation para **"Área clientes"**, não para
+ * "Área das tutoras". Filtrar com o ID errado devolve zero linhas sem erro
+ * nenhum — veja `planejamento()`.
  *
  * `Área de tutora ` (com espaço no fim, sim) é rollup — só leitura.
  */

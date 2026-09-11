@@ -67,20 +67,23 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
 }
 
 /**
- * Objetivos da mentorada — ou `null` quando o Notion não deixa recortar.
+ * Objetivos da mentorada — ou `null` quando não dá para recortar.
  *
- * `Área da mentorada` aponta para uma base não compartilhada com a integração.
- * O Notion aceita o filtro (200) mas devolve zero linhas em todas as 404, e
- * some com a propriedade do schema. Ou seja: "nenhum objetivo" e "não consigo
- * separar por mentorada" chegariam aqui do mesmo jeito — uma lista vazia.
+ * Cuidado com a chave: `Área da mentorada` NÃO aponta para a linha da mentorada
+ * em "Área das tutoras", e sim para a página dela na base "Área clientes". Usar
+ * o ID errado aqui não dá erro — devolve zero objetivos, que é indistinguível
+ * de "ela não tem objetivos". Por isso o filtro vai pelo `Área da cliente` da
+ * mentorada.
  *
- * Distinguir importa: a primeira frase é falsa e a segunda é a verdade. Por
- * isso conferimos o schema antes e devolvemos `null` quando a propriedade não
- * está lá, para a tela poder dizer o que está acontecendo de fato.
+ * `null` quando não existe esse vínculo (ou a base "Área clientes" não está
+ * conectada à integração): a tela precisa dizer que não consegue separar, em
+ * vez de afirmar que não há objetivos.
  */
 export async function planejamento(
   mentorada: Mentorada,
 ): Promise<ItemPlanejamento[] | null> {
+  if (mentorada.areaDaClienteIds.length === 0) return null;
+
   const dbId = await resolverDatabaseId('planejamento');
 
   const schema = await getDatabase(dbId);
@@ -91,7 +94,12 @@ export async function planejamento(
   let linhas;
   try {
     linhas = await queryDatabase(dbId, {
-      filter: { property: PLANEJAMENTO.areaDaMentorada, relation: { contains: mentorada.id } },
+      filter: {
+        or: mentorada.areaDaClienteIds.map((id) => ({
+          property: PLANEJAMENTO.areaDaMentorada,
+          relation: { contains: id },
+        })),
+      },
     });
   } catch (erro) {
     const semRecorte =
