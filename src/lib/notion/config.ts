@@ -119,11 +119,86 @@ export const HANDSOFF = {
   mentorada: 'Mentorada',
 } as const;
 
-/** Propriedades da base "Mapas das clientes". */
+/**
+ * Base "Mapas das clientes": o retrato da mentorada preenchido por ela.
+ *
+ * Liga direto na linha da mentorada em "Área das tutoras" pela relation
+ * `Área da tutora` — apesar do nome, não é a tutora.
+ *
+ * O mapa é um formulário, não uma página: o que interessa são os campos, não o
+ * corpo. Por isso a tela mostra campo a campo em vez de um item para expandir.
+ */
 export const MAPA = {
   titulo: 'Nome',
-  mentorada: 'Área da mentorada',
+  mentorada: 'Área da tutora',
 } as const;
+
+/**
+ * Os campos do mapa, na ordem em que aparecem no card do Notion.
+ *
+ * Cada campo tem um par: o valor e a `Legenda "..."` que dá o rótulo visível.
+ * Os dois nomes divergem em vários casos — o valor mora em `Time`, mas a
+ * mentorada lê "Pessoas no time"; `Fontes de rendas` aparece como "Fonte de
+ * receita do seu negócio". Por isso o par é explícito aqui, e não deduzido por
+ * semelhança de nome.
+ *
+ * O rótulo exibido é o CONTEÚDO da legenda (é ele que está na tela dela); o
+ * nome do campo só entra como reserva, se a legenda estiver vazia.
+ */
+export const MAPA_CAMPOS: ReadonlyArray<{ valor: string; legenda?: string; reserva: string }> = [
+  { valor: 'Idade', legenda: 'Legenda "Idade"', reserva: 'Idade' },
+  { valor: 'Instagram', legenda: 'Legenda "Instagram"', reserva: 'Instagram' },
+  { valor: 'O que faz', legenda: 'Legenda "O que faz"', reserva: 'O que faz' },
+  { valor: 'Persona (cliente)', legenda: 'Legenda "Persona (cliente)"', reserva: 'Persona' },
+  {
+    valor: 'Problemas que o trabalho resolve',
+    legenda: 'Legenda "Problemas que o trabalho resolve"',
+    reserva: 'Problemas que o trabalho resolve',
+  },
+  { valor: 'Time', legenda: 'Legenda "Pessoas no time"', reserva: 'Pessoas no time' },
+  {
+    valor: 'Fontes de rendas',
+    legenda: 'Legenda "Fonte de receita do seu negócio"',
+    reserva: 'Fonte de receita do seu negócio',
+  },
+  {
+    valor: 'Origem dos clientes',
+    legenda: 'Legenda "Origem dos clientes"',
+    reserva: 'Origem dos clientes',
+  },
+  {
+    valor: 'Entrega e atendimentos',
+    legenda: 'Legenda "Tipo de entrega"',
+    reserva: 'Tipo de entrega',
+  },
+  {
+    valor: 'Sua trajetória',
+    legenda: 'Legenda "Sua tragetória profissional"',
+    reserva: 'Sua trajetória profissional',
+  },
+  { valor: 'Faturamento', legenda: 'Legenda "Faturamento"', reserva: 'Faturamento' },
+  {
+    valor: 'Produtos e serviços',
+    legenda: 'Legenda "Produtos e serviços"',
+    reserva: 'Produtos e serviços',
+  },
+  { valor: 'Tempo de atuação', legenda: 'Legenda "Tempo de atuação"', reserva: 'Tempo de atuação' },
+  { valor: 'Posicionamento ', legenda: 'Legenda "Posicionamento"', reserva: 'Posicionamento' },
+  {
+    valor: 'Outras informações sobre (você e seu negócio)',
+    legenda: 'Legenda "Outras informações sobre você e seu negócio"',
+    reserva: 'Outras informações sobre você e seu negócio',
+  },
+  { valor: 'Nascimento', reserva: 'Nascimento' },
+];
+
+/**
+ * Campos que existem só para rotular o formulário da mentorada
+ * (`Legenda "Idade"`, `Legenda "Instagram"`…). São o rótulo, não a resposta.
+ */
+export function ehLegenda(nome: string): boolean {
+  return nome.trim().toLowerCase().startsWith('legenda');
+}
 
 /**
  * Seções do corpo de um Hands-off, na ordem em que aparecem no Notion.

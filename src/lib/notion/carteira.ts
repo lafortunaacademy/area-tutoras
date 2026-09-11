@@ -1,8 +1,8 @@
 import 'server-only';
 import { cache } from 'react';
-import { queryDatabase, getPage, NotionError, type NotionPage } from './client';
+import { queryDatabase, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { BRIEFINGS, HANDSOFF, MENTORADA, STATUS_ATIVA } from './config';
+import { MENTORADA, STATUS_ATIVA } from './config';
 import { relationIds, texto, titulo } from './props';
 
 /**
@@ -33,81 +33,43 @@ function paraMentorada(page: NotionPage): Mentorada {
 }
 
 /**
- * A carteira da tutora.
+ * As mentoradas que a tutora vê.
  *
- * Caminho direto: a base "Área das tutoras" tem uma relation para a tutora, e o
- * filtro é uma query só. É o caminho certo — mas essa relation AINDA NÃO EXISTE
- * no Notion (conferido em 2026-09-10), então hoje o Notion responde
- * `validation_error` e o código cai no caminho derivado.
+ * Caminho certo: a base "Área das tutoras" tem uma relation para a tutora, e a
+ * lista é um filtro só. Essa relation AINDA NÃO EXISTE no Notion — enquanto
+ * não existir, o Notion responde `validation_error` e caímos na lista completa
+ * de mentoradas ativas.
  *
- * Caminho derivado: só a base Hands-off liga tutora e mentorada por relations
- * filtráveis, então a carteira é o conjunto de mentoradas com quem a tutora já
- * registrou pelo menos uma sessão. Isso tem um furo conhecido: uma mentorada
- * recém-atribuída, antes do primeiro hands-off, não aparece. Não dá para
- * contornar no código — a informação não existe no Notion. A saída é criar a
- * relation `Tutora` em "Área das tutoras"; aí o caminho direto assume sozinho.
+ * ⚠️ Isso quer dizer que HOJE toda tutora enxerga todas as 44 ativas. Não é um
+ * descuido: é a única coisa possível sem o vínculo, e foi decidido assim para
+ * a área já servir. Criar a relation `Tutora` fecha isso sozinho — o código já
+ * tenta por ela primeiro, e o dia em que existir cada tutora passa a ver só as
+ * suas, sem precisar mexer aqui.
  */
 export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Mentorada[]> => {
   const areaId = await resolverDatabaseId('areaDasTutoras');
 
+  const ativas = { property: MENTORADA.status, status: { equals: STATUS_ATIVA } };
+
   try {
     const paginas = await queryDatabase(areaId, {
       filter: {
-        and: [
-          { property: MENTORADA.tutora, relation: { contains: tutoraPageId } },
-          { property: MENTORADA.status, status: { equals: STATUS_ATIVA } },
-        ],
+        and: [{ property: MENTORADA.tutora, relation: { contains: tutoraPageId } }, ativas],
       },
     });
-    return paginas.map(paraMentorada).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    return paginas.map(paraMentorada).sort(porNome);
   } catch (erro) {
-    const semPropriedade =
+    const semRelation =
       erro instanceof NotionError &&
       (erro.code === 'validation_error' || erro.status === 400);
-    if (!semPropriedade) throw erro;
+    if (!semRelation) throw erro;
   }
 
-  const ids = await mentoradaIdsPelasRelations(tutoraPageId);
-  const paginas = await Promise.all([...ids].map((id) => getPage(id).catch(() => null)));
-
-  return paginas
-    .filter((p): p is NotionPage => p !== null)
-    .map(paraMentorada)
-    .filter((m) => !m.status || m.status === STATUS_ATIVA)
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const todas = await queryDatabase(areaId, { filter: ativas });
+  return todas.map(paraMentorada).sort(porNome);
 });
 
-/** Junta os IDs de mentorada que aparecem ligados a esta tutora em cada base. */
-async function mentoradaIdsPelasRelations(tutoraPageId: string): Promise<Set<string>> {
-  // Só entra base cujas DUAS pontas sejam relation utilizável. Planejamento
-  // fica de fora: a relation para a mentorada aponta para uma base não
-  // compartilhada e volta sempre vazia.
-  const fontes = [
-    { secao: 'handsoff', tutora: HANDSOFF.feitoPelaTutora, mentorada: HANDSOFF.mentorada },
-    { secao: 'briefings', tutora: BRIEFINGS.paraATutora, mentorada: BRIEFINGS.mentorada },
-  ] as const;
-
-  const ids = new Set<string>();
-
-  await Promise.all(
-    fontes.map(async (fonte) => {
-      try {
-        const dbId = await resolverDatabaseId(fonte.secao);
-        const linhas = await queryDatabase(dbId, {
-          filter: { property: fonte.tutora, relation: { contains: tutoraPageId } },
-        });
-        for (const linha of linhas) {
-          for (const id of relationIds(linha, fonte.mentorada)) ids.add(id);
-        }
-      } catch {
-        // Uma base indisponível não pode derrubar a carteira inteira —
-        // as outras ainda respondem.
-      }
-    }),
-  );
-
-  return ids;
-}
+const porNome = (a: Mentorada, b: Mentorada) => a.nome.localeCompare(b.nome, 'pt-BR');
 
 /** IDs do Notion circulam com e sem hífen; a comparação precisa dos dois. */
 export function normalizarId(id: string): string {

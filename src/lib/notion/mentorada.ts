@@ -1,7 +1,7 @@
 import 'server-only';
-import { queryDatabase, getPage, getDatabase, NotionError, type NotionPage } from './client';
+import { queryDatabase, getDatabase, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { BRIEFINGS, HANDSOFF, MAPA, PLANEJAMENTO } from './config';
+import { BRIEFINGS, HANDSOFF, MAPA, MAPA_CAMPOS, PLANEJAMENTO, ehLegenda } from './config';
 import { data, formatarData, relationIds, texto, titulo } from './props';
 import type { Mentorada } from './carteira';
 
@@ -13,9 +13,12 @@ import type { Mentorada } from './carteira';
  * tutora nem por engano. É cinto e suspensório de propósito.
  */
 
+export type CampoMapa = { nome: string; valor: string };
+
 export type ItemMapa = {
   id: string;
   titulo: string;
+  campos: CampoMapa[];
 };
 
 export type ItemPlanejamento = {
@@ -44,26 +47,45 @@ export type ItemHandsoff = {
 };
 
 export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
-  // O mapa costuma vir pela relation "Área da cliente" da própria mentorada.
-  if (mentorada.areaDaClienteIds.length > 0) {
-    const paginas = await Promise.all(
-      mentorada.areaDaClienteIds.map((id) => getPage(id).catch(() => null)),
-    );
-    return paginas
-      .filter((p): p is NotionPage => p !== null)
-      .map((p) => ({ id: p.id, titulo: titulo(p) || 'Mapa da cliente' }));
-  }
+  const dbId = await resolverDatabaseId('mapas');
+  const linhas = await queryDatabase(dbId, {
+    filter: { property: MAPA.mentorada, relation: { contains: mentorada.id } },
+    limite: 20,
+  });
 
-  try {
-    const dbId = await resolverDatabaseId('mapas');
-    const linhas = await queryDatabase(dbId, {
-      filter: { property: MAPA.mentorada, relation: { contains: mentorada.id } },
-      limite: 20,
-    });
-    return linhas.map((p) => ({ id: p.id, titulo: texto(p, MAPA.titulo) || titulo(p) }));
-  } catch {
-    return [];
-  }
+  return linhas.map((p) => ({
+    id: p.id,
+    titulo: texto(p, MAPA.titulo) || titulo(p) || 'Mapa da cliente',
+    campos: camposDoMapa(p),
+  }));
+}
+
+/** Data crua do Notion não se lê: `1993-08-18` vira `18/08/1993`. */
+function comoTexto(page: NotionPage, nome: string): string {
+  const bruto = texto(page, nome);
+  const ehData = page.properties?.[nome]?.type === 'date';
+  return ehData ? formatarData(bruto) : bruto;
+}
+
+/** Só os campos preenchidos, com o rótulo que a mentorada vê no Notion. */
+function camposDoMapa(page: NotionPage): CampoMapa[] {
+  const conhecidos = new Set(MAPA_CAMPOS.map((c) => c.valor));
+
+  const doMapa = MAPA_CAMPOS.map((campo) => ({
+    nome: (campo.legenda ? texto(page, campo.legenda) : '').replace(/:\s*$/, '') || campo.reserva,
+    valor: comoTexto(page, campo.valor),
+  }));
+
+  // Campo novo criado no Notion depois disto entra no fim sozinho, com o
+  // próprio nome como rótulo — melhor aparecer sem rótulo bonito do que sumir.
+  const extras = Object.keys(page.properties ?? {})
+    .filter(
+      (n) =>
+        !conhecidos.has(n) && !ehLegenda(n) && n !== MAPA.titulo && n !== MAPA.mentorada,
+    )
+    .map((n) => ({ nome: n.trim(), valor: comoTexto(page, n) }));
+
+  return [...doMapa, ...extras].filter((c) => c.valor);
 }
 
 /**

@@ -37,7 +37,7 @@ export default async function MentoradaPage({
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-texto-suave transition hover:text-marca"
       >
         <ArrowLeft aria-hidden size={14} />
-        Suas mentoradas
+        Mentoradas
       </Link>
 
       <div className="mb-10">
@@ -52,16 +52,23 @@ export default async function MentoradaPage({
         {mapa.length === 0 ? (
           <Vazio>Nenhum mapa preenchido no Notion ainda.</Vazio>
         ) : (
-          <ul className="space-y-2">
+          <div className="space-y-4">
             {mapa.map((item) => (
-              <ItemExpansivel
-                key={item.id}
-                pageId={item.id}
-                mentoradaId={mentorada.id}
-                titulo={item.titulo}
-              />
+              <div key={item.id} className="rounded-xl border border-borda bg-superficie p-5">
+                <p className="mb-4 text-sm font-medium">{item.titulo}</p>
+                <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                  {item.campos.map((campo) => (
+                    <div key={campo.nome}>
+                      <dt className="text-[11px] uppercase tracking-wide text-destaque">
+                        {campo.nome}
+                      </dt>
+                      <dd className="mt-0.5 text-sm whitespace-pre-line">{campo.valor}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </Secao>
 
