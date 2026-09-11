@@ -93,7 +93,7 @@ export default async function InicioPage() {
               : 'Nenhuma tutoria realizada ainda.'}
           </Vazio>
         ) : (
-          <GraficoMeses meses={[...meses].reverse()} emReais={emReais} />
+          <GraficoMeses meses={[...meses].reverse()} />
         )}
 
         <p className="mt-3 text-xs text-texto-suave">

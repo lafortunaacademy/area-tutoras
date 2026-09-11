@@ -35,6 +35,8 @@ export type MesDeSessoes = {
   rotulo: string;
   sessoes: number;
   valor: number | null;
+  /** Já em reais. Formatar no servidor evita mandar função para o cliente. */
+  valorEmReais: string | null;
 };
 
 /** id da tutora -> nome, para rotular quem assinou cada hands-off. */
@@ -114,7 +116,12 @@ export function porMes(sessoes: Sessao[]): MesDeSessoes[] {
 
   return [...mapa.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([chave, v]) => ({ chave, rotulo: rotuloDoMes(chave), ...v }));
+    .map(([chave, v]) => ({
+      chave,
+      rotulo: rotuloDoMes(chave),
+      ...v,
+      valorEmReais: v.valor === null ? null : emReais(v.valor),
+    }));
 }
 
 function rotuloDoMes(chave: string): string {

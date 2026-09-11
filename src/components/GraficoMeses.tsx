@@ -13,14 +13,7 @@ import type { MesDeSessoes } from '@/lib/notion/tutora';
  * A tabela equivalente continua existindo para leitor de tela; ela é o que
  * torna o gráfico dispensável para quem não enxerga as barras.
  */
-export function GraficoMeses({
-  meses,
-  emReais,
-}: {
-  /** Do mais antigo para o mais recente. */
-  meses: MesDeSessoes[];
-  emReais: (v: number) => string;
-}) {
+export function GraficoMeses({ meses }: { /** Do mais antigo para o mais recente. */ meses: MesDeSessoes[] }) {
   const [sobre, setSobre] = useState<number | null>(null);
 
   if (meses.length === 0) return null;
@@ -64,7 +57,7 @@ export function GraficoMeses({
                   <p className="font-medium">{m.rotulo}</p>
                   <p className="mt-0.5 text-texto-suave">
                     {m.sessoes} {m.sessoes === 1 ? 'sessão' : 'sessões'}
-                    {m.valor !== null ? ` · ${emReais(m.valor)}` : ''}
+                    {m.valorEmReais ? ` · ${m.valorEmReais}` : ''}
                   </p>
                 </div>
               ) : null}
@@ -100,7 +93,7 @@ export function GraficoMeses({
               <tr key={m.chave}>
                 <td>{m.rotulo}</td>
                 <td>{m.sessoes}</td>
-                <td>{m.valor === null ? '—' : emReais(m.valor)}</td>
+                <td>{m.valorEmReais ?? '—'}</td>
               </tr>
             ))}
           </tbody>
