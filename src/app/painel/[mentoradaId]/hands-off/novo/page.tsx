@@ -27,8 +27,8 @@ export default async function NovoHandsoffPage({
 
       <h1 className="display text-2xl">Novo hands-off</h1>
       <p className="mt-1 mb-8 text-sm text-texto-suave">
-        O que você escrever aqui vira uma página na base Hands-off do Notion, no mesmo formato
-        de sempre.
+        Vira uma página na base Hands-off do Notion, no mesmo formato de sempre, assinada como{' '}
+        <strong className="font-medium text-texto">{sessao.tutora.nome}</strong>.
       </p>
 
       <FormularioHandsoff mentoradaId={mentorada.id} />

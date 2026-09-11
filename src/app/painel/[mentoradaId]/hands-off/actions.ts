@@ -18,6 +18,14 @@ export async function salvarHandsoff(
   form: FormData,
 ): Promise<EstadoHandsoff> {
   const sessao = await exigirSessao();
+
+  // Em "ver como", quem está no teclado é a admin, mas a sessão aponta para a
+  // tutora previewada. Escrever aqui criaria um hands-off assinado por alguém
+  // que não escreveu nada. Preview é para olhar.
+  if (sessao.verComo) {
+    return { erro: 'Você está vendo a área como outra tutora. Saia do preview para registrar.' };
+  }
+
   const mentoradaId = String(form.get('mentoradaId') ?? '');
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
@@ -39,13 +47,17 @@ export async function salvarHandsoff(
 
   let criado;
   try {
-    criado = await criarHandsoff(mentorada, tutoraId, {
-      dataSessao,
-      tema,
-      resumo: linhas('resumo'),
-      emocional: String(form.get('emocional') ?? '').trim(),
-      tarefas: linhas('tarefas'),
-    });
+    criado = await criarHandsoff(
+      mentorada,
+      { id: tutoraId, nome: sessao.tutora.nome },
+      {
+        dataSessao,
+        tema,
+        resumo: linhas('resumo'),
+        emocional: String(form.get('emocional') ?? '').trim(),
+        tarefas: linhas('tarefas'),
+      },
+    );
   } catch (erro) {
     return {
       erro: erro instanceof Error ? erro.message : 'Não consegui salvar no Notion.',

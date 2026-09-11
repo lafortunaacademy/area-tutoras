@@ -51,7 +51,7 @@ function bullet(texto: string) {
 
 export async function criarHandsoff(
   mentorada: Mentorada,
-  tutoraPageId: string,
+  tutora: { id: string; nome: string },
   dados: DadosHandsoff,
 ): Promise<{ id: string; url: string }> {
   const dbId = await resolverDatabaseId('handsoff');
@@ -74,11 +74,20 @@ export async function criarHandsoff(
   const page = await createPage({
     parent: { database_id: dbId },
     properties: {
+      // O nome da tutora vai no título, além da relation. A relation é a fonte
+      // de verdade, mas some em qualquer lugar que mostre só o título: busca,
+      // menção, breadcrumb, notificação. Quem leu o registro tem que saber de
+      // quem ele é sem precisar abrir.
       [HANDSOFF.nome]: {
-        title: [{ type: 'text', text: { content: `Hands-off — ${mentorada.nome}` } }],
+        title: [
+          {
+            type: 'text',
+            text: { content: `Hands-off — ${mentorada.nome} · ${tutora.nome}` },
+          },
+        ],
       },
       [HANDSOFF.dataDaSessao]: { date: { start: dados.dataSessao } },
-      [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutoraPageId }] },
+      [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutora.id }] },
       [HANDSOFF.mentorada]: { relation: [{ id: mentorada.id }] },
     },
     children,
