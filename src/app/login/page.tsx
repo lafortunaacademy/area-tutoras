@@ -5,8 +5,21 @@ import { getSessao, supabaseConfigurado } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 import { FormularioLogin } from './FormularioLogin';
 
-export default async function LoginPage() {
+const MENSAGENS: Record<string, string> = {
+  link_invalido: 'Esse link não veio completo. Peça um novo abaixo.',
+  link_expirado:
+    'Esse link não vale mais — ou já foi usado, ou foi pedido em outro navegador. Peça um novo abaixo.',
+};
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ erro?: string }>;
+}) {
   if (await getSessao()) redirect('/painel');
+
+  const { erro } = await searchParams;
+  const aviso = erro ? (MENSAGENS[erro] ?? 'Não consegui te autenticar. Peça um novo link.') : null;
 
   return (
     <main className="flex min-h-dvh items-center justify-center px-6 py-16">
@@ -20,6 +33,10 @@ export default async function LoginPage() {
             Entre com o e-mail cadastrado. Enviamos um link de acesso — sem senha.
           </p>
         </div>
+
+        {aviso ? (
+          <p className="mb-4 rounded-lg bg-parado-suave px-3 py-2 text-sm text-parado">{aviso}</p>
+        ) : null}
 
         {supabaseConfigurado() ? (
           <FormularioLogin />

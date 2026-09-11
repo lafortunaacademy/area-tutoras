@@ -3,57 +3,64 @@
 /*
  * Identidade visual da La Fortuna Academy.
  *
- * A marca não tem guia escrito: as cores abaixo foram amostradas do Notion
- * dela — a capa marrom-chocolate com o monograma creme, e os cartões em taupe.
- * São leituras de tela, então valem como ponto de partida muito próximo, não
- * como valor oficial. Se um dia aparecer o arquivo da marca, é só corrigir os
- * hex deste bloco; nenhum outro arquivo tem cor escrita na mão.
+ * Cores oficiais do guia de marca (ELIZBOSSI © 2025, p.13). São seis: três
+ * claras e três escuras, todas em tons de marrom — "limpa, forte, minimalista,
+ * mas elegante, leve, acolhedora".
  *
- *   chocolate  #4a3728   capa, cor principal
- *   taupe      #a99885   cartões, apoio
- *   creme      #f3ece1   monograma, fundo claro
- *   café       #2a2019   texto
+ *   2E231C  café  · texto
+ *   4B3424  marrom escuro · cor principal
+ *   5C4C3D  marrom frio · texto secundário
+ *   AF9B87  taupe · apoio
+ *   D8CFC0  bege · bordas
+ *   F5F2E9  off-white · fundo
+ *
+ * A tipografia do guia é um par: serifada de alto contraste para títulos e
+ * detalhes, grotesca para títulos e parágrafos. Sem os arquivos das fontes
+ * originais, o par aqui é Cormorant Garamond + Geist, que segue o mesmo
+ * sistema. Trocar é só mexer no layout.tsx.
+ *
+ * Os tons fora dessa lista são derivados dela (tints para superfície e estados)
+ * ou semânticos de status, que o guia não cobre porque não são da marca.
  */
 :root {
-  --fundo: #f7f2ea;
+  --fundo: #f5f2e9;
   --superficie: #ffffff;
-  --superficie-2: #f0e8dc;
-  --borda: #e0d5c6;
-  --texto: #2a2019;
-  --texto-suave: #6e6153;
-  --marca: #4a3728;
-  --marca-suave: #ede4d8;
-  --marca-contraste: #f7f2ea;
-  --destaque: #a99885;
+  --superficie-2: #ede8dc;
+  --borda: #d8cfc0;
+  --texto: #2e231c;
+  --texto-suave: #5c4c3d;
+  --marca: #4b3424;
+  --marca-suave: #e8e1d3;
+  --marca-contraste: #f5f2e9;
+  --destaque: #af9b87;
   --ok: #4a6b4f;
-  --ok-suave: #e6eee6;
+  --ok-suave: #e4ece4;
   --andamento: #8a6a2f;
-  --andamento-suave: #f4ead6;
+  --andamento-suave: #f1e8d5;
   --parado: #8a4038;
-  --parado-suave: #f4e4e1;
-  --sombra: 0 1px 2px rgb(42 32 25 / 0.06), 0 8px 24px -12px rgb(42 32 25 / 0.22);
+  --parado-suave: #f2e3e0;
+  --sombra: 0 1px 2px rgb(46 35 28 / 0.06), 0 8px 24px -12px rgb(46 35 28 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) {
-    --fundo: #17120e;
-    --superficie: #201a15;
-    --superficie-2: #2a231c;
-    --borda: #3a3129;
-    --texto: #f2ebe1;
-    --texto-suave: #a99885;
-    /* O chocolate é escuro demais para carregar destaque no escuro: no dark a
-       marca é lida pelo lado claro da mesma família. */
-    --marca: #d9c5ac;
-    --marca-suave: #2e2419;
-    --marca-contraste: #201a15;
-    --destaque: #c9a227;
-    --ok: #86ad8c;
-    --ok-suave: #1e2a20;
+    --fundo: #211913;
+    --superficie: #2e231c;
+    --superficie-2: #3a2d23;
+    --borda: #4b3424;
+    --texto: #f5f2e9;
+    --texto-suave: #af9b87;
+    /* O marrom principal some no escuro; quem carrega a marca aqui é o bege. */
+    --marca: #d8cfc0;
+    --marca-suave: #3a2d23;
+    --marca-contraste: #2e231c;
+    --destaque: #af9b87;
+    --ok: #8fb195;
+    --ok-suave: #1f2a21;
     --andamento: #d3ab63;
-    --andamento-suave: #2d2416;
+    --andamento-suave: #2f2718;
     --parado: #d99a91;
-    --parado-suave: #2e1d1b;
+    --parado-suave: #2f1e1b;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
   }
 }

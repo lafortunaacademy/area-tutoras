@@ -40,6 +40,18 @@ export async function enviarMagicLink(
     },
   });
 
-  if (error) return { erro: 'Não consegui enviar o link agora. Tente de novo em instantes.' };
+  if (error) {
+    // A mensagem genérica escondia o motivo mais comum: o SMTP embutido do
+    // Supabase libera poucos e-mails por hora, e "tente de novo em instantes"
+    // manda a pessoa bater de novo numa porta que vai continuar fechada.
+    if (error.status === 429 || /rate limit/i.test(error.message)) {
+      return {
+        erro: 'Limite de e-mails do Supabase atingido. Espere cerca de uma hora, ou configure um SMTP próprio.',
+      };
+    }
+    console.error('[login] signInWithOtp falhou:', error.message);
+    return { erro: 'Não consegui enviar o link agora. Tente de novo em instantes.' };
+  }
+
   return { enviado: true };
 }
