@@ -130,6 +130,18 @@ if (deFora) {
   }
 }
 
+console.log('\n— tutorias (controle) —');
+const { tutoriasDaTutora } = await import('../src/lib/notion/tutorias.js');
+for (const [nome, email] of [
+  ['Luíza Sales', 'luiza@luizasales.com'],
+  ['Rafaela Trajano', 'rafaelastrajano@gmail.com'],
+]) {
+  const t = await tutoriasDaTutora(email);
+  const comData = t.filter((x) => x.data).length;
+  console.log(`  ${nome}: ${t.length} realizada(s), ${comData} com data`);
+  ok(t.length > 0, `${nome} tem tutorias no controle`);
+}
+
 console.log('\n— blocos sob demanda —');
 const alvo = hands[0] ?? brief[0];
 if (alvo) {

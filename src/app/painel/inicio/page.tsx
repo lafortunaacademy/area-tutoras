@@ -7,6 +7,7 @@ import {
   porMes,
   sessoesDaTutora,
 } from '@/lib/notion/tutora';
+import { temUsuarioNoNotion } from '@/lib/notion/tutorias';
 import { formatarData } from '@/lib/notion/props';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
@@ -22,7 +23,7 @@ export default async function InicioPage() {
   try {
     [perfil, sessoes, mentoradas] = await Promise.all([
       perfilDaTutora(tutoraId),
-      sessoesDaTutora(tutoraId),
+      sessoesDaTutora(tutoraId, sessao.tutora.email),
       carteiraDaTutora(tutoraId),
     ]);
   } catch (erro) {
@@ -38,6 +39,7 @@ export default async function InicioPage() {
   const esteMes = meses.find((m) => m.chave === agora);
 
   const atendidas = new Set(sessoes.flatMap((s) => s.mentoradaIds));
+  const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
 
   return (
     <div>
@@ -72,7 +74,7 @@ export default async function InicioPage() {
         </dl>
       </Secao>
       <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <Numero rotulo="Sessões registradas" valor={String(sessoes.length)} />
+        <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
         <Numero rotulo="Mentoradas atendidas" valor={String(atendidas.size)} />
         {total !== null ? <Numero rotulo="Total recebido" valor={emReais(total)} /> : null}
@@ -83,9 +85,13 @@ export default async function InicioPage() {
         />
       </div>
 
-      <Secao titulo="Sessões mês a mês">
+      <Secao titulo="Tutorias mês a mês">
         {meses.length === 0 ? (
-          <Vazio>Nenhuma sessão registrada ainda.</Vazio>
+          <Vazio>
+            {semUsuario
+              ? 'Não encontrei tutorias suas no controle. Confira se o e-mail cadastrado aqui é o mesmo da sua conta no Notion.'
+              : 'Nenhuma tutoria realizada ainda.'}
+          </Vazio>
         ) : (
           <GraficoMeses meses={[...meses].reverse()} emReais={emReais} />
         )}

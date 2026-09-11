@@ -1,10 +1,11 @@
 import 'server-only';
 import { cache } from 'react';
 import { getPage, queryDatabase } from './client';
+import { tutoriasDaTutora } from './tutorias';
 import { resolverDatabaseId } from './resolver';
-import { HANDSOFF, TUTORA, VALOR_POR_SESSAO } from './config';
+import { TUTORA, VALOR_POR_SESSAO } from './config';
 import { carteiraDaTutora } from './carteira';
-import { arquivoUrl, data, numero, relationIds, texto } from './props';
+import { arquivoUrl, texto } from './props';
 
 /** Quem é a tutora e o que ela já fez — o conteúdo da página de Início. */
 
@@ -24,7 +25,7 @@ export type Sessao = {
   titulo: string;
   data: string | null;
   mentoradaIds: string[];
-  /** Da propriedade `Valor`, se existir; senão da tabela de preços. */
+  /** Da tabela de preços, pela mentoria da mentorada atendida. */
   valor: number | null;
 };
 
@@ -60,34 +61,34 @@ export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora
 }
 
 /**
- * Todas as sessões que a tutora já registrou, da mais recente para a mais antiga.
+ * As tutorias que a tutora já deu.
  *
- * O valor de cada uma sai da mentoria da mentorada atendida — My Partner e
- * Pronta Para Fazer Dinheiro pagam diferente. Se um dia existir uma propriedade
- * `Valor` na base Hands-off, ela manda: caso a caso sempre vence a tabela.
+ * Vêm do controle — "Acompanhamento de clientes" — e não dos hands-off. O
+ * hands-off é o relato da sessão, escrito quando dá; o controle é onde a sessão
+ * é marcada como realizada. Contar hands-off subestimaria o trabalho dela.
+ *
+ * O valor sai da mentoria da mentorada atendida: My Partner e Pronta Para Fazer
+ * Dinheiro pagam diferente.
  */
-export async function sessoesDaTutora(tutoraPageId: string): Promise<Sessao[]> {
-  const dbId = await resolverDatabaseId('handsoff');
-  const [linhas, mentoradas] = await Promise.all([
-    queryDatabase(dbId, {
-      filter: { property: HANDSOFF.feitoPelaTutora, relation: { contains: tutoraPageId } },
-      sorts: [{ property: HANDSOFF.dataDaSessao, direction: 'descending' }],
-    }),
+export async function sessoesDaTutora(
+  tutoraPageId: string,
+  email: string,
+): Promise<Sessao[]> {
+  const [tutorias, mentoradas] = await Promise.all([
+    tutoriasDaTutora(email),
     carteiraDaTutora(tutoraPageId),
   ]);
 
   const mentoriaPor = new Map(mentoradas.map((m) => [m.id, m.mentoria]));
 
-  return linhas.map((p) => {
-    const ids = relationIds(p, HANDSOFF.mentorada);
-    const mentoria = ids.map((id) => mentoriaPor.get(id)).find(Boolean) ?? '';
-
+  return tutorias.map((t) => {
+    const mentoria = t.mentoradaIds.map((id) => mentoriaPor.get(id)).find(Boolean) ?? '';
     return {
-      id: p.id,
-      titulo: texto(p, HANDSOFF.nome),
-      data: data(p, HANDSOFF.dataDaSessao),
-      mentoradaIds: ids,
-      valor: numero(p, HANDSOFF.valor) ?? valorDaSessao(mentoria),
+      id: t.id,
+      titulo: t.sessao,
+      data: t.data,
+      mentoradaIds: t.mentoradaIds,
+      valor: valorDaSessao(mentoria),
     };
   });
 }

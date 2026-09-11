@@ -25,6 +25,12 @@ export const DATABASES = {
   mapas: 'Mapas das clientes',
   /** O título real é "Planejamento estratégico: objetivos". */
   planejamento: 'Planejamento estratégico: objetivos',
+  /**
+   * O controle de tutorias. O que aparece na página como "Acompanhamento das
+   * mentoradas" é uma visualização vinculada sem fonte própria — a base de
+   * verdade é esta, com 961 sessões.
+   */
+  tutorias: 'Acompanhamento de clientes',
   briefings: 'Briefings',
   handsoff: 'Hands-off',
 } as const;
@@ -148,6 +154,26 @@ export const VALOR_POR_SESSAO: ReadonlyArray<{ contem: string; valor: number }> 
   { contem: 'my partner', valor: 450 },
   { contem: 'pronta para fazer dinheiro', valor: 350 },
 ];
+
+/**
+ * Propriedades da base "Acompanhamento de clientes": o controle de tutorias.
+ *
+ * `Tutora` é campo de PESSOA (usuário do Notion), não relation para a base
+ * Tutoras — então a ligação com quem está logada passa pelo e-mail do usuário,
+ * não por ID de página.
+ */
+export const TUTORIA = {
+  sessao: 'Sessão',
+  tutora: 'Tutora',
+  mentorada: 'Mentorada',
+  status: 'Status',
+  dataRealizada: 'Data realizada',
+  dataPrevista: 'Data prevista',
+  mesPrevisto: 'Mês previsto',
+} as const;
+
+/** Só estas contam como tutoria dada. */
+export const TUTORIA_REALIZADA = 'Realizada';
 
 /** Propriedades da base "Tutoras" — o perfil de quem está logada. */
 export const TUTORA = {

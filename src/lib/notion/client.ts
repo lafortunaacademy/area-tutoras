@@ -174,6 +174,17 @@ export async function updatePage(
   return call<NotionPage>(`/pages/${pageId}`, { method: 'PATCH', body: { properties } });
 }
 
+export type NotionUser = {
+  id: string;
+  name?: string;
+  type?: string;
+  person?: { email?: string };
+};
+
+export async function getUser(userId: string): Promise<NotionUser> {
+  return call<NotionUser>(`/users/${userId}`);
+}
+
 /** Busca por título. Só enxerga o que foi compartilhado com a integração. */
 export async function search(
   query: string,
