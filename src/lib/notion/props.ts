@@ -144,3 +144,42 @@ export function formatarData(iso: string | null): string {
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+
+/** URL de um arquivo (propriedade `files`): o primeiro que tiver. */
+export function arquivoUrl(page: NotionPage, nome: string): string | null {
+  const p = page.properties?.[nome];
+  if (!p || p.type !== 'files') return null;
+
+  const arquivos = (p.files ?? []) as Array<{
+    file?: { url: string };
+    external?: { url: string };
+  }>;
+  for (const a of arquivos) {
+    const url = a.file?.url ?? a.external?.url;
+    if (url) return url;
+  }
+  return null;
+}
+
+/**
+ * URL do ícone da página, quando o ícone é uma imagem (e não um emoji ou um
+ * ícone nativo do Notion). É onde mora a foto das mentoradas, na página delas
+ * em "Área clientes".
+ */
+export function iconeUrl(page: NotionPage): string | null {
+  const icon = page.icon as
+    | { type?: string; file?: { url: string }; external?: { url: string } }
+    | null
+    | undefined;
+  if (icon?.type !== 'file' && icon?.type !== 'external') return null;
+  return icon.file?.url ?? icon.external?.url ?? null;
+}
+
+/** URL da capa da página. Vem assinada e expira — por isso só serve ao vivo. */
+export function capaUrl(page: NotionPage): string | null {
+  const cover = page.cover as
+    | { type?: string; file?: { url: string }; external?: { url: string } }
+    | null
+    | undefined;
+  return cover?.file?.url ?? cover?.external?.url ?? null;
+}

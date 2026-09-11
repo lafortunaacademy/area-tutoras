@@ -1,8 +1,8 @@
 import 'server-only';
-import { queryDatabase, getDatabase, NotionError, type NotionPage } from './client';
+import { queryDatabase, getDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { BRIEFINGS, HANDSOFF, MAPA, MAPA_CAMPOS, PLANEJAMENTO, ehLegenda } from './config';
-import { data, formatarData, relationIds, texto, titulo } from './props';
+import { arquivoUrl, data, formatarData, iconeUrl, relationIds, texto, titulo } from './props';
 import type { Mentorada } from './carteira';
 
 /**
@@ -13,11 +13,12 @@ import type { Mentorada } from './carteira';
  * tutora nem por engano. É cinto e suspensório de propósito.
  */
 
-export type CampoMapa = { nome: string; valor: string };
+export type CampoMapa = { nome: string; valor: string; longo: boolean };
 
 export type ItemMapa = {
   id: string;
   titulo: string;
+  foto: string | null;
   campos: CampoMapa[];
 };
 
@@ -46,6 +47,22 @@ export type ItemHandsoff = {
   url: string;
 };
 
+/**
+ * A foto da mentorada.
+ *
+ * Não está na base do mapa nem na linha dela em "Área das tutoras": mora como
+ * ícone da página dela em "Área clientes" — a área individual. É uma requisição
+ * a mais, então só é feita na página da mentorada, nunca na listagem.
+ */
+export async function fotoDaMentorada(mentorada: Mentorada): Promise<string | null> {
+  for (const id of mentorada.areaDaClienteIds) {
+    const page = await getPage(id).catch(() => null);
+    const foto = page && iconeUrl(page);
+    if (foto) return foto;
+  }
+  return null;
+}
+
 export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
   const dbId = await resolverDatabaseId('mapas');
   const linhas = await queryDatabase(dbId, {
@@ -56,6 +73,9 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
   return linhas.map((p) => ({
     id: p.id,
     titulo: texto(p, MAPA.titulo) || titulo(p) || 'Mapa da cliente',
+    // A capa da mentorada é arte da marca, igual para todas — não serve de
+    // retrato. Só a propriedade `Foto`, quando existir, vale como foto.
+    foto: arquivoUrl(p, MAPA.foto),
     campos: camposDoMapa(p),
   }));
 }
@@ -74,6 +94,7 @@ function camposDoMapa(page: NotionPage): CampoMapa[] {
   const doMapa = MAPA_CAMPOS.map((campo) => ({
     nome: (campo.legenda ? texto(page, campo.legenda) : '').replace(/:\s*$/, '') || campo.reserva,
     valor: comoTexto(page, campo.valor),
+    longo: Boolean(campo.longo),
   }));
 
   // Campo novo criado no Notion depois disto entra no fim sozinho, com o
@@ -81,9 +102,13 @@ function camposDoMapa(page: NotionPage): CampoMapa[] {
   const extras = Object.keys(page.properties ?? {})
     .filter(
       (n) =>
-        !conhecidos.has(n) && !ehLegenda(n) && n !== MAPA.titulo && n !== MAPA.mentorada,
+        !conhecidos.has(n) &&
+        !ehLegenda(n) &&
+        n !== MAPA.titulo &&
+        n !== MAPA.mentorada &&
+        n !== MAPA.foto,
     )
-    .map((n) => ({ nome: n.trim(), valor: comoTexto(page, n) }));
+    .map((n) => ({ nome: n.trim(), valor: comoTexto(page, n), longo: true }));
 
   return [...doMapa, ...extras].filter((c) => c.valor);
 }

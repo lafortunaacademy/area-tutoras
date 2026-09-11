@@ -131,6 +131,11 @@ export const HANDSOFF = {
 export const MAPA = {
   titulo: 'Nome',
   mentorada: 'Área da tutora',
+  /**
+   * Ainda não existe na base. Quando for criada (tipo Arquivo, como a `Foto` da
+   * base Tutoras), a foto aparece sozinha no mapa — a tela já a procura.
+   */
+  foto: 'Foto',
 } as const;
 
 /**
@@ -145,18 +150,26 @@ export const MAPA = {
  * O rótulo exibido é o CONTEÚDO da legenda (é ele que está na tela dela); o
  * nome do campo só entra como reserva, se a legenda estiver vazia.
  */
-export const MAPA_CAMPOS: ReadonlyArray<{ valor: string; legenda?: string; reserva: string }> = [
+export const MAPA_CAMPOS: ReadonlyArray<{
+  valor: string;
+  legenda?: string;
+  reserva: string;
+  /** Texto corrido, que pede a largura toda em vez de meia coluna. */
+  longo?: boolean;
+}> = [
   { valor: 'Idade', legenda: 'Legenda "Idade"', reserva: 'Idade' },
   { valor: 'Instagram', legenda: 'Legenda "Instagram"', reserva: 'Instagram' },
-  { valor: 'O que faz', legenda: 'Legenda "O que faz"', reserva: 'O que faz' },
-  { valor: 'Persona (cliente)', legenda: 'Legenda "Persona (cliente)"', reserva: 'Persona' },
+  { longo: true, valor: 'O que faz', legenda: 'Legenda "O que faz"', reserva: 'O que faz' },
+  { longo: true, valor: 'Persona (cliente)', legenda: 'Legenda "Persona (cliente)"', reserva: 'Persona' },
   {
+    longo: true,
     valor: 'Problemas que o trabalho resolve',
     legenda: 'Legenda "Problemas que o trabalho resolve"',
     reserva: 'Problemas que o trabalho resolve',
   },
-  { valor: 'Time', legenda: 'Legenda "Pessoas no time"', reserva: 'Pessoas no time' },
+  { longo: true, valor: 'Time', legenda: 'Legenda "Pessoas no time"', reserva: 'Pessoas no time' },
   {
+    longo: true,
     valor: 'Fontes de rendas',
     legenda: 'Legenda "Fonte de receita do seu negócio"',
     reserva: 'Fonte de receita do seu negócio',
@@ -172,12 +185,14 @@ export const MAPA_CAMPOS: ReadonlyArray<{ valor: string; legenda?: string; reser
     reserva: 'Tipo de entrega',
   },
   {
+    longo: true,
     valor: 'Sua trajetória',
     legenda: 'Legenda "Sua tragetória profissional"',
     reserva: 'Sua trajetória profissional',
   },
   { valor: 'Faturamento', legenda: 'Legenda "Faturamento"', reserva: 'Faturamento' },
   {
+    longo: true,
     valor: 'Produtos e serviços',
     legenda: 'Legenda "Produtos e serviços"',
     reserva: 'Produtos e serviços',
@@ -185,6 +200,7 @@ export const MAPA_CAMPOS: ReadonlyArray<{ valor: string; legenda?: string; reser
   { valor: 'Tempo de atuação', legenda: 'Legenda "Tempo de atuação"', reserva: 'Tempo de atuação' },
   { valor: 'Posicionamento ', legenda: 'Legenda "Posicionamento"', reserva: 'Posicionamento' },
   {
+    longo: true,
     valor: 'Outras informações sobre (você e seu negócio)',
     legenda: 'Legenda "Outras informações sobre você e seu negócio"',
     reserva: 'Outras informações sobre você e seu negócio',

@@ -2,9 +2,16 @@ import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
-import { briefings, handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
+import {
+  briefings,
+  fotoDaMentorada,
+  handsoffs,
+  mapaDaCliente,
+  planejamento,
+} from '@/lib/notion/mentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
+import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { ItemExpansivel } from '@/components/ItemExpansivel';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +30,9 @@ export default async function MentoradaPage({
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.
-  const [mapa, plano, brief, hands] = await Promise.all([
+  const [mapa, foto, plano, brief, hands] = await Promise.all([
     mapaDaCliente(mentorada).catch(() => []),
+    fotoDaMentorada(mentorada).catch(() => null),
     planejamento(mentorada).catch((e) => e as Error),
     briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
@@ -54,19 +62,7 @@ export default async function MentoradaPage({
         ) : (
           <div className="space-y-4">
             {mapa.map((item) => (
-              <div key={item.id} className="rounded-xl border border-borda bg-superficie p-5">
-                <p className="mb-4 text-sm font-medium">{item.titulo}</p>
-                <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                  {item.campos.map((campo) => (
-                    <div key={campo.nome}>
-                      <dt className="text-[11px] uppercase tracking-wide text-destaque">
-                        {campo.nome}
-                      </dt>
-                      <dd className="mt-0.5 text-sm whitespace-pre-line">{campo.valor}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
+              <MapaDaCliente key={item.id} item={item} nome={mentorada.nome} foto={foto} />
             ))}
           </div>
         )}
