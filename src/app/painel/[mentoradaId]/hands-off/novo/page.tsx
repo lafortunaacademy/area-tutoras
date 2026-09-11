@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
-import { FormularioHandsoff } from './FormularioHandsoff';
+import { FormularioHandsoff } from '../FormularioHandsoff';
 
 export const dynamic = 'force-dynamic';
 

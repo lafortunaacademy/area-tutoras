@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
 import {
@@ -171,6 +171,17 @@ export default async function MentoradaPage({
                   <span className="shrink-0 text-xs text-texto-suave">
                     {[item.tutora, item.dataSessao].filter(Boolean).join(' · ')}
                   </span>
+                }
+                rodape={
+                  item.minha ? (
+                    <Link
+                      href={`/painel/${mentorada.id}/hands-off/${item.id}/editar`}
+                      className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs font-medium transition hover:border-marca hover:text-marca"
+                    >
+                      <Pencil aria-hidden size={13} />
+                      Editar
+                    </Link>
+                  ) : null
                 }
               />
             ))}

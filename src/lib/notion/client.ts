@@ -158,6 +158,15 @@ export async function createPage(body: {
   return call<NotionPage>('/pages', { method: 'POST', body });
 }
 
+/** Arquiva um bloco. No Notion isso é o "apagar" — dá para restaurar da lixeira. */
+export async function deleteBlock(blockId: string): Promise<void> {
+  await call(`/blocks/${blockId}`, { method: 'DELETE' });
+}
+
+export async function appendChildren(blockId: string, children: unknown[]): Promise<void> {
+  await call(`/blocks/${blockId}/children`, { method: 'PATCH', body: { children } });
+}
+
 export async function updatePage(
   pageId: string,
   properties: Record<string, unknown>,

@@ -47,6 +47,8 @@ export type ItemHandsoff = {
   dataSessao: string;
   /** Quem escreveu. Vem da relation, não do título — o título é editável à mão. */
   tutora: string;
+  /** Escrito pela tutora logada, e portanto editável por ela. */
+  minha: boolean;
   url: string;
 };
 
@@ -214,9 +216,13 @@ export async function handsoffs(
     id: p.id,
     titulo: texto(p, HANDSOFF.nome) || titulo(p) || 'Hands-off',
     dataSessao: formatarData(data(p, HANDSOFF.dataDaSessao)),
-    tutora: relationIds(p, HANDSOFF.feitoPelaTutora)
-      .map((id) => nomes.get(id))
-      .find(Boolean) ?? '',
+    tutora:
+      relationIds(p, HANDSOFF.feitoPelaTutora)
+        .map((id) => nomes.get(id))
+        .find(Boolean) ?? '',
+    minha: relationIds(p, HANDSOFF.feitoPelaTutora).some(
+      (id) => id.replace(/-/g, '') === tutoraPageId.replace(/-/g, ''),
+    ),
     url: p.url,
   }));
 }
