@@ -58,7 +58,6 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
       >
         <Users aria-hidden size={15} className="shrink-0" />
         <span className="flex-1 text-left">Mentoradas</span>
-        <span className="text-xs text-destaque tabular-nums">{mentoradas.length}</span>
         <ChevronDown
           aria-hidden
           size={14}
@@ -78,7 +77,7 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
               type="search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder={`Buscar entre ${mentoradas.length}`}
+              placeholder="Buscar mentorada"
               aria-label="Buscar mentorada"
               className="w-full rounded-lg border border-borda bg-superficie py-2 pr-3 pl-8 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
             />

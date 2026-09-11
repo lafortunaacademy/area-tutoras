@@ -36,7 +36,6 @@ export default async function InicioPage() {
   const agora = new Date().toISOString().slice(0, 7);
   const esteMes = meses.find((m) => m.chave === agora);
 
-  const atendidas = new Set(sessoes.flatMap((s) => s.mentoradaIds));
   const cronologico = [...meses].reverse();
 
   // Programa e Mentoria são a mesma pergunta feita duas vezes ("de que produto
@@ -53,8 +52,8 @@ export default async function InicioPage() {
   // Campo vazio não vira linha com travessão: some.
   const atuacao = [
     { rotulo: 'Área do método', valor: perfil?.areaDoMetodo ?? '' },
-    { rotulo: 'Programas', valor: tutoraDe },
     { rotulo: 'Especialidades', valor: perfil?.especialidades ?? '' },
+    { rotulo: 'Programas', valor: tutoraDe },
     { rotulo: 'Principais tópicos', valor: perfil?.topicos ?? '' },
   ].filter((c) => c.valor);
   const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
@@ -94,10 +93,9 @@ export default async function InicioPage() {
         </Secao>
       ) : null}
 
-      <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
-        <Numero rotulo="Mentoradas atendidas" valor={String(atendidas.size)} />
         {total !== null ? <Numero rotulo="Total recebido" valor={emReais(total)} /> : null}
         <Numero
           rotulo="Atuando há"

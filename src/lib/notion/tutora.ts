@@ -81,7 +81,14 @@ export async function sessoesDaTutora(
     carteiraDaTutora(tutoraPageId),
   ]);
 
-  const mentoriaPor = new Map(mentoradas.map((m) => [m.id, m.mentoria]));
+  // A relation `Mentorada` do controle aponta para a página da cliente em "Área
+  // clientes", não para a linha dela em "Área das tutoras". Indexar pelo ID
+  // errado casa zero e faz todo valor virar null — foi o que aconteceu.
+  const mentoriaPor = new Map<string, string>();
+  for (const m of mentoradas) {
+    for (const id of m.areaDaClienteIds) mentoriaPor.set(id, m.mentoria);
+    mentoriaPor.set(m.id, m.mentoria);
+  }
 
   return tutorias.map((t) => {
     const mentoria = t.mentoradaIds.map((id) => mentoriaPor.get(id)).find(Boolean) ?? '';
