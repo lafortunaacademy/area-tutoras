@@ -96,7 +96,7 @@ export default async function MentoradaPage({
             <table className="w-full min-w-[38rem] text-sm">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Objetivo', 'Status', 'Trimestre', 'Pilar', 'Tutoria'].map((c) => (
+                  {['Status', 'Objetivo', 'Trimestre', 'Pilar', 'Tutoria'].map((c) => (
                     <th
                       key={c}
                       className="rotulo px-4 py-3 text-[10px] font-normal text-texto-suave"
@@ -109,10 +109,10 @@ export default async function MentoradaPage({
               <tbody>
                 {plano.map((item) => (
                   <tr key={item.id} className="border-b border-borda transition last:border-0 hover:bg-fundo">
-                    <td className="px-4 py-3">{item.objetivo}</td>
                     <td className="px-4 py-3">
                       <Etiqueta texto={item.status} />
                     </td>
+                    <td className="px-4 py-3">{item.objetivo}</td>
                     <td className="px-4 py-3 text-texto-suave">{item.trimestre}</td>
                     <td className="px-4 py-3 text-texto-suave">{item.pilar}</td>
                     <td className="px-4 py-3 text-texto-suave">{item.tutoria}</td>
