@@ -1,10 +1,17 @@
 'use client';
 
 import { useActionState } from 'react';
+import { HANDSOFF_SECOES } from '@/lib/notion/config';
 import { salvarHandsoff, type EstadoHandsoff } from '../actions';
 
 const inicial: EstadoHandsoff = {};
 
+/**
+ * O formulário é gerado das seções do template do Notion, na mesma ordem.
+ *
+ * Assim não existe "o app tem 4 campos e o Notion tem 8": seção nova lá aparece
+ * aqui sozinha, e o que se escreve aqui nasce com o mesmo formato de lá.
+ */
 export function FormularioHandsoff({ mentoradaId }: { mentoradaId: string }) {
   const [estado, acao, salvando] = useActionState(salvarHandsoff, inicial);
   const hoje = new Date().toISOString().slice(0, 10);
@@ -24,25 +31,29 @@ export function FormularioHandsoff({ mentoradaId }: { mentoradaId: string }) {
         />
       </Campo>
 
-      <Campo rotulo="Principal tema trabalhado" ajuda="uma frase" htmlFor="tema">
-        <input id="tema" name="tema" type="text" required className={ENTRADA} />
-      </Campo>
-
-      <Campo rotulo="Resumo do que foi feito" ajuda="uma linha por bullet, 3 a 5" htmlFor="resumo">
-        <textarea id="resumo" name="resumo" rows={5} className={ENTRADA} />
-      </Campo>
-
-      <Campo
-        rotulo="Estado emocional da cliente ao sair"
-        ajuda="observação de negócio"
-        htmlFor="emocional"
-      >
-        <textarea id="emocional" name="emocional" rows={3} className={ENTRADA} />
-      </Campo>
-
-      <Campo rotulo="Exercícios ou tarefas deixadas" ajuda="uma linha por item" htmlFor="tarefas">
-        <textarea id="tarefas" name="tarefas" rows={4} className={ENTRADA} />
-      </Campo>
+      {HANDSOFF_SECOES.map((secao) => (
+        <Campo
+          key={secao.key}
+          rotulo={secao.titulo}
+          ajuda={
+            secao.formato === 'bullets'
+              ? `${secao.ajuda} — uma linha por bullet`
+              : secao.ajuda
+          }
+          htmlFor={secao.key}
+        >
+          {secao.formato === 'linha' ? (
+            <input id={secao.key} name={secao.key} type="text" required className={ENTRADA} />
+          ) : (
+            <textarea
+              id={secao.key}
+              name={secao.key}
+              rows={secao.formato === 'bullets' ? 5 : 3}
+              className={ENTRADA}
+            />
+          )}
+        </Campo>
+      ))}
 
       {estado.erro ? (
         <p className="rounded-lg bg-parado-suave px-3 py-2 text-sm text-parado">{estado.erro}</p>

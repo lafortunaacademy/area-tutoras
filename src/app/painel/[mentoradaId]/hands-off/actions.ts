@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
 import { criarHandsoff } from '@/lib/notion/handsoff';
+import { HANDSOFF_SECOES, type HandsoffSecaoKey } from '@/lib/notion/config';
 
 export type EstadoHandsoff = { erro?: string };
 
@@ -34,29 +35,20 @@ export async function salvarHandsoff(
   const mentorada = await exigirMentorada(tutoraId, mentoradaId);
 
   const dataSessao = String(form.get('dataSessao') ?? '').trim();
-  const tema = String(form.get('tema') ?? '').trim();
-
   if (!dataSessao) return { erro: 'Informe a data da sessão.' };
-  if (!tema) return { erro: 'Preencha o principal tema trabalhado.' };
 
-  const linhas = (campo: string) =>
-    String(form.get(campo) ?? '')
-      .split('\n')
-      .map((l) => l.replace(/^[-•*]\s*/, '').trim())
-      .filter(Boolean);
+  const secoes = Object.fromEntries(
+    HANDSOFF_SECOES.map((s) => [s.key, String(form.get(s.key) ?? '').trim()]),
+  ) as Record<HandsoffSecaoKey, string>;
+
+  if (!secoes.tema) return { erro: 'Preencha o principal tema trabalhado.' };
 
   let criado;
   try {
     criado = await criarHandsoff(
       mentorada,
       { id: tutoraId, nome: sessao.tutora.nome },
-      {
-        dataSessao,
-        tema,
-        resumo: linhas('resumo'),
-        emocional: String(form.get('emocional') ?? '').trim(),
-        tarefas: linhas('tarefas'),
-      },
+      { dataSessao, ...secoes },
     );
   } catch (erro) {
     return {

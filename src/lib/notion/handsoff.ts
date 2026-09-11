@@ -1,7 +1,7 @@
 import 'server-only';
 import { createPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { HANDSOFF, HANDSOFF_SECOES } from './config';
+import { HANDSOFF, HANDSOFF_SECOES, type HandsoffSecaoKey } from './config';
 import type { Mentorada } from './carteira';
 
 /**
@@ -14,30 +14,13 @@ import type { Mentorada } from './carteira';
 
 export type DadosHandsoff = {
   dataSessao: string; // ISO (yyyy-mm-dd)
-  tema: string;
-  resumo: string[];
-  emocional: string;
-  tarefas: string[];
-};
+} & Record<HandsoffSecaoKey, string>;
 
 function paragrafo(texto: string) {
   return {
     object: 'block',
     type: 'paragraph',
     paragraph: { rich_text: [{ type: 'text', text: { content: texto } }] },
-  };
-}
-
-/** O template do Notion usa callout por seção, com a resposta aninhada dentro. */
-function secao(titulo: string, ajuda: string, conteudo: unknown[]) {
-  const rotulo = ajuda ? `${titulo} (${ajuda})` : titulo;
-  return {
-    object: 'block',
-    type: 'callout',
-    callout: {
-      rich_text: [{ type: 'text', text: { content: rotulo } }],
-      children: conteudo,
-    },
   };
 }
 
@@ -49,6 +32,24 @@ function bullet(texto: string) {
   };
 }
 
+/** Callout com ícone nativo do Notion, igual ao template escrito à mão. */
+function secao(
+  titulo: string,
+  ajuda: string,
+  icone: string,
+  conteudo: unknown[],
+) {
+  return {
+    object: 'block',
+    type: 'callout',
+    callout: {
+      rich_text: [{ type: 'text', text: { content: ajuda ? `${titulo} (${ajuda})` : titulo } }],
+      icon: { type: 'icon', icon: { name: icone, color: 'brown' } },
+      children: conteudo,
+    },
+  };
+}
+
 export async function criarHandsoff(
   mentorada: Mentorada,
   tutora: { id: string; nome: string },
@@ -56,35 +57,28 @@ export async function criarHandsoff(
 ): Promise<{ id: string; url: string }> {
   const dbId = await resolverDatabaseId('handsoff');
 
-  const valores: Record<string, string[] | string> = {
-    tema: dados.tema,
-    resumo: dados.resumo,
-    emocional: dados.emocional,
-    tarefas: dados.tarefas,
-  };
+  const children = HANDSOFF_SECOES.map((sec) => {
+    const bruto = (dados[sec.key] ?? '').trim();
 
-  const children = HANDSOFF_SECOES.map((s) => {
-    const valor = valores[s.key];
-    const conteudo = Array.isArray(valor)
-      ? (valor.filter((v) => v.trim()).map(bullet) ?? [])
-      : [paragrafo(valor.trim() || '—')];
-    return secao(s.titulo, s.ajuda, conteudo.length ? conteudo : [paragrafo('—')]);
+    if (sec.formato === 'bullets') {
+      const itens = bruto
+        .split('\n')
+        .map((l) => l.replace(/^[-•*]\s*/, '').trim())
+        .filter(Boolean);
+      return secao(sec.titulo, sec.ajuda, sec.icone, itens.length ? itens.map(bullet) : [paragrafo('')]);
+    }
+
+    return secao(sec.titulo, sec.ajuda, sec.icone, [paragrafo(bruto)]);
   });
 
   const page = await createPage({
     parent: { database_id: dbId },
     properties: {
-      // O nome da tutora vai no título, além da relation. A relation é a fonte
-      // de verdade, mas some em qualquer lugar que mostre só o título: busca,
-      // menção, breadcrumb, notificação. Quem leu o registro tem que saber de
-      // quem ele é sem precisar abrir.
+      // O título nomeia a TUTORA, nunca a mentorada: o registro já vive dentro
+      // da área dela, e repetir o nome da mentorada ali só ocupa espaço. Quem
+      // olha uma lista de hands-off quer saber quem atendeu.
       [HANDSOFF.nome]: {
-        title: [
-          {
-            type: 'text',
-            text: { content: `Hands-off — ${mentorada.nome} · ${tutora.nome}` },
-          },
-        ],
+        title: [{ type: 'text', text: { content: `Hands-off — Tutora: ${tutora.nome}` } }],
       },
       [HANDSOFF.dataDaSessao]: { date: { start: dados.dataSessao } },
       [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutora.id }] },

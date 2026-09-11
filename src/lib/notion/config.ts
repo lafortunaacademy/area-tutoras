@@ -250,33 +250,69 @@ export function ehLegenda(nome: string): boolean {
 }
 
 /**
- * Seções do corpo de um Hands-off, na ordem em que aparecem no Notion.
- * O formulário do app é gerado a partir desta lista.
+ * As seções do Hands-off, na ordem e com os ícones do template do Notion.
+ *
+ * Copiado do que a Fernanda montou lá: cada seção é um callout com um ícone
+ * nativo do Notion (não emoji), em marrom. O formulário do app é gerado desta
+ * lista, e a página criada sai igual à criada à mão — mesmas oito seções, mesmos
+ * ícones, mesma ordem. Seção nova aqui aparece nos dois lugares de uma vez.
  */
 export const HANDSOFF_SECOES = [
   {
     key: 'tema',
     titulo: 'Principal tema trabalhado',
     ajuda: 'uma frase',
+    icone: 'push-pin',
     formato: 'linha',
   },
   {
     key: 'resumo',
     titulo: 'Resumo do que foi feito',
     ajuda: '3-5 bullets',
+    icone: 'list',
     formato: 'bullets',
   },
   {
     key: 'emocional',
     titulo: 'Estado emocional da cliente ao sair',
     ajuda: 'observação de negócio',
+    icone: 'stars',
     formato: 'texto',
   },
   {
     key: 'tarefas',
     titulo: 'Exercícios ou tarefas deixadas',
     ajuda: '',
-    formato: 'bullets',
+    icone: 'checklist',
+    formato: 'texto',
+  },
+  {
+    key: 'atencao',
+    titulo: 'Pontos de atenção para a próxima tutora',
+    ajuda: '',
+    icone: 'exclamation-mark-double',
+    formato: 'texto',
+  },
+  {
+    key: 'encaminhamento',
+    titulo: 'Recomendação de encaminhamento',
+    ajuda: 'qual próxima tutoria? Por quê?',
+    icone: 'send-to',
+    formato: 'texto',
+  },
+  {
+    key: 'pendencias',
+    titulo: 'Pendências',
+    ajuda: 'o que ficou incompleto',
+    icone: 'square-dashed',
+    formato: 'texto',
+  },
+  {
+    key: 'observacoes',
+    titulo: 'Observações adicionais',
+    ajuda: '',
+    icone: 'reorder',
+    formato: 'texto',
   },
 ] as const;
 
