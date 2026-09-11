@@ -1,5 +1,4 @@
 import { exigirSessao } from '@/lib/session';
-import { carteiraDaTutora } from '@/lib/notion/carteira';
 import {
   desdeAPrimeiraSessao,
   emReais,
@@ -19,12 +18,11 @@ export default async function InicioPage() {
   const sessao = await exigirSessao();
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
-  let perfil, sessoes, mentoradas;
+  let perfil, sessoes;
   try {
-    [perfil, sessoes, mentoradas] = await Promise.all([
+    [perfil, sessoes] = await Promise.all([
       perfilDaTutora(tutoraId),
       sessoesDaTutora(tutoraId, sessao.tutora.email),
-      carteiraDaTutora(tutoraId),
     ]);
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
@@ -39,6 +37,26 @@ export default async function InicioPage() {
   const esteMes = meses.find((m) => m.chave === agora);
 
   const atendidas = new Set(sessoes.flatMap((s) => s.mentoradaIds));
+  const cronologico = [...meses].reverse();
+
+  // Programa e Mentoria são a mesma pergunta feita duas vezes ("de que produto
+  // você é tutora?"), e vinham repetindo item. Viram um campo só, sem repetição.
+  const tutoraDe = [
+    ...new Set(
+      [perfil?.programa, perfil?.mentoria]
+        .filter(Boolean)
+        .flatMap((v) => v!.split(',').map((x) => x.trim()))
+        .filter(Boolean),
+    ),
+  ].join(', ');
+
+  // Campo vazio não vira linha com travessão: some.
+  const atuacao = [
+    { rotulo: 'Área do método', valor: perfil?.areaDoMetodo ?? '' },
+    { rotulo: 'Programas', valor: tutoraDe },
+    { rotulo: 'Especialidades', valor: perfil?.especialidades ?? '' },
+    { rotulo: 'Principais tópicos', valor: perfil?.topicos ?? '' },
+  ].filter((c) => c.valor);
   const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
 
   return (
@@ -63,16 +81,19 @@ export default async function InicioPage() {
         </div>
       </div>
 
-      <Secao titulo="Onde você atua">
-        <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
-          <Campo rotulo="Área do método" valor={perfil?.areaDoMetodo} />
-          <Campo rotulo="Especialidades" valor={perfil?.especialidades} />
-          <Campo rotulo="Programa" valor={perfil?.programa} />
-          <Campo rotulo="Mentoria" valor={perfil?.mentoria} />
-          <Campo rotulo="Principais tópicos" valor={perfil?.topicos} />
-          <Campo rotulo="Mentoradas na lista" valor={String(mentoradas.length)} />
-        </dl>
-      </Secao>
+      {atuacao.length > 0 ? (
+        <Secao titulo="Onde você atua">
+          <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
+            {atuacao.map((c) => (
+              <div key={c.rotulo}>
+                <dt className="rotulo text-[10px] text-destaque">{c.rotulo}</dt>
+                <dd className="mt-1 text-sm leading-relaxed">{c.valor}</dd>
+              </div>
+            ))}
+          </dl>
+        </Secao>
+      ) : null}
+
       <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
@@ -85,7 +106,7 @@ export default async function InicioPage() {
         />
       </div>
 
-      <Secao titulo="Tutorias mês a mês">
+      <Secao titulo="Recebido mês a mês">
         {meses.length === 0 ? (
           <Vazio>
             {semUsuario
@@ -93,16 +114,15 @@ export default async function InicioPage() {
               : 'Nenhuma tutoria realizada ainda.'}
           </Vazio>
         ) : (
-          <GraficoMeses meses={[...meses].reverse()} />
+          <GraficoMeses meses={cronologico} tipo="reais" />
         )}
-
-        <p className="mt-3 text-xs text-texto-suave">
-          Valor por sessão: <strong className="font-medium text-texto">My Partner R$ 450</strong>,{' '}
-          <strong className="font-medium text-texto">Pronta Para Fazer Dinheiro R$ 350</strong>.
-          Sessão com mentoria fora dessas duas aparece sem valor.
-        </p>
       </Secao>
 
+      {meses.length > 0 ? (
+        <Secao titulo="Tutorias por mês">
+          <GraficoMeses meses={cronologico} tipo="volume" />
+        </Secao>
+      ) : null}
     </div>
   );
 }
@@ -113,15 +133,6 @@ function Numero({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?:
       <p className="rotulo text-[10px] text-destaque">{rotulo}</p>
       <p className="display mt-2 text-3xl leading-none">{valor}</p>
       {nota ? <p className="mt-2 text-xs text-texto-suave">{nota}</p> : null}
-    </div>
-  );
-}
-
-function Campo({ rotulo, valor }: { rotulo: string; valor?: string }) {
-  return (
-    <div>
-      <dt className="rotulo text-[10px] text-destaque">{rotulo}</dt>
-      <dd className="mt-1 text-sm leading-relaxed">{valor || '—'}</dd>
     </div>
   );
 }
