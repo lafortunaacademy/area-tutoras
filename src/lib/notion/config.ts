@@ -117,6 +117,39 @@ export const HANDSOFF = {
   dataDaSessao: 'Data da sessão',
   feitoPelaTutora: 'Feito pela tutora:',
   mentorada: 'Mentorada',
+  /**
+   * Ainda não existe. Se for criada como Número em "Hands-off", o quanto a
+   * tutora recebeu por cada sessão passa a aparecer no Início, mês a mês e no
+   * total — de graça, porque sai da mesma linha que já registra a sessão.
+   */
+  valor: 'Valor',
+} as const;
+
+/**
+ * Quanto a tutora recebe por sessão, conforme a mentoria da mentorada.
+ *
+ * Não existe no Notion: veio da Luíza em 2026-09-11. Enquanto não virar um campo
+ * lá, é aqui que se corrige um preço.
+ *
+ * A regra é a PRIMEIRA da lista que casar. Importa porque há mentorada com mais
+ * de uma mentoria ("Pronta Para Fazer Dinheiro, My Partner Sprint") — nesse caso
+ * vale My Partner. Se a regra certa for outra, é só inverter a ordem.
+ */
+export const VALOR_POR_SESSAO: ReadonlyArray<{ contem: string; valor: number }> = [
+  { contem: 'my partner', valor: 450 },
+  { contem: 'pronta para fazer dinheiro', valor: 350 },
+];
+
+/** Propriedades da base "Tutoras" — o perfil de quem está logada. */
+export const TUTORA = {
+  nome: 'Tutora',
+  foto: 'Foto',
+  status: 'Status',
+  areaDoMetodo: 'Área do metódo',
+  especialidades: 'Áreas/Especialidades',
+  programa: 'Programa',
+  mentoria: 'Mentoria',
+  topicos: 'Principais tópicos',
 } as const;
 
 /**

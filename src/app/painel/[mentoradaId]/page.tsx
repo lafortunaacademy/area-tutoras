@@ -42,7 +42,7 @@ export default async function MentoradaPage({
     <div>
       {/* Em telas com o menu lateral, voltar já é clicar em outro nome. */}
       <Link
-        href="/painel"
+        href="/painel/mentoradas"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-texto-suave transition hover:text-marca lg:hidden"
       >
         <ArrowLeft aria-hidden size={14} />

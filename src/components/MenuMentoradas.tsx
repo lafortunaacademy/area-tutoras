@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Home, Search } from 'lucide-react';
 
 export type ItemMenu = { id: string; nome: string };
 
@@ -24,8 +24,23 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
     return mentoradas.filter((m) => m.nome.toLowerCase().includes(termo));
   }, [busca, mentoradas]);
 
+  const noInicio = caminho === '/painel/inicio';
+
   return (
-    <nav aria-label="Mentoradas" className="flex h-full flex-col">
+    <nav aria-label="Navegação" className="flex h-full flex-col">
+      <Link
+        href="/painel/inicio"
+        aria-current={noInicio ? 'page' : undefined}
+        className={`mb-5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
+          noInicio
+            ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
+            : 'text-texto-suave hover:bg-superficie hover:text-texto'
+        }`}
+      >
+        <Home aria-hidden size={15} className="shrink-0" />
+        Início
+      </Link>
+
       <p className="rotulo mb-3 px-1 text-[10px] text-texto-suave">
         Mentoradas <span className="text-destaque">{mentoradas.length}</span>
       </p>

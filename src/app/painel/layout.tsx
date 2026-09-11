@@ -17,7 +17,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
       <header className="border-b border-borda bg-superficie">
         <div className="mx-auto flex max-w-[110rem] items-center justify-between gap-4 px-6 py-4">
-          <Link href="/painel" className="group">
+          <Link href="/painel/inicio" className="group">
             <p className="rotulo text-[10px] text-texto-suave">
               La Fortuna Academy
             </p>
