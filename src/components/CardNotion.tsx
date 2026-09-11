@@ -71,7 +71,7 @@ export function CardNotion({
           {carregando ? (
             <p className="flex items-center gap-2 text-sm text-texto-suave">
               <Loader2 aria-hidden size={14} className="animate-spin" />
-              Buscando no Notion…
+              Carregando…
             </p>
           ) : null}
           {erro ? <p className="text-sm text-parado">{erro}</p> : null}

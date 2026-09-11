@@ -64,7 +64,7 @@ export function FormularioHandsoff({ mentoradaId }: { mentoradaId: string }) {
         disabled={salvando}
         className="rounded-lg bg-marca px-5 py-2.5 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
       >
-        {salvando ? 'Salvando no Notion…' : 'Salvar hands-off'}
+        {salvando ? 'Salvando…' : 'Salvar hands-off'}
       </button>
     </form>
   );

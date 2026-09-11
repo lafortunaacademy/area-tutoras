@@ -69,7 +69,7 @@ export default async function MentoradaPage({
 
       <Secao titulo="Mapa da cliente">
         {mapa.length === 0 ? (
-          <Vazio>Nenhum mapa preenchido no Notion ainda.</Vazio>
+          <Vazio>Nenhum mapa preenchido ainda.</Vazio>
         ) : (
           <div className="space-y-4">
             {mapa.map((item) => (
@@ -81,12 +81,12 @@ export default async function MentoradaPage({
 
       <Secao titulo="Planejamento estratégico">
         {plano instanceof Error ? (
-          <AvisoNotion erro={plano} />
+          <AvisoNotion erro={plano} detalhar={sessao.real.is_admin} />
         ) : plano === null ? (
           <Vazio>
             {mentorada.areaDaClienteIds.length === 0
-              ? 'Esta mentorada ainda não tem área individual vinculada no Notion, e os objetivos se ligam a ela por ali. É o mesmo motivo da foto e da mentoria não aparecerem.'
-              : 'Não consigo separar os objetivos por mentorada: a base de planejamento se liga a ela por uma relation que a integração não alcança. Mostrar sem esse recorte traria os objetivos de todas.'}
+              ? 'Esta mentorada ainda não tem área individual vinculada, e os objetivos se ligam a ela por ali. É o mesmo motivo da foto e da mentoria não aparecerem.'
+              : 'Não consigo separar os objetivos por mentorada — mostrar sem esse recorte traria os objetivos de todas.'}
           </Vazio>
         ) : plano.length === 0 ? (
           <Vazio>Nenhum objetivo cadastrado.</Vazio>
@@ -171,16 +171,6 @@ export default async function MentoradaPage({
                   <span className="shrink-0 text-xs text-texto-suave">
                     {[item.tutora, item.dataSessao].filter(Boolean).join(' · ')}
                   </span>
-                }
-                rodape={
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-6 inline-block text-xs text-marca underline underline-offset-2"
-                  >
-                    Abrir no Notion
-                  </a>
                 }
               />
             ))}

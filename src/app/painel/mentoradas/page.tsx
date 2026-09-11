@@ -13,7 +13,7 @@ export default async function PainelPage() {
   try {
     mentoradas = await carteiraDaTutora(sessao.tutora.notion_tutora_page_id);
   } catch (erro) {
-    return <AvisoNotion erro={erro} />;
+    return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }
 
   return (
@@ -22,8 +22,8 @@ export default async function PainelPage() {
         <h1 className="display text-2xl">Mentoradas</h1>
         <p className="mt-1 text-sm text-texto-suave">
           {mentoradas.length === 0
-            ? 'Nenhuma mentorada ativa no Notion.'
-            : `${mentoradas.length} ativa${mentoradas.length > 1 ? 's' : ''} — direto do Notion, sempre atualizado.`}
+            ? 'Nenhuma mentorada ativa.'
+            : `${mentoradas.length} ativa${mentoradas.length > 1 ? 's' : ''} — sempre atualizado.`}
         </p>
       </div>
 

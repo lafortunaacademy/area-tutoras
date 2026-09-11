@@ -26,7 +26,7 @@ export default async function InicioPage() {
       carteiraDaTutora(tutoraId),
     ]);
   } catch (erro) {
-    return <AvisoNotion erro={erro} />;
+    return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }
 
   const meses = porMes(sessoes);

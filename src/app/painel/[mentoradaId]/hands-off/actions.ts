@@ -51,9 +51,9 @@ export async function salvarHandsoff(
       { dataSessao, ...secoes },
     );
   } catch (erro) {
-    return {
-      erro: erro instanceof Error ? erro.message : 'Não consegui salvar no Notion.',
-    };
+    // O motivo fica no log do servidor; a tutora não tem o que fazer com ele.
+    console.error('[hands-off] criação falhou:', erro);
+    return { erro: 'Não consegui salvar agora. Tente de novo em instantes.' };
   }
 
   revalidatePath(`/painel/${mentorada.id}`);
