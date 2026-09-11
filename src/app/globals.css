@@ -119,6 +119,21 @@ body {
   letter-spacing: 0.18em;
 }
 
+/*
+ * A logo é preta sobre transparente. No escuro ela desapareceria, então inverte
+ * — regra própria em vez do `dark:` do Tailwind, porque o escuro aqui tem a
+ * ressalva do `data-tema`.
+ */
+.logo-marca {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) .logo-marca {
+    filter: invert(1);
+  }
+}
+
 ::selection {
   background: var(--marca-suave);
   color: var(--texto);

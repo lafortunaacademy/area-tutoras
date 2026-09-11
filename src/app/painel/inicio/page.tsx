@@ -61,6 +61,16 @@ export default async function InicioPage() {
         </div>
       </div>
 
+      <Secao titulo="Onde você atua">
+        <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
+          <Campo rotulo="Área do método" valor={perfil?.areaDoMetodo} />
+          <Campo rotulo="Especialidades" valor={perfil?.especialidades} />
+          <Campo rotulo="Programa" valor={perfil?.programa} />
+          <Campo rotulo="Mentoria" valor={perfil?.mentoria} />
+          <Campo rotulo="Principais tópicos" valor={perfil?.topicos} />
+          <Campo rotulo="Mentoradas na lista" valor={String(mentoradas.length)} />
+        </dl>
+      </Secao>
       <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <Numero rotulo="Sessões registradas" valor={String(sessoes.length)} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
@@ -87,16 +97,6 @@ export default async function InicioPage() {
         </p>
       </Secao>
 
-      <Secao titulo="Onde você atua">
-        <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
-          <Campo rotulo="Área do método" valor={perfil?.areaDoMetodo} />
-          <Campo rotulo="Especialidades" valor={perfil?.especialidades} />
-          <Campo rotulo="Programa" valor={perfil?.programa} />
-          <Campo rotulo="Mentoria" valor={perfil?.mentoria} />
-          <Campo rotulo="Principais tópicos" valor={perfil?.topicos} />
-          <Campo rotulo="Mentoradas na lista" valor={String(mentoradas.length)} />
-        </dl>
-      </Secao>
     </div>
   );
 }

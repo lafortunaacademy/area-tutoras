@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search } from 'lucide-react';
+import { ChevronDown, Home, Search, Users } from 'lucide-react';
 
 export type ItemMenu = { id: string; nome: string };
 
@@ -18,6 +18,11 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
   const [busca, setBusca] = useState('');
   const caminho = usePathname();
 
+  // Numa página de mentorada a lista começa aberta; no Início, fechada — a
+  // pessoa está ali para ver o resumo dela, não para escolher alguém.
+  const naMentorada = /^\/painel\/[^/]+$/.test(caminho) && caminho !== '/painel/inicio';
+  const [aberto, setAberto] = useState(naMentorada);
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     if (!termo) return mentoradas;
@@ -31,7 +36,7 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
       <Link
         href="/painel/inicio"
         aria-current={noInicio ? 'page' : undefined}
-        className={`mb-5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
+        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
           noInicio
             ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
             : 'text-texto-suave hover:bg-superficie hover:text-texto'
@@ -41,52 +46,70 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
         Início
       </Link>
 
-      <p className="rotulo mb-3 px-1 text-[10px] text-texto-suave">
-        Mentoradas <span className="text-destaque">{mentoradas.length}</span>
-      </p>
-
-      <div className="relative mb-3">
-        <Search
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        className={`mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
+          aberto || naMentorada
+            ? 'text-texto'
+            : 'text-texto-suave hover:bg-superficie hover:text-texto'
+        }`}
+      >
+        <Users aria-hidden size={15} className="shrink-0" />
+        <span className="flex-1 text-left">Mentoradas</span>
+        <span className="text-xs text-destaque tabular-nums">{mentoradas.length}</span>
+        <ChevronDown
           aria-hidden
           size={14}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-texto-suave"
+          className={`shrink-0 text-texto-suave transition-transform ${aberto ? 'rotate-180' : ''}`}
         />
-        <input
-          type="search"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder={`Buscar entre ${mentoradas.length}`}
-          aria-label="Buscar mentorada"
-          className="w-full rounded-lg border border-borda bg-superficie py-2 pr-3 pl-8 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
-        />
-      </div>
+      </button>
 
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
-        {visiveis.map((m) => {
-          const atual = caminho.startsWith(`/painel/${m.id}`);
-          return (
-            <li key={m.id}>
-              <Link
-                href={`/painel/${m.id}`}
-                aria-current={atual ? 'page' : undefined}
-                // O marrom cheio é o que diz "é esta". Com fundo claro a
-                // seleção sumia no meio de 44 linhas parecidas.
-                className={`block rounded-lg px-3 py-2 text-sm leading-snug transition ${
-                  atual
-                    ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
-                    : 'text-texto-suave hover:bg-superficie hover:text-texto'
-                }`}
-              >
-                {m.nome}
-              </Link>
-            </li>
-          );
-        })}
+      {aberto ? (
+        <div className="mt-2 flex min-h-0 flex-1 flex-col">
+          <div className="relative mb-2">
+            <Search
+              aria-hidden
+              size={14}
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-texto-suave"
+            />
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder={`Buscar entre ${mentoradas.length}`}
+              aria-label="Buscar mentorada"
+              className="w-full rounded-lg border border-borda bg-superficie py-2 pr-3 pl-8 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
+            />
+          </div>
 
-        {visiveis.length === 0 ? (
-          <li className="px-3 py-2 text-sm text-texto-suave">Ninguém com esse nome.</li>
-        ) : null}
-      </ul>
+          <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+            {visiveis.map((m) => {
+              const atual = caminho.startsWith(`/painel/${m.id}`);
+              return (
+                <li key={m.id}>
+                  <Link
+                    href={`/painel/${m.id}`}
+                    aria-current={atual ? 'page' : undefined}
+                    className={`block rounded-lg px-3 py-2 text-sm leading-snug transition ${
+                      atual
+                        ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
+                        : 'text-texto-suave hover:bg-superficie hover:text-texto'
+                    }`}
+                  >
+                    {m.nome}
+                  </Link>
+                </li>
+              );
+            })}
+
+            {visiveis.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-texto-suave">Ninguém com esse nome.</li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
     </nav>
   );
 }

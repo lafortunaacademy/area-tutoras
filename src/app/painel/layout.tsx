@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { exigirSessao } from '@/lib/session';
 import { carteiraDaTutora } from '@/lib/notion/carteira';
@@ -17,13 +18,20 @@ export default async function PainelLayout({ children }: { children: React.React
 
       <header className="border-b border-borda bg-superficie">
         <div className="mx-auto flex max-w-[110rem] items-center justify-between gap-4 px-6 py-4">
-          <Link href="/painel/inicio" className="group">
-            <p className="rotulo text-[10px] text-texto-suave">
-              La Fortuna Academy
-            </p>
-            <p className="display text-base group-hover:text-marca">
+          <Link href="/painel/inicio" className="group flex items-center gap-3">
+            {/* A logo é preta sobre transparente; no escuro ela some, então
+                inverte junto com o tema. */}
+            <Image
+              src="/marca/la-fortuna.png"
+              alt="La Fortuna Academy"
+              width={2369}
+              height={862}
+              priority
+              className="logo-marca h-8 w-auto"
+            />
+            <span className="hidden border-l border-borda pl-3 text-sm text-texto-suave sm:inline">
               Área das tutoras
-            </p>
+            </span>
           </Link>
 
           <div className="flex items-center gap-4 text-sm">
