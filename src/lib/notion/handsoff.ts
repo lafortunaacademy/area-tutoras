@@ -79,7 +79,7 @@ export async function criarHandsoff(
       // da área dela, e repetir o nome da mentorada ali só ocupa espaço. Quem
       // olha uma lista de hands-off quer saber quem atendeu.
       [HANDSOFF.nome]: {
-        title: [{ type: 'text', text: { content: `Hands-off — Tutora: ${tutora.nome}` } }],
+        title: [{ type: 'text', text: { content: `Hands-off | Tutora: ${tutora.nome}` } }],
       },
       [HANDSOFF.dataDaSessao]: { date: { start: dados.dataSessao } },
       [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutora.id }] },
