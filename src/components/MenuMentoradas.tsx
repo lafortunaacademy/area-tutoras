@@ -26,6 +26,10 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
 
   return (
     <nav aria-label="Mentoradas" className="flex h-full flex-col">
+      <p className="rotulo mb-3 px-1 text-[10px] text-texto-suave">
+        Mentoradas <span className="text-destaque">{mentoradas.length}</span>
+      </p>
+
       <div className="relative mb-3">
         <Search
           aria-hidden
@@ -50,9 +54,11 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
               <Link
                 href={`/painel/${m.id}`}
                 aria-current={atual ? 'page' : undefined}
+                // O marrom cheio é o que diz "é esta". Com fundo claro a
+                // seleção sumia no meio de 44 linhas parecidas.
                 className={`block rounded-lg px-3 py-2 text-sm leading-snug transition ${
                   atual
-                    ? 'bg-marca-suave font-medium text-marca'
+                    ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
                     : 'text-texto-suave hover:bg-superficie hover:text-texto'
                 }`}
               >

@@ -57,7 +57,7 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
         and: [{ property: MENTORADA.tutora, relation: { contains: tutoraPageId } }, ativas],
       },
     });
-    return paginas.map(paraMentorada).sort(porNome);
+    return paginas.map(paraMentorada).filter(temMentoria).sort(porNome);
   } catch (erro) {
     const semRelation =
       erro instanceof NotionError &&
@@ -66,8 +66,15 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
   }
 
   const todas = await queryDatabase(areaId, { filter: ativas });
-  return todas.map(paraMentorada).sort(porNome);
+  return todas.map(paraMentorada).filter(temMentoria).sort(porNome);
 });
+
+/**
+ * Sem mentoria, a linha é cadastro pela metade — quase sempre porque falta o
+ * vínculo com a área individual dela, de onde o rótulo vem. A tutora não tem o
+ * que fazer com esse registro, então ele não entra na lista.
+ */
+const temMentoria = (m: Mentorada) => Boolean(m.mentoria);
 
 const porNome = (a: Mentorada, b: Mentorada) => a.nome.localeCompare(b.nome, 'pt-BR');
 

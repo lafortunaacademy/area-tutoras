@@ -40,19 +40,30 @@ export default async function MentoradaPage({
 
   return (
     <div>
+      {/* Em telas com o menu lateral, voltar já é clicar em outro nome. */}
       <Link
         href="/painel"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-texto-suave transition hover:text-marca"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-texto-suave transition hover:text-marca lg:hidden"
       >
         <ArrowLeft aria-hidden size={14} />
         Mentoradas
       </Link>
 
-      <div className="mb-10">
-        <h1 className="display text-2xl">{mentorada.nome}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {mentorada.mentoria ? <Etiqueta texto={mentorada.mentoria} /> : null}
-          {mentorada.status ? <Etiqueta texto={mentorada.status} /> : null}
+      <div className="mb-10 flex items-center gap-4 border-b border-borda pb-6">
+        {foto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={foto}
+            alt=""
+            className="size-14 shrink-0 rounded-full border border-borda object-cover"
+          />
+        ) : null}
+        <div className="min-w-0">
+          <h1 className="display text-2xl leading-tight">{mentorada.nome}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {mentorada.mentoria ? <Etiqueta texto={mentorada.mentoria} /> : null}
+            {mentorada.status ? <Etiqueta texto={mentorada.status} /> : null}
+          </div>
         </div>
       </div>
 
@@ -84,17 +95,20 @@ export default async function MentoradaPage({
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
             <table className="w-full min-w-[38rem] text-sm">
               <thead>
-                <tr className="border-b border-borda text-left text-xs uppercase tracking-wide text-texto-suave">
-                  <th className="px-4 py-3 font-medium">Objetivo</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Trimestre</th>
-                  <th className="px-4 py-3 font-medium">Pilar</th>
-                  <th className="px-4 py-3 font-medium">Tutoria</th>
+                <tr className="border-b border-borda text-left">
+                  {['Objetivo', 'Status', 'Trimestre', 'Pilar', 'Tutoria'].map((c) => (
+                    <th
+                      key={c}
+                      className="rotulo px-4 py-3 text-[10px] font-normal text-texto-suave"
+                    >
+                      {c}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {plano.map((item) => (
-                  <tr key={item.id} className="border-b border-borda last:border-0">
+                  <tr key={item.id} className="border-b border-borda transition last:border-0 hover:bg-fundo">
                     <td className="px-4 py-3">{item.objetivo}</td>
                     <td className="px-4 py-3">
                       <Etiqueta texto={item.status} />
