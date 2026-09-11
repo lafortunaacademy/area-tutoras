@@ -25,14 +25,14 @@ export function MapaDaCliente({
 
   return (
     <div className="overflow-hidden rounded-xl border border-borda bg-superficie">
-      <div className="grid gap-6 p-6 sm:grid-cols-[168px_1fr] sm:gap-8">
+      <div className="grid gap-6 p-6 sm:grid-cols-[180px_1fr] sm:gap-8 xl:grid-cols-[220px_1fr]">
         <div>
           <Retrato nome={nome} foto={item.foto ?? foto} />
         </div>
 
         <div className="min-w-0">
           {curtos.length > 0 ? (
-            <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            <dl className="grid gap-x-10 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
               {curtos.map((c) => (
                 <Campo key={c.nome} nome={c.nome} valor={c.valor} />
               ))}
@@ -41,7 +41,7 @@ export function MapaDaCliente({
 
           {longos.length > 0 ? (
             <dl
-              className={`space-y-4 ${curtos.length > 0 ? 'mt-6 border-t border-borda pt-6' : ''}`}
+              className={`grid gap-x-10 gap-y-4 xl:grid-cols-2 ${curtos.length > 0 ? 'mt-6 border-t border-borda pt-6' : ''}`}
             >
               {longos.map((c) => (
                 <Campo key={c.nome} nome={c.nome} valor={c.valor} />
