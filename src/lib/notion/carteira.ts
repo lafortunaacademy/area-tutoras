@@ -57,7 +57,7 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
         and: [{ property: MENTORADA.tutora, relation: { contains: tutoraPageId } }, ativas],
       },
     });
-    return paginas.map(paraMentorada).filter(temMentoria).sort(porNome);
+    return paginas.map(paraMentorada).sort(porNome);
   } catch (erro) {
     const semRelation =
       erro instanceof NotionError &&
@@ -66,15 +66,19 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
   }
 
   const todas = await queryDatabase(areaId, { filter: ativas });
-  return todas.map(paraMentorada).filter(temMentoria).sort(porNome);
+  return todas.map(paraMentorada).sort(porNome);
 });
 
-/**
- * Sem mentoria, a linha é cadastro pela metade — quase sempre porque falta o
- * vínculo com a área individual dela, de onde o rótulo vem. A tutora não tem o
- * que fazer com esse registro, então ele não entra na lista.
+/*
+ * Já escondemos daqui as mentoradas sem mentoria, e foi um erro: a mentoria é
+ * calculada a partir da relation `Área da cliente`, e essa relation volta vazia
+ * quando a página do outro lado não é visível para a integração — mesmo estando
+ * preenchida no Notion. Aconteceu com duas mentoradas ativas e corretas.
+ *
+ * Esconder linha com base em valor que pode sumir por permissão apaga gente de
+ * verdade. Se um dia for preciso ocultar alguém, que seja por um campo que a
+ * Fernanda controla (o Status, por exemplo), nunca por um derivado.
  */
-const temMentoria = (m: Mentorada) => Boolean(m.mentoria);
 
 const porNome = (a: Mentorada, b: Mentorada) => a.nome.localeCompare(b.nome, 'pt-BR');
 
