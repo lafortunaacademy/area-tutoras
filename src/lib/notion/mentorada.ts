@@ -1,7 +1,15 @@
 import 'server-only';
 import { queryDatabase, getDatabase, getPage, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { BRIEFINGS, HANDSOFF, MAPA, MAPA_CAMPOS, PLANEJAMENTO, ehLegenda } from './config';
+import {
+  BRIEFINGS,
+  HANDSOFF,
+  MAPA,
+  MAPA_CAMPOS,
+  ORDEM_STATUS_OBJETIVO,
+  PLANEJAMENTO,
+  ehLegenda,
+} from './config';
 import { arquivoUrl, data, formatarData, iconeUrl, relationIds, texto, titulo } from './props';
 import type { Mentorada } from './carteira';
 import { nomesDasTutoras } from './tutora';
@@ -92,6 +100,14 @@ function comoTexto(page: NotionPage, nome: string): string {
   return ehData ? formatarData(bruto) : bruto;
 }
 
+/** Status desconhecido cai antes dos concluídos, nunca no fim. */
+function pesoDoStatus(status: string): number {
+  const i = ORDEM_STATUS_OBJETIVO.findIndex(
+    (s) => s.toLowerCase() === status.trim().toLowerCase(),
+  );
+  return i === -1 ? ORDEM_STATUS_OBJETIVO.indexOf('Concluído') - 0.5 : i;
+}
+
 /** Só os campos preenchidos, com o rótulo que a mentorada vê no Notion. */
 function camposDoMapa(page: NotionPage): CampoMapa[] {
   const conhecidos = new Set(MAPA_CAMPOS.map((c) => c.valor));
@@ -160,7 +176,8 @@ export async function planejamento(
     throw erro;
   }
 
-  return linhas.map((p) => ({
+  return linhas
+    .map((p) => ({
     id: p.id,
     objetivo: texto(p, PLANEJAMENTO.objetivo) || titulo(p),
     status: texto(p, PLANEJAMENTO.status),
@@ -169,7 +186,8 @@ export async function planejamento(
     pilar: texto(p, PLANEJAMENTO.pilar),
     tutoria: texto(p, PLANEJAMENTO.tutoria),
     ano: texto(p, PLANEJAMENTO.ano),
-  }));
+    }))
+    .sort((a, b) => pesoDoStatus(a.status) - pesoDoStatus(b.status));
 }
 
 export async function briefings(

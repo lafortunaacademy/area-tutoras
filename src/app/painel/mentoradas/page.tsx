@@ -29,16 +29,16 @@ export default async function PainelPage() {
 
       {mentoradas.length > 0 ? (
         <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-          <table className="w-full min-w-[34rem] text-sm">
+          <table className="w-full min-w-[34rem] table-fixed text-[13px]">
             <thead>
               <tr className="border-b border-borda text-left">
-                <th className="rotulo px-5 py-3 text-[10px] font-normal text-texto-suave">
+                <th className="rotulo px-5 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave">
                   Cliente
                 </th>
-                <th className="rotulo px-5 py-3 text-[10px] font-normal text-texto-suave">
+                <th className="rotulo px-5 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave">
                   Mentoria
                 </th>
-                <th className="rotulo px-5 py-3 text-[10px] font-normal text-texto-suave">
+                <th className="rotulo px-5 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave">
                   Status
                 </th>
               </tr>
@@ -46,7 +46,7 @@ export default async function PainelPage() {
             <tbody>
               {mentoradas.map((m) => (
                 <tr key={m.id} className="border-b border-borda last:border-0 hover:bg-fundo">
-                  <td className="px-5 py-3">
+                  <td className="truncate px-5 py-2.5">
                     {/* O link cobre só o nome, mas é o alvo grande da linha: um
                         <tr> clicável quebraria teclado e "abrir em nova aba". */}
                     <Link
@@ -56,8 +56,8 @@ export default async function PainelPage() {
                       {m.nome}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-texto-suave">{m.mentoria}</td>
-                  <td className="px-5 py-3">
+                  <td className="truncate px-5 py-2.5 whitespace-nowrap text-texto-suave" title={m.mentoria}>{m.mentoria}</td>
+                  <td className="truncate px-5 py-2.5">
                     <Etiqueta texto={m.status} />
                   </td>
                 </tr>

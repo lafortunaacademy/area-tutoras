@@ -72,6 +72,21 @@ export const MENTORADA = {
   tutora: 'Tutora',
 } as const;
 
+/**
+ * Ordem dos objetivos na tela: o que está em andamento primeiro, o que ainda
+ * não começou no meio, e o que já acabou no fim.
+ *
+ * A tutora abre esta tabela para saber onde pegar o trabalho — não para revisar
+ * o que já foi feito. Status fora desta lista cai antes dos concluídos.
+ */
+export const ORDEM_STATUS_OBJETIVO = [
+  'Em andamento',
+  'A iniciar',
+  'Concluído',
+  'Concluida',
+  'Cancelado',
+] as const;
+
 /** Valor de `Status` que conta como mentorada ativa. */
 export const STATUS_ATIVA = 'Ativa';
 

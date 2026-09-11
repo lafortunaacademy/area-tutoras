@@ -92,29 +92,53 @@ export default async function MentoradaPage({
           <Vazio>Nenhum objetivo cadastrado.</Vazio>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-            <table className="w-full min-w-[38rem] text-sm">
+            <table className="w-full min-w-[44rem] table-fixed text-[13px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Status', 'Objetivo', 'Trimestre', 'Pilar', 'Tutoria'].map((c) => (
+                  {[
+                    { nome: 'Status', largura: 'w-32' },
+                    { nome: 'Objetivo', largura: '' },
+                    { nome: 'Trimestre', largura: 'w-28' },
+                    { nome: 'Pilar', largura: 'w-28' },
+                    { nome: 'Tutoria', largura: 'w-44' },
+                  ].map((c) => (
                     <th
-                      key={c}
-                      className="rotulo px-4 py-3 text-[10px] font-normal text-texto-suave"
+                      key={c.nome}
+                      className={`rotulo px-4 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave ${c.largura}`}
                     >
-                      {c}
+                      {c.nome}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {plano.map((item) => (
-                  <tr key={item.id} className="border-b border-borda transition last:border-0 hover:bg-fundo">
-                    <td className="px-4 py-3">
+                  // Uma linha por objetivo, sempre: texto que não cabe é
+                  // cortado com reticências e aparece inteiro no hover. Quebrar
+                  // linha deixava a tabela com alturas irregulares e difícil de
+                  // varrer com o olho.
+                  <tr
+                    key={item.id}
+                    className="border-b border-borda transition last:border-0 hover:bg-fundo"
+                  >
+                    <td className="px-4 py-2.5 whitespace-nowrap">
                       <Etiqueta texto={item.status} />
                     </td>
-                    <td className="px-4 py-3">{item.objetivo}</td>
-                    <td className="px-4 py-3 text-texto-suave">{item.trimestre}</td>
-                    <td className="px-4 py-3 text-texto-suave">{item.pilar}</td>
-                    <td className="px-4 py-3 text-texto-suave">{item.tutoria}</td>
+                    <td className="truncate px-4 py-2.5 tracking-[0.005em]" title={item.objetivo}>
+                      {item.objetivo}
+                    </td>
+                    <td className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave">
+                      {item.trimestre}
+                    </td>
+                    <td className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave">
+                      {item.pilar}
+                    </td>
+                    <td
+                      className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave"
+                      title={item.tutoria}
+                    >
+                      {item.tutoria}
+                    </td>
                   </tr>
                 ))}
               </tbody>
