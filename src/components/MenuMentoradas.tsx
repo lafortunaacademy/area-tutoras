@@ -91,7 +91,7 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
                   <Link
                     href={`/painel/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
-                    className={`flex items-center gap-2.5 rounded-lg py-1.5 pr-3 pl-2 text-sm leading-snug transition ${
+                    className={`flex items-center gap-2.5 rounded-lg py-1.5 pr-3 pl-2 text-[12.5px] leading-snug transition ${
                       atual
                         ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
                         : 'text-texto-suave hover:bg-superficie hover:text-texto'
@@ -119,7 +119,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
   if (foto) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={foto} alt="" className="size-6 shrink-0 rounded-full object-cover" />
+      <img src={foto} alt="" className="size-5 shrink-0 rounded-full object-cover" />
     );
   }
 
@@ -133,7 +133,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
   return (
     <span
       aria-hidden
-      className="flex size-6 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[9px] font-medium text-marca"
+      className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[8px] font-medium text-marca"
     >
       {iniciais}
     </span>
