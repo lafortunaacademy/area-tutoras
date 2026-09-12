@@ -80,7 +80,19 @@ export function ObjetivosPorAno({ objetivos }: { objetivos: ItemPlanejamento[] }
 
   return (
     <div className="space-y-3">
-      {doAtual.length > 0 ? <TabelaObjetivos objetivos={doAtual} /> : null}
+      {doAtual.length > 0 ? (
+        <div>
+          {/* O ano corrente também se nomeia: sem isso, a tabela de cima ficava
+              sem etiqueta ao lado dos toggles, que têm. */}
+          <p className="mb-1.5 flex items-center gap-2 px-1 text-sm">
+            <span className="font-medium">{anoAtual}</span>
+            <span className="text-xs text-destaque">
+              {doAtual.length} {doAtual.length === 1 ? 'objetivo' : 'objetivos'}
+            </span>
+          </p>
+          <TabelaObjetivos objetivos={doAtual} />
+        </div>
+      ) : null}
 
       {outros.map(([ano, lista]) => (
         <details key={ano} className="group rounded-xl border border-borda bg-superficie">
