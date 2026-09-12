@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { queryDatabase, NotionError, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { MENTORADA, STATUS_ATIVA } from './config';
+import { iconeUrl } from './props';
 import { relationIds, texto, titulo } from './props';
 
 /**
@@ -20,15 +21,38 @@ export type Mentorada = {
   mentoria: string;
   status: string;
   areaDaClienteIds: string[];
+  /** Ícone da página dela em "Área clientes". URL assinada, expira. */
+  foto: string | null;
 };
 
-function paraMentorada(page: NotionPage): Mentorada {
+/**
+ * Foto de cada cliente, numa consulta só.
+ *
+ * A foto é o ícone da página em "Área clientes". Buscar página por página
+ * custaria 44 requisições para desenhar uma lista; a base inteira sai em uma.
+ */
+const fotosDasClientes = cache(async (): Promise<Map<string, string>> => {
+  const dbId = await resolverDatabaseId('areaClientes');
+  const linhas = await queryDatabase(dbId, { limite: 300 }).catch(() => []);
+
+  const mapa = new Map<string, string>();
+  for (const p of linhas) {
+    const url = iconeUrl(p);
+    if (url) mapa.set(p.id, url);
+  }
+  return mapa;
+});
+
+function paraMentorada(page: NotionPage, fotos: Map<string, string>): Mentorada {
+  const areaDaClienteIds = relationIds(page, MENTORADA.areaDaCliente);
+
   return {
     id: page.id,
     nome: texto(page, MENTORADA.nome) || titulo(page),
     mentoria: MENTORADA.mentoria.map((n) => texto(page, n)).find(Boolean) ?? '',
     status: texto(page, MENTORADA.status),
-    areaDaClienteIds: relationIds(page, MENTORADA.areaDaCliente),
+    areaDaClienteIds,
+    foto: areaDaClienteIds.map((id) => fotos.get(id)).find(Boolean) ?? null,
   };
 }
 
@@ -47,7 +71,10 @@ function paraMentorada(page: NotionPage): Mentorada {
  * suas, sem precisar mexer aqui.
  */
 export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Mentorada[]> => {
-  const areaId = await resolverDatabaseId('areaDasTutoras');
+  const [areaId, fotos] = await Promise.all([
+    resolverDatabaseId('areaDasTutoras'),
+    fotosDasClientes(),
+  ]);
 
   const ativas = { property: MENTORADA.status, status: { equals: STATUS_ATIVA } };
 
@@ -57,7 +84,7 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
         and: [{ property: MENTORADA.tutora, relation: { contains: tutoraPageId } }, ativas],
       },
     });
-    return paginas.map(paraMentorada).sort(porNome);
+    return paginas.map((p) => paraMentorada(p, fotos)).sort(porNome);
   } catch (erro) {
     const semRelation =
       erro instanceof NotionError &&
@@ -66,7 +93,7 @@ export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Ment
   }
 
   const todas = await queryDatabase(areaId, { filter: ativas });
-  return todas.map(paraMentorada).sort(porNome);
+  return todas.map((p) => paraMentorada(p, fotos)).sort(porNome);
 });
 
 /*

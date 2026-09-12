@@ -33,6 +33,8 @@ export const DATABASES = {
   tutorias: 'Acompanhamento de clientes',
   briefings: 'Briefings',
   handsoff: 'Hands-off',
+  /** A área individual de cada cliente: é dela que pendura todo o conteúdo. */
+  areaClientes: 'Área clientes',
 } as const;
 
 export type SectionKey = keyof typeof DATABASES;

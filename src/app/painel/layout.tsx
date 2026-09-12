@@ -57,7 +57,7 @@ export default async function PainelLayout({ children }: { children: React.React
           {/* Altura fixa, não máxima: sem ela o `h-full` do menu não tem de
               quem herdar, a lista cresce e a rolagem nunca acontece. */}
           <div className="sticky top-8 h-[calc(100dvh-6rem)]">
-            <MenuMentoradas mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome }))} />
+            <MenuMentoradas mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))} />
           </div>
         </aside>
 

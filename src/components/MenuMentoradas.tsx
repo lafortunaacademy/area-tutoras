@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, Home, Search, Users } from 'lucide-react';
 
-export type ItemMenu = { id: string; nome: string };
+export type ItemMenu = { id: string; nome: string; foto: string | null };
 
 /**
  * Menu lateral com todas as mentoradas.
@@ -91,13 +91,14 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
                   <Link
                     href={`/painel/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
-                    className={`block rounded-lg px-3 py-2 text-sm leading-snug transition ${
+                    className={`flex items-center gap-2.5 rounded-lg py-1.5 pr-3 pl-2 text-sm leading-snug transition ${
                       atual
                         ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
                         : 'text-texto-suave hover:bg-superficie hover:text-texto'
                     }`}
                   >
-                    {m.nome}
+                    <Retrato nome={m.nome} foto={m.foto} />
+                    <span className="min-w-0 flex-1">{m.nome}</span>
                   </Link>
                 </li>
               );
@@ -110,5 +111,31 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
         </div>
       ) : null}
     </nav>
+  );
+}
+
+/** Foto pequena ao lado do nome; sem foto, as iniciais seguram o alinhamento. */
+function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
+  if (foto) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={foto} alt="" className="size-6 shrink-0 rounded-full object-cover" />
+    );
+  }
+
+  const iniciais = nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+
+  return (
+    <span
+      aria-hidden
+      className="flex size-6 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[9px] font-medium text-marca"
+    >
+      {iniciais}
+    </span>
   );
 }

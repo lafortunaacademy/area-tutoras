@@ -10,7 +10,7 @@ import {
   PLANEJAMENTO,
   ehLegenda,
 } from './config';
-import { arquivoUrl, data, formatarData, iconeUrl, relationIds, texto, titulo } from './props';
+import { arquivoUrl, data, formatarData, relationIds, texto, titulo } from './props';
 import type { Mentorada } from './carteira';
 import { nomesDasTutoras } from './tutora';
 
@@ -62,22 +62,6 @@ export type ItemHandsoff = {
 };
 
 /**
- * A foto da mentorada.
- *
- * Não está na base do mapa nem na linha dela em "Área das tutoras": mora como
- * ícone da página dela em "Área clientes" — a área individual. É uma requisição
- * a mais, então só é feita na página da mentorada, nunca na listagem.
- */
-export async function fotoDaMentorada(mentorada: Mentorada): Promise<string | null> {
-  for (const id of mentorada.areaDaClienteIds) {
-    const page = await getPage(id).catch(() => null);
-    const foto = page && iconeUrl(page);
-    if (foto) return foto;
-  }
-  return null;
-}
-
-/**
  * Filtro "é desta mentorada".
  *
  * Desde que o conteúdo passou a se pendurar na área individual, a chave é a
@@ -86,9 +70,11 @@ export async function fotoDaMentorada(mentorada: Mentorada): Promise<string | nu
  * indistinguível de "não tem nada".
  */
 function daMentorada(mentorada: Mentorada, propriedade: string) {
-  const ids = mentorada.areaDaClienteIds;
   return {
-    or: ids.map((id) => ({ property: propriedade, relation: { contains: id } })),
+    or: mentorada.areaDaClienteIds.map((id) => ({
+      property: propriedade,
+      relation: { contains: id },
+    })),
   };
 }
 
