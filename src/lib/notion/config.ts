@@ -39,7 +39,11 @@ export type SectionKey = keyof typeof DATABASES;
 
 /**
  * Propriedades da base "Área das tutoras" (uma linha por mentorada).
- * 45 linhas, 44 ativas. Conferido pela API em 2026-09-10.
+ *
+ * ⚠️ Esta base é só a LISTA de mentoradas. Desde 2026-09-11 todo o conteúdo —
+ * briefings, hands-off, objetivos, mapa — se pendura na página da cliente em
+ * "Área clientes", não nesta linha. Ou seja: para listar, use o ID daqui; para
+ * filtrar conteúdo, use `areaDaClienteIds`.
  */
 export const MENTORADA = {
   nome: 'Cliente',
@@ -124,7 +128,6 @@ export const PLANEJAMENTO = {
 export const BRIEFINGS = {
   titulo: 'Briefing',
   data: 'Data',
-  mentoria: 'Mentoria',
   paraATutora: 'Para a tutora:',
   mentorada: 'Mentorada',
 } as const;
@@ -137,7 +140,8 @@ export const HANDSOFF = {
   nome: 'Nome',
   dataDaSessao: 'Data da sessão',
   feitoPelaTutora: 'Feito pela tutora:',
-  mentorada: 'Mentorada',
+  /** Com espaço no fim, sim. */
+  mentorada: 'Mentorada ',
   /**
    * Ainda não existe. Se for criada como Número em "Hands-off", o quanto a
    * tutora recebeu por cada sessão passa a aparecer no Início, mês a mês e no
@@ -213,7 +217,7 @@ export const TUTORA = {
  */
 export const MAPA = {
   titulo: 'Nome',
-  mentorada: 'Área da tutora',
+  mentorada: 'Mentorada',
   /**
    * Ainda não existe na base. Quando for criada (tipo Arquivo, como a `Foto` da
    * base Tutoras), a foto aparece sozinha no mapa — a tela já a procura.
@@ -242,7 +246,13 @@ export const MAPA_CAMPOS: ReadonlyArray<{
 }> = [
   { valor: 'Idade', legenda: 'Legenda "Idade"', reserva: 'Idade' },
   { valor: 'Instagram', legenda: 'Legenda "Instagram"', reserva: 'Instagram' },
-  { longo: true, valor: 'O que faz', legenda: 'Legenda "O que faz"', reserva: 'O que faz' },
+  {
+    longo: true,
+    valor: 'O que o seu negócio faz hoje?',
+    legenda: 'Legenda "O que faz"',
+    reserva: 'O que faz',
+  },
+  { valor: 'Profissão', reserva: 'Profissão' },
   { longo: true, valor: 'Persona (cliente)', legenda: 'Legenda "Persona (cliente)"', reserva: 'Persona' },
   {
     longo: true,

@@ -80,7 +80,11 @@ export async function criarHandsoff(
       },
       [HANDSOFF.dataDaSessao]: { date: { start: dados.dataSessao } },
       [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutora.id }] },
-      [HANDSOFF.mentorada]: { relation: [{ id: mentorada.id }] },
+      // A relation aponta para a área individual da cliente, não para a linha
+      // dela em "Área das tutoras".
+      [HANDSOFF.mentorada]: {
+        relation: mentorada.areaDaClienteIds.map((id) => ({ id })),
+      },
     },
     children,
   });

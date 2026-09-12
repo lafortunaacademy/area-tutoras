@@ -46,7 +46,6 @@ export type ItemBriefing = {
   id: string;
   titulo: string;
   data: string;
-  mentoria: string;
 };
 
 export type ItemHandsoff = {
@@ -76,10 +75,27 @@ export async function fotoDaMentorada(mentorada: Mentorada): Promise<string | nu
   return null;
 }
 
+/**
+ * Filtro "é desta mentorada".
+ *
+ * Desde que o conteúdo passou a se pendurar na área individual, a chave é a
+ * página da cliente em "Área clientes" — nunca a linha dela em "Área das
+ * tutoras". Usar o ID errado não dá erro: devolve zero linhas, que é
+ * indistinguível de "não tem nada".
+ */
+function daMentorada(mentorada: Mentorada, propriedade: string) {
+  const ids = mentorada.areaDaClienteIds;
+  return {
+    or: ids.map((id) => ({ property: propriedade, relation: { contains: id } })),
+  };
+}
+
 export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
+  if (mentorada.areaDaClienteIds.length === 0) return [];
+
   const dbId = await resolverDatabaseId('mapas');
   const linhas = await queryDatabase(dbId, {
-    filter: { property: MAPA.mentorada, relation: { contains: mentorada.id } },
+    filter: daMentorada(mentorada, MAPA.mentorada),
     limite: 20,
   });
 
@@ -162,12 +178,7 @@ export async function planejamento(
   let linhas;
   try {
     linhas = await queryDatabase(dbId, {
-      filter: {
-        or: mentorada.areaDaClienteIds.map((id) => ({
-          property: PLANEJAMENTO.areaDaMentorada,
-          relation: { contains: id },
-        })),
-      },
+      filter: daMentorada(mentorada, PLANEJAMENTO.areaDaMentorada),
     });
   } catch (erro) {
     const semRecorte =
@@ -195,10 +206,12 @@ export async function briefings(
   tutoraPageId: string,
 ): Promise<ItemBriefing[]> {
   const dbId = await resolverDatabaseId('briefings');
+  if (mentorada.areaDaClienteIds.length === 0) return [];
+
   const linhas = await queryDatabase(dbId, {
     filter: {
       and: [
-        { property: BRIEFINGS.mentorada, relation: { contains: mentorada.id } },
+        daMentorada(mentorada, BRIEFINGS.mentorada),
         { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
       ],
     },
@@ -209,7 +222,6 @@ export async function briefings(
     id: p.id,
     titulo: texto(p, BRIEFINGS.titulo) || titulo(p) || 'Briefing',
     data: formatarData(data(p, BRIEFINGS.data)),
-    mentoria: texto(p, BRIEFINGS.mentoria),
   }));
 }
 
@@ -218,10 +230,12 @@ export async function handsoffs(
   tutoraPageId: string,
 ): Promise<ItemHandsoff[]> {
   const dbId = await resolverDatabaseId('handsoff');
+  if (mentorada.areaDaClienteIds.length === 0) return [];
+
   const linhas = await queryDatabase(dbId, {
     filter: {
       and: [
-        { property: HANDSOFF.mentorada, relation: { contains: mentorada.id } },
+        daMentorada(mentorada, HANDSOFF.mentorada),
         { property: HANDSOFF.feitoPelaTutora, relation: { contains: tutoraPageId } },
       ],
     },
@@ -277,11 +291,13 @@ export async function paginaPertenceA(
       alvos.some((alvo) => alvo.replace(/-/g, '') === id.replace(/-/g, '')),
     );
 
-  if (mesmaBase(daBase, briefingsId)) return aponta(BRIEFINGS.mentorada, [mentorada.id]);
-  if (mesmaBase(daBase, handsoffId)) return aponta(HANDSOFF.mentorada, [mentorada.id]);
-  if (mesmaBase(daBase, mapasId)) return aponta(MAPA.mentorada, [mentorada.id]);
+  const daCliente = mentorada.areaDaClienteIds;
+
+  if (mesmaBase(daBase, briefingsId)) return aponta(BRIEFINGS.mentorada, daCliente);
+  if (mesmaBase(daBase, handsoffId)) return aponta(HANDSOFF.mentorada, daCliente);
+  if (mesmaBase(daBase, mapasId)) return aponta(MAPA.mentorada, daCliente);
   if (mesmaBase(daBase, planejamentoId)) {
-    return aponta(PLANEJAMENTO.areaDaMentorada, mentorada.areaDaClienteIds);
+    return aponta(PLANEJAMENTO.areaDaMentorada, daCliente);
   }
 
   return false;
