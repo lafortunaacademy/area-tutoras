@@ -110,10 +110,16 @@ if (deFora) {
       'página desta mentorada NÃO passa na checagem de outra mentorada',
     );
   }
-  const handsDeFora = await handsoffs({ ...mentorada, id: deFora.id }, tutoraId);
+  // Hands-off é visível a todas as tutoras da mentorada, então o que isola aqui
+  // é a mentorada — não a tutora.
+  const handsDeFora = await handsoffs(
+    { ...mentorada, id: deFora.id, areaDaClienteIds: relationIds(deFora, 'Área da cliente') },
+    tutoraId,
+  );
+  const meusIds = new Set(hands.map((h) => h.id));
   ok(
-    handsDeFora.length === 0,
-    'query de hands-off com mentorada de fora + esta tutora não devolve nada',
+    handsDeFora.every((h) => !meusIds.has(h.id)),
+    'hands-off de outra mentorada não se mistura com os desta',
   );
 
   // O planejamento é o filtro mais fácil de errar: a chave é a Área da cliente,

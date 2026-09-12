@@ -232,13 +232,12 @@ export async function handsoffs(
   const dbId = await resolverDatabaseId('handsoff');
   if (mentorada.areaDaClienteIds.length === 0) return [];
 
+  // Sem filtro por tutora, de propósito: o hands-off existe para a PRÓXIMA
+  // tutora saber o que aconteceu na sessão anterior. Esconder o que as colegas
+  // escreveram destruiria a razão de ser do registro. Quem escreveu continua
+  // marcado, e só ela edita.
   const linhas = await queryDatabase(dbId, {
-    filter: {
-      and: [
-        daMentorada(mentorada, HANDSOFF.mentorada),
-        { property: HANDSOFF.feitoPelaTutora, relation: { contains: tutoraPageId } },
-      ],
-    },
+    filter: daMentorada(mentorada, HANDSOFF.mentorada),
     sorts: [{ property: HANDSOFF.dataDaSessao, direction: 'descending' }],
   });
 
