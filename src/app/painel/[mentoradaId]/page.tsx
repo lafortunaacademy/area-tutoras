@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Pencil, Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
 import {
@@ -11,8 +11,9 @@ import {
 } from '@/lib/notion/mentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
+import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { MapaDaCliente } from '@/components/MapaDaCliente';
-import { CardNotion } from '@/components/CardNotion';
+import { TabelaNotion } from '@/components/TabelaNotion';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,81 +89,26 @@ export default async function MentoradaPage({
               ? 'Esta mentorada ainda não tem área individual vinculada, e os objetivos se ligam a ela por ali. É o mesmo motivo da foto e da mentoria não aparecerem.'
               : 'Não consigo separar os objetivos por mentorada — mostrar sem esse recorte traria os objetivos de todas.'}
           </Vazio>
-        ) : plano.length === 0 ? (
-          <Vazio>Nenhum objetivo cadastrado.</Vazio>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-            <table className="w-full min-w-[44rem] table-fixed text-[13px]">
-              <thead>
-                <tr className="border-b border-borda text-left">
-                  {[
-                    { nome: 'Status', largura: 'w-32' },
-                    { nome: 'Objetivo', largura: '' },
-                    { nome: 'Trimestre', largura: 'w-28' },
-                    { nome: 'Pilar', largura: 'w-28' },
-                    { nome: 'Tutoria', largura: 'w-44' },
-                  ].map((c) => (
-                    <th
-                      key={c.nome}
-                      className={`rotulo px-4 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave ${c.largura}`}
-                    >
-                      {c.nome}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {plano.map((item) => (
-                  // Uma linha por objetivo, sempre: texto que não cabe é
-                  // cortado com reticências e aparece inteiro no hover. Quebrar
-                  // linha deixava a tabela com alturas irregulares e difícil de
-                  // varrer com o olho.
-                  <tr
-                    key={item.id}
-                    className="border-b border-borda transition last:border-0 hover:bg-fundo"
-                  >
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <Etiqueta texto={item.status} />
-                    </td>
-                    <td className="truncate px-4 py-2.5 tracking-[0.005em]" title={item.objetivo}>
-                      {item.objetivo}
-                    </td>
-                    <td className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave">
-                      {item.trimestre}
-                    </td>
-                    <td className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave">
-                      {item.pilar}
-                    </td>
-                    <td
-                      className="truncate px-4 py-2.5 whitespace-nowrap text-texto-suave"
-                      title={item.tutoria}
-                    >
-                      {item.tutoria}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ObjetivosPorAno objetivos={plano} />
         )}
       </Secao>
 
       <Secao titulo="Briefings">
-        {brief.length === 0 ? (
-          <Vazio>Nenhum briefing para você nesta mentorada.</Vazio>
-        ) : (
-          <ul className="space-y-2">
-            {brief.map((item) => (
-              <CardNotion
-                key={item.id}
-                pageId={item.id}
-                mentoradaId={mentorada.id}
-                titulo={item.titulo}
-                meta={<span className="shrink-0 text-xs text-texto-suave">{item.data}</span>}
-              />
-            ))}
-          </ul>
-        )}
+        <TabelaNotion
+          mentoradaId={mentorada.id}
+          vazio="Nenhum briefing para esta mentorada."
+          colunas={[
+            { nome: 'Data', largura: 'w-28' },
+            { nome: 'Briefing' },
+            { nome: 'Para a tutora', largura: 'w-52' },
+          ]}
+          linhas={brief.map((b) => ({
+            id: b.id,
+            titulo: b.titulo,
+            celulas: [b.data, b.titulo, b.tutora],
+          }))}
+        />
       </Secao>
 
       <Secao
@@ -181,36 +127,24 @@ export default async function MentoradaPage({
           )
         }
       >
-        {hands.length === 0 ? (
-          <Vazio>Nenhuma sessão registrada ainda.</Vazio>
-        ) : (
-          <ul className="space-y-2">
-            {hands.map((item) => (
-              <CardNotion
-                key={item.id}
-                pageId={item.id}
-                mentoradaId={mentorada.id}
-                titulo={item.titulo}
-                meta={
-                  <span className="shrink-0 text-xs text-texto-suave">
-                    {[item.tutora, item.dataSessao].filter(Boolean).join(' · ')}
-                  </span>
-                }
-                rodape={
-                  item.minha ? (
-                    <Link
-                      href={`/painel/${mentorada.id}/hands-off/${item.id}/editar`}
-                      className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs font-medium transition hover:border-marca hover:text-marca"
-                    >
-                      <Pencil aria-hidden size={13} />
-                      Editar
-                    </Link>
-                  ) : null
-                }
-              />
-            ))}
-          </ul>
-        )}
+        <TabelaNotion
+          mentoradaId={mentorada.id}
+          vazio="Nenhuma sessão registrada ainda."
+          colunas={[
+            { nome: 'Nome' },
+            { nome: 'Feito pela tutora', largura: 'w-52' },
+            { nome: 'Data da sessão', largura: 'w-36' },
+          ]}
+          linhas={hands.map((h) => ({
+            id: h.id,
+            titulo: h.titulo,
+            celulas: [h.titulo, h.tutora, h.dataSessao],
+            editarHref:
+              h.minha && !sessao.verComo
+                ? `/painel/${mentorada.id}/hands-off/${h.id}/editar`
+                : undefined,
+          }))}
+        />
       </Secao>
     </div>
   );

@@ -46,6 +46,8 @@ export type ItemBriefing = {
   id: string;
   titulo: string;
   data: string;
+  /** Para qual tutora o briefing foi escrito. */
+  tutora: string;
 };
 
 export type ItemHandsoff = {
@@ -218,10 +220,16 @@ export async function briefings(
     sorts: [{ property: BRIEFINGS.data, direction: 'descending' }],
   });
 
+  const nomes = await nomesDasTutoras();
+
   return linhas.map((p) => ({
     id: p.id,
     titulo: texto(p, BRIEFINGS.titulo) || titulo(p) || 'Briefing',
     data: formatarData(data(p, BRIEFINGS.data)),
+    tutora:
+      relationIds(p, BRIEFINGS.paraATutora)
+        .map((id) => nomes.get(id))
+        .find(Boolean) ?? '',
   }));
 }
 
