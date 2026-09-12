@@ -10,7 +10,7 @@ export default async function PainelLayout({ children }: { children: React.React
 
   // `carteiraDaTutora` é cacheada por requisição, então o menu e a página que
   // ele envolve dividem a mesma ida ao Notion.
-  const mentoradas = await carteiraDaTutora(sessao.tutora.notion_tutora_page_id).catch(() => []);
+  const mentoradas = await carteiraDaTutora().catch(() => []);
 
   return (
     <div className="min-h-dvh">

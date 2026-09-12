@@ -1,18 +1,19 @@
 import 'server-only';
 import { cache } from 'react';
-import { queryDatabase, NotionError, type NotionPage } from './client';
+import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { MENTORADA, STATUS_ATIVA } from './config';
-import { iconeUrl } from './props';
-import { relationIds, texto, titulo } from './props';
+import { MENTORADA, SITUACOES_ENCERRADAS } from './config';
+import { iconeUrl, texto, titulo } from './props';
 
 /**
- * Quem a tutora pode ver.
+ * Quem a tutora vê.
  *
- * As bases do Notion são compartilhadas por todas as tutoras — o recorte de
- * cada uma existe só como relation. Então NÃO EXISTE consulta "da tutora":
- * existe consulta filtrada. Este módulo é a única fonte dessa lista, e toda
- * página que mostra dados de uma mentorada passa por `exigirMentorada`.
+ * A lista sai de "Área clientes" — a mesma página de onde pendura todo o
+ * conteúdo. Por isso `areaDaClienteIds` é a própria linha: não há desvio.
+ *
+ * ⚠️ Hoje toda tutora enxerga todas as mentoradas. Não é descuido: não existe no
+ * Notion um vínculo tutora↔mentorada que dê para filtrar. Quando existir, é aqui
+ * que entra o filtro.
  */
 
 export type Mentorada = {
@@ -20,94 +21,32 @@ export type Mentorada = {
   nome: string;
   mentoria: string;
   status: string;
+  /** A própria linha. Mantido em lista para o resto do código não mudar. */
   areaDaClienteIds: string[];
-  /** Ícone da página dela em "Área clientes". URL assinada, expira. */
+  /** Ícone da página dela. URL assinada, expira — só serve ao vivo. */
   foto: string | null;
 };
 
-/**
- * Foto de cada cliente, numa consulta só.
- *
- * A foto é o ícone da página em "Área clientes". Buscar página por página
- * custaria 44 requisições para desenhar uma lista; a base inteira sai em uma.
- */
-const fotosDasClientes = cache(async (): Promise<Map<string, string>> => {
-  const dbId = await resolverDatabaseId('areaClientes');
-  const linhas = await queryDatabase(dbId, { limite: 300 }).catch(() => []);
-
-  const mapa = new Map<string, string>();
-  for (const p of linhas) {
-    const url = iconeUrl(p);
-    if (url) mapa.set(p.id, url);
-  }
-  return mapa;
-});
-
-function paraMentorada(page: NotionPage, fotos: Map<string, string>): Mentorada {
-  const areaDaClienteIds = relationIds(page, MENTORADA.areaDaCliente);
-
+function paraMentorada(page: NotionPage): Mentorada {
   return {
     id: page.id,
     nome: texto(page, MENTORADA.nome) || titulo(page),
-    mentoria: MENTORADA.mentoria.map((n) => texto(page, n)).find(Boolean) ?? '',
+    mentoria: texto(page, MENTORADA.mentoria),
     status: texto(page, MENTORADA.status),
-    areaDaClienteIds,
-    foto: areaDaClienteIds.map((id) => fotos.get(id)).find(Boolean) ?? null,
+    areaDaClienteIds: [page.id],
+    foto: iconeUrl(page),
   };
 }
 
-/**
- * As mentoradas que a tutora vê.
- *
- * Caminho certo: a base "Área das tutoras" tem uma relation para a tutora, e a
- * lista é um filtro só. Essa relation AINDA NÃO EXISTE no Notion — enquanto
- * não existir, o Notion responde `validation_error` e caímos na lista completa
- * de mentoradas ativas.
- *
- * ⚠️ Isso quer dizer que HOJE toda tutora enxerga todas as 44 ativas. Não é um
- * descuido: é a única coisa possível sem o vínculo, e foi decidido assim para
- * a área já servir. Criar a relation `Tutora` fecha isso sozinho — o código já
- * tenta por ela primeiro, e o dia em que existir cada tutora passa a ver só as
- * suas, sem precisar mexer aqui.
- */
-export const carteiraDaTutora = cache(async (tutoraPageId: string): Promise<Mentorada[]> => {
-  const [areaId, fotos] = await Promise.all([
-    resolverDatabaseId('areaDasTutoras'),
-    fotosDasClientes(),
-  ]);
+export const carteiraDaTutora = cache(async (): Promise<Mentorada[]> => {
+  const dbId = await resolverDatabaseId('areaClientes');
+  const paginas = await queryDatabase(dbId, { limite: 300 });
 
-  const ativas = { property: MENTORADA.status, status: { equals: STATUS_ATIVA } };
-
-  try {
-    const paginas = await queryDatabase(areaId, {
-      filter: {
-        and: [{ property: MENTORADA.tutora, relation: { contains: tutoraPageId } }, ativas],
-      },
-    });
-    return paginas.map((p) => paraMentorada(p, fotos)).sort(porNome);
-  } catch (erro) {
-    const semRelation =
-      erro instanceof NotionError &&
-      (erro.code === 'validation_error' || erro.status === 400);
-    if (!semRelation) throw erro;
-  }
-
-  const todas = await queryDatabase(areaId, { filter: ativas });
-  return todas.map((p) => paraMentorada(p, fotos)).sort(porNome);
+  return paginas
+    .map(paraMentorada)
+    .filter((m) => !SITUACOES_ENCERRADAS.includes(m.status as (typeof SITUACOES_ENCERRADAS)[number]))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 });
-
-/*
- * Já escondemos daqui as mentoradas sem mentoria, e foi um erro: a mentoria é
- * calculada a partir da relation `Área da cliente`, e essa relation volta vazia
- * quando a página do outro lado não é visível para a integração — mesmo estando
- * preenchida no Notion. Aconteceu com duas mentoradas ativas e corretas.
- *
- * Esconder linha com base em valor que pode sumir por permissão apaga gente de
- * verdade. Se um dia for preciso ocultar alguém, que seja por um campo que a
- * Fernanda controla (o Status, por exemplo), nunca por um derivado.
- */
-
-const porNome = (a: Mentorada, b: Mentorada) => a.nome.localeCompare(b.nome, 'pt-BR');
 
 /** IDs do Notion circulam com e sem hífen; a comparação precisa dos dois. */
 export function normalizarId(id: string): string {

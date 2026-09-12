@@ -5,6 +5,12 @@ const CORES: Record<string, string> = {
   concluida: 'bg-ok-suave text-ok',
   cancelado: 'bg-parado-suave text-parado',
   ativa: 'bg-ok-suave text-ok',
+  // Situação da cliente, de "Área clientes".
+  fluindo: 'bg-ok-suave text-ok',
+  'a iniciar ': 'bg-superficie-2 text-texto-suave',
+  atenção: 'bg-andamento-suave text-andamento',
+  'em crise': 'bg-parado-suave text-parado',
+  finalizado: 'bg-superficie-2 text-texto-suave',
 };
 
 export function Etiqueta({ texto }: { texto: string }) {

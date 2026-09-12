@@ -8,11 +8,8 @@ import { carteiraDaTutora, normalizarId, type Mentorada } from './carteira';
  * Um ID que não está na carteira vira 404 — a mesma resposta de um ID que não
  * existe, para não confirmar a existência da mentorada de outra tutora.
  */
-export async function exigirMentorada(
-  tutoraPageId: string,
-  mentoradaId: string,
-): Promise<Mentorada> {
-  const carteira = await carteiraDaTutora(tutoraPageId);
+export async function exigirMentorada(mentoradaId: string): Promise<Mentorada> {
+  const carteira = await carteiraDaTutora();
   const mentorada = carteira.find((m) => m.id === normalizarId(mentoradaId));
   if (!mentorada) notFound();
   return mentorada;

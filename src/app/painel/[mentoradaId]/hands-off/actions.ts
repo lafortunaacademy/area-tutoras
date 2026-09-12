@@ -36,7 +36,7 @@ export async function salvarHandsoff(
 
   // A autorização é refeita no servidor: o ID veio de um campo do formulário,
   // ou seja, do browser, e não vale nada por si só.
-  const mentorada = await exigirMentorada(tutoraId, mentoradaId);
+  const mentorada = await exigirMentorada(mentoradaId);
 
   const dataSessao = String(form.get('dataSessao') ?? '').trim();
   if (!dataSessao) return { erro: 'Informe a data da sessão.' };

@@ -40,43 +40,30 @@ export const DATABASES = {
 export type SectionKey = keyof typeof DATABASES;
 
 /**
- * Propriedades da base "Área das tutoras" (uma linha por mentorada).
+ * Propriedades da base **"Área clientes"** — a lista de mentoradas.
  *
- * ⚠️ Esta base é só a LISTA de mentoradas. Desde 2026-09-11 todo o conteúdo —
- * briefings, hands-off, objetivos, mapa — se pendura na página da cliente em
- * "Área clientes", não nesta linha. Ou seja: para listar, use o ID daqui; para
- * filtrar conteúdo, use `areaDaClienteIds`.
+ * Até 2026-09-12 a lista vinha de "Área das tutoras", mas a reorganização moveu
+ * tudo para a área individual da cliente e o Notion migrou aquela base para o
+ * modelo novo de data sources, cortando o acesso. "Área clientes" é a fonte
+ * certa agora: é a mesma página de onde já pendura briefings, objetivos, mapa e
+ * hands-off, e traz nome, mentoria, situação e foto numa consulta só.
+ *
+ * Consequência boa: `areaDaClienteIds` deixa de ser um desvio — a linha da lista
+ * JÁ É a página da cliente.
  */
 export const MENTORADA = {
   nome: 'Cliente',
-  status: 'Status',
-  /**
-   * A mentoria aparece duas vezes na base: um rollup `"Mentoria "` (com espaço
-   * no fim) e uma fórmula `"Mentoria"`. As duas derivam de `Área da cliente`,
-   * então hoje voltam vazias — quando essa base for compartilhada, uma das duas
-   * passa a responder. Lemos as duas, na ordem, e ficamos com a primeira que
-   * tiver valor.
-   */
-  mentoria: ['Mentoria ', 'Mentoria'],
-  /**
-   * Aponta para a página da mentorada na base **"Área clientes"** — que é uma
-   * base diferente desta. É por ali que passam o mapa da cliente, o rótulo da
-   * mentoria e o vínculo dos objetivos; nenhum deles usa o ID desta linha.
-   */
-  areaDaCliente: 'Área da cliente',
-  /**
-   * ⚠️ ESTA PROPRIEDADE AINDA NÃO EXISTE NO NOTION.
-   *
-   * É a relation "Área das tutoras → Tutoras" que ligaria cada mentorada à sua
-   * tutora. Sem ela a carteira só pode ser derivada de quem já tem hands-off ou
-   * briefing registrado — o que hoje cobre 4 das 15 tutoras. As outras 11
-   * entram no app e veem uma lista vazia.
-   *
-   * No minuto em que ela existir, o caminho direto passa a funcionar sozinho:
-   * o código já tenta por ele primeiro.
-   */
-  tutora: 'Tutora',
+  status: 'Situação',
+  mentoria: 'Mentoria',
 } as const;
+
+/**
+ * Situações que tiram a mentorada da lista.
+ *
+ * É lista de exclusão, não de inclusão: situação nova criada no Notion aparece
+ * por padrão, em vez de sumir sem ninguém entender por quê.
+ */
+export const SITUACOES_ENCERRADAS = ['Finalizado'] as const;
 
 /**
  * Ordem dos objetivos na tela: o que está em andamento primeiro, o que ainda
@@ -92,9 +79,6 @@ export const ORDEM_STATUS_OBJETIVO = [
   'Concluida',
   'Cancelado',
 ] as const;
-
-/** Valor de `Status` que conta como mentorada ativa. */
-export const STATUS_ATIVA = 'Ativa';
 
 /**
  * Propriedades da base "Planejamento estratégico: objetivos" (404 linhas).

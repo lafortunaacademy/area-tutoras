@@ -11,7 +11,7 @@ export default async function PainelPage() {
 
   let mentoradas;
   try {
-    mentoradas = await carteiraDaTutora(sessao.tutora.notion_tutora_page_id);
+    mentoradas = await carteiraDaTutora();
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }

@@ -78,7 +78,7 @@ export async function sessoesDaTutora(
 ): Promise<Sessao[]> {
   const [tutorias, mentoradas] = await Promise.all([
     tutoriasDaTutora(email),
-    carteiraDaTutora(tutoraPageId),
+    carteiraDaTutora(),
   ]);
 
   // A relation `Mentorada` do controle aponta para a página da cliente em "Área

@@ -13,7 +13,7 @@ export default async function NovoHandsoffPage({
 }) {
   const sessao = await exigirSessao();
   const { mentoradaId } = await params;
-  const mentorada = await exigirMentorada(sessao.tutora.notion_tutora_page_id, mentoradaId);
+  const mentorada = await exigirMentorada(mentoradaId);
 
   return (
     <div className="max-w-2xl">

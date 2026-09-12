@@ -21,7 +21,7 @@ export default async function MentoradaPage({
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
   // 404 se a mentorada não estiver na carteira desta tutora.
-  const mentorada = await exigirMentorada(tutoraId, mentoradaId);
+  const mentorada = await exigirMentorada(mentoradaId);
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.

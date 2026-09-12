@@ -22,7 +22,7 @@ export default async function EditarHandsoffPage({
   const { mentoradaId, handsoffId } = await params;
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
-  const mentorada = await exigirMentorada(tutoraId, mentoradaId);
+  const mentorada = await exigirMentorada(mentoradaId);
   const alvo = normalizarId(handsoffId);
 
   if (!(await paginaPertenceA(mentorada, alvo))) notFound();

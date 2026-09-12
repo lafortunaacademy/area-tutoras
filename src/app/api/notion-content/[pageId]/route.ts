@@ -36,9 +36,7 @@ export async function GET(
   const alvo = normalizarId(pageId);
 
   try {
-    const mentorada = await exigirMentorada(
-      sessao.tutora.notion_tutora_page_id,
-      mentoradaId,
+    const mentorada = await exigirMentorada(mentoradaId,
     );
 
     if (!(await paginaPertenceA(mentorada, alvo))) {

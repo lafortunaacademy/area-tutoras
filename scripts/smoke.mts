@@ -18,8 +18,6 @@ const { mapaDaCliente, planejamento, briefings, handsoffs, paginaPertenceA } = a
   '../src/lib/notion/mentorada.js'
 );
 const { lerBlocos } = await import('../src/lib/notion/blocks.js');
-const { queryDatabase } = await import('../src/lib/notion/client.js');
-const { relationIds } = await import('../src/lib/notion/props.js');
 
 const TUTORAS = {
   'Rafaela Trajano': '3bb64a56-eca0-8061-98cf-e85c0fe1f987',
@@ -34,21 +32,18 @@ const ok = (cond: boolean, msg: string) => {
 };
 
 console.log('— carteira —');
-const carteiras = new Map<string, Awaited<ReturnType<typeof carteiraDaTutora>>>();
-for (const [nome, id] of Object.entries(TUTORAS)) {
-  const c = await carteiraDaTutora(id);
-  carteiras.set(nome, c);
-  console.log(`  ${nome}: ${c.length} mentorada(s) — ${c.map((m) => m.nome).join(', ') || '(vazia)'}`);
-}
+const carteira = await carteiraDaTutora();
+console.log(`  ${carteira.length} mentorada(s) ativas`);
+ok(carteira.length > 0, 'a lista de mentoradas não veio vazia');
+ok(
+  carteira.every((m) => m.areaDaClienteIds.length > 0),
+  'toda mentorada tem área individual (ela mesma)',
+);
+ok(carteira.filter((m) => m.foto).length > carteira.length * 0.8, 'quase todas têm foto');
 
-const [nomeTutora, carteira] = [...carteiras.entries()].find(([, c]) => c.length > 0) ?? [];
-if (!carteira?.length || !nomeTutora) {
-  console.log('\nNenhuma tutora com carteira: nada mais a exercitar.');
-  process.exit(1);
-}
-
+const nomeTutora = 'Luíza Sales';
 const tutoraId = TUTORAS[nomeTutora as keyof typeof TUTORAS];
-const mentorada = carteira[0];
+const mentorada = carteira.find((m) => m.mentoria) ?? carteira[0];
 console.log(`\n— ${nomeTutora} / ${mentorada.nome} —`);
 
 ok(Boolean(mentorada.nome), 'mentorada tem nome (title lido)');
@@ -56,7 +51,7 @@ ok(
   typeof mentorada.mentoria === 'string',
   `mentoria: ${mentorada.mentoria ? `"${mentorada.mentoria}"` : '(vazia — depende da base não compartilhada)'}`,
 );
-ok(mentorada.status === 'Ativa', `status lido do tipo status: "${mentorada.status}"`);
+ok(Boolean(mentorada.status), `situação lida: "${mentorada.status}"`);
 ok(normalizarId(mentorada.id.replace(/-/g, '')) === mentorada.id, 'normalizarId ida e volta');
 
 const mapa = await mapaDaCliente(mentorada);
@@ -97,43 +92,30 @@ ok(
 );
 
 console.log('\n— isolamento —');
-const AREA = process.env.NOTION_DB_AREADASTUTORAS!;
-const todas = await queryDatabase(AREA, { limite: 100 });
-const deFora = todas.find((p) => !carteira.some((m) => m.id === p.id));
-ok(Boolean(deFora), 'existe mentorada fora da carteira para testar');
+const deFora = carteira.find((m) => m.id !== mentorada.id);
+ok(Boolean(deFora), 'existe outra mentorada para testar');
 if (deFora) {
   const primeiro = [...brief, ...hands][0];
   if (primeiro) {
-    const foraCompleta0 = { ...mentorada, id: deFora.id };
     ok(
-      !(await paginaPertenceA(foraCompleta0, primeiro.id)),
-      'página desta mentorada NÃO passa na checagem de outra mentorada',
+      !(await paginaPertenceA(deFora, primeiro.id)),
+      'página desta mentorada NÃO passa na checagem de outra',
     );
   }
-  // Hands-off é visível a todas as tutoras da mentorada, então o que isola aqui
-  // é a mentorada — não a tutora.
-  const handsDeFora = await handsoffs(
-    { ...mentorada, id: deFora.id, areaDaClienteIds: relationIds(deFora, 'Área da cliente') },
-    tutoraId,
-  );
+
+  const handsDeFora = await handsoffs(deFora, tutoraId);
   const meusIds = new Set(hands.map((h) => h.id));
   ok(
     handsDeFora.every((h) => !meusIds.has(h.id)),
     'hands-off de outra mentorada não se mistura com os desta',
   );
 
-  // O planejamento é o filtro mais fácil de errar: a chave é a Área da cliente,
-  // não o ID da mentorada. Se alguém trocar por engano, o filtro não dá erro —
-  // devolve os objetivos de outra pessoa. Esta checagem pega isso.
-  const foraCompleta = { ...mentorada, id: deFora.id, areaDaClienteIds: relationIds(deFora, 'Área da cliente') };
-  if (foraCompleta.areaDaClienteIds.length > 0) {
-    const planoDeFora = await planejamento(foraCompleta);
-    const meus = new Set((plano ?? []).map((o) => o.id));
-    ok(
-      (planoDeFora ?? []).every((o) => !meus.has(o.id)),
-      'objetivos de outra mentorada não se misturam com os desta',
-    );
-  }
+  const planoDeFora = await planejamento(deFora);
+  const meusObj = new Set((plano ?? []).map((o) => o.id));
+  ok(
+    (planoDeFora ?? []).every((o) => !meusObj.has(o.id)),
+    'objetivos de outra mentorada não se misturam com os desta',
+  );
 }
 
 console.log('\n— tutorias (controle) —');

@@ -1,6 +1,19 @@
 import 'server-only';
 
 const NOTION_VERSION = '2022-06-28';
+
+/**
+ * O Notion está migrando as bases para o modelo de "data sources": uma database
+ * passa a ser um contêiner de uma ou mais fontes, e a consulta muda de endpoint.
+ * A migração acontece base a base, sem aviso — a de "Área das tutoras" virou de
+ * um dia para o outro e derrubou o app.
+ *
+ * Em vez de migrar tudo de uma vez (a versão nova muda outras respostas), o
+ * cliente tenta o caminho antigo e, quando ele responde 404, descobre a fonte e
+ * repete pelo endpoint novo. Funciona nos dois mundos enquanto a migração corre.
+ */
+const NOTION_VERSION_FONTES = '2025-09-03';
+
 const BASE = 'https://api.notion.com/v1';
 
 export class NotionError extends Error {
@@ -29,9 +42,9 @@ function token(): string {
  */
 async function call<T>(
   path: string,
-  init: { method?: string; body?: unknown } = {},
+  init: { method?: string; body?: unknown; versao?: string } = {},
 ): Promise<T> {
-  const { method = 'GET', body } = init;
+  const { method = 'GET', body, versao = NOTION_VERSION } = init;
 
   // 429 e 5xx são transitórios; tenta de novo com backoff antes de desistir.
   let ultimoErro: NotionError | undefined;
@@ -40,7 +53,7 @@ async function call<T>(
       method,
       headers: {
         Authorization: `Bearer ${token()}`,
-        'Notion-Version': NOTION_VERSION,
+        'Notion-Version': versao,
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -92,6 +105,24 @@ export type NotionBlock = {
 type Lista<T> = { results: T[]; next_cursor: string | null; has_more: boolean };
 
 /** Consulta uma database, paginando até o fim (ou até `limite` registros). */
+/** id da database -> id da fonte, para não redescobrir a cada consulta. */
+const fontes = new Map<string, string>();
+
+async function fonteDe(databaseId: string): Promise<string | null> {
+  const conhecida = fontes.get(databaseId);
+  if (conhecida) return conhecida;
+
+  const db = await call<{ data_sources?: { id: string }[] }>(`/databases/${databaseId}`, {
+    versao: NOTION_VERSION_FONTES,
+  }).catch(() => null);
+
+  const id = db?.data_sources?.[0]?.id;
+  if (!id) return null;
+
+  fontes.set(databaseId, id);
+  return id;
+}
+
 export async function queryDatabase(
   databaseId: string,
   opts: {
@@ -110,15 +141,33 @@ export async function queryDatabase(
     if (sorts) body.sorts = sorts;
     if (cursor) body.start_cursor = cursor;
 
-    const res: Lista<NotionPage> = await call(`/databases/${databaseId}/query`, {
-      method: 'POST',
-      body,
-    });
+    const res: Lista<NotionPage> = await consultar(databaseId, body);
     paginas.push(...res.results);
     cursor = res.has_more ? res.next_cursor : null;
   } while (cursor && paginas.length < limite);
 
   return paginas;
+}
+
+/** Consulta pelo caminho antigo; se a base já migrou, repete pelo novo. */
+async function consultar(databaseId: string, body: Record<string, unknown>) {
+  try {
+    return await call<Lista<NotionPage>>(`/databases/${databaseId}/query`, {
+      method: 'POST',
+      body,
+    });
+  } catch (erro) {
+    if (!(erro instanceof NotionError) || erro.status !== 404) throw erro;
+
+    const fonte = await fonteDe(databaseId);
+    if (!fonte) throw erro;
+
+    return call<Lista<NotionPage>>(`/data_sources/${fonte}/query`, {
+      method: 'POST',
+      body,
+      versao: NOTION_VERSION_FONTES,
+    });
+  }
 }
 
 export async function getPage(pageId: string): Promise<NotionPage> {
