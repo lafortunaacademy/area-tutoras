@@ -171,6 +171,8 @@ export const VALOR_POR_SESSAO: ReadonlyArray<{ contem: string; valor: number }> 
 export const TUTORIA = {
   sessao: 'Sessão',
   tutora: 'Tutora',
+  /** Relation para a base Tutoras — é por ela que o progresso da mentoria agrupa. */
+  tutoras: 'Tutoras',
   mentorada: 'Mentorada',
   status: 'Status',
   dataRealizada: 'Data realizada',

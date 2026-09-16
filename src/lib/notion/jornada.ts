@@ -2,7 +2,8 @@ import 'server-only';
 import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA, cicloAtual } from './config';
-import { data, texto } from './props';
+import { data, relationIds, texto } from './props';
+import { nomesDasTutoras } from './tutora';
 import type { Mentorada } from './carteira';
 
 /**
@@ -56,6 +57,8 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
     limite: 500,
   });
 
+  const nomes = await nomesDasTutoras();
+
   const realizadas: NotionPage[] = [];
   const futuras: NotionPage[] = [];
   for (const p of linhas) {
@@ -74,23 +77,26 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
     ciclo,
     realizadas: realizadas.length,
     aRealizar: futuras.length,
-    porTutora: { realizadas: contarPorTutora(realizadas), aRealizar: contarPorTutora(futuras) },
+    porTutora: {
+      realizadas: contarPorTutora(realizadas, nomes),
+      aRealizar: contarPorTutora(futuras, nomes),
+    },
     proxima: proxima ? { sessao: proxima.sessao, data: diaMesAno(proxima.data) } : null,
   };
 }
 
 /**
- * `Tutora` é campo de pessoa. Sessão com duas tutoras conta para as duas — é o
- * que o gráfico do Notion faz ao agrupar por pessoa.
+ * Agrupa pela relation `Tutoras` (a base de tutoras), não pelo campo de pessoa
+ * `Tutora`: é assim que os gráficos do Notion agrupam, e o nome sai como está
+ * cadastrado lá ("Bela Mestriner", não o nome da conta). Sessão com duas
+ * tutoras conta para as duas.
  */
-function contarPorTutora(paginas: NotionPage[]): TutoriasPorTutora {
+function contarPorTutora(paginas: NotionPage[], nomesPorId: Map<string, string>): TutoriasPorTutora {
   const contagem = new Map<string, number>();
   for (const p of paginas) {
-    const prop = p.properties?.[TUTORIA.tutora];
-    const nomes =
-      prop?.type === 'people'
-        ? ((prop.people as { name?: string }[]) ?? []).map((u) => u.name?.trim()).filter((n): n is string => Boolean(n))
-        : [];
+    const nomes = relationIds(p, TUTORIA.tutoras)
+      .map((id) => nomesPorId.get(id)?.trim())
+      .filter((n): n is string => Boolean(n));
     for (const nome of nomes.length > 0 ? nomes : [SEM_TUTORA]) {
       contagem.set(nome, (contagem.get(nome) ?? 0) + 1);
     }
