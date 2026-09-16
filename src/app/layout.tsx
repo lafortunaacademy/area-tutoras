@@ -12,8 +12,8 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: 'Área das tutoras | La Fortuna Academy',
-  description: 'Acompanhamento das mentoradas.',
+  title: 'La Fortuna Academy',
+  description: 'Área das tutoras e área das mentoradas.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

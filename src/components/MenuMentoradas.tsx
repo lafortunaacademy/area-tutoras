@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, Home, Search, Users } from 'lucide-react';
+import { iniciais } from '@/lib/iniciais';
 
 export type ItemMenu = { id: string; nome: string; foto: string | null };
 
@@ -13,14 +14,26 @@ export type ItemMenu = { id: string; nome: string; foto: string | null };
  * São 44 nomes: sem um filtro, achar alguém vira rolagem e paciência. O filtro
  * é local — a lista inteira já veio do servidor, então não há ida e volta a
  * cada tecla.
+ *
+ * Serve às duas áreas: `base` é onde moram as páginas de mentorada ("/painel"
+ * nas tutoras, "/mentoradas" na área de membros) e `inicio` é o primeiro item.
  */
-export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
+export function MenuMentoradas({
+  mentoradas,
+  base,
+  inicio,
+}: {
+  mentoradas: ItemMenu[];
+  base: string;
+  inicio: { href: string; rotulo: string };
+}) {
   const [busca, setBusca] = useState('');
   const caminho = usePathname();
 
-  // Numa página de mentorada a lista começa aberta; no Início, fechada — a
-  // pessoa está ali para ver o resumo dela, não para escolher alguém.
-  const naMentorada = /^\/painel\/[^/]+$/.test(caminho) && caminho !== '/painel/inicio';
+  const noInicio = caminho === inicio.href;
+  // Numa página de mentorada a lista começa aberta; no início, fechada — a
+  // pessoa está ali para ver o resumo, não para escolher alguém.
+  const naMentorada = !noInicio && caminho.startsWith(`${base}/`);
   const [aberto, setAberto] = useState(naMentorada);
 
   const visiveis = useMemo(() => {
@@ -29,12 +42,10 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
     return mentoradas.filter((m) => m.nome.toLowerCase().includes(termo));
   }, [busca, mentoradas]);
 
-  const noInicio = caminho === '/painel/inicio';
-
   return (
     <nav aria-label="Navegação" className="flex h-full flex-col">
       <Link
-        href="/painel/inicio"
+        href={inicio.href}
         aria-current={noInicio ? 'page' : undefined}
         className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
           noInicio
@@ -43,7 +54,7 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
         }`}
       >
         <Home aria-hidden size={15} className="shrink-0" />
-        Início
+        {inicio.rotulo}
       </Link>
 
       <button
@@ -85,11 +96,11 @@ export function MenuMentoradas({ mentoradas }: { mentoradas: ItemMenu[] }) {
 
           <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
             {visiveis.map((m) => {
-              const atual = caminho.startsWith(`/painel/${m.id}`);
+              const atual = caminho.startsWith(`${base}/${m.id}`);
               return (
                 <li key={m.id}>
                   <Link
-                    href={`/painel/${m.id}`}
+                    href={`${base}/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
                     className={`flex items-center gap-2.5 rounded-lg py-1.5 pr-3 pl-2 text-[12.5px] leading-snug transition ${
                       atual
@@ -123,19 +134,12 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
     );
   }
 
-  const iniciais = nome
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('');
-
   return (
     <span
       aria-hidden
       className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[8px] font-medium text-marca"
     >
-      {iniciais}
+      {iniciais(nome)}
     </span>
   );
 }

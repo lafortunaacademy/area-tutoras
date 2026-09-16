@@ -180,6 +180,9 @@ export const TUTORIA = {
 /** Só estas contam como tutoria dada. */
 export const TUTORIA_REALIZADA = 'Realizada';
 
+/** Sessões que ainda vão acontecer. "Não Realizado" não entra em nenhum dos lados. */
+export const TUTORIA_A_REALIZAR: readonly string[] = ['A realizar', 'Agendar', 'Agendado'];
+
 /** Propriedades da base "Tutoras" — o perfil de quem está logada. */
 export const TUTORA = {
   nome: 'Tutora',
@@ -363,3 +366,69 @@ export const HANDSOFF_SECOES = [
 ] as const;
 
 export type HandsoffSecaoKey = (typeof HANDSOFF_SECOES)[number]['key'];
+
+/**
+ * Modelo novo da área de membros (entra em uso em janeiro de 2027).
+ *
+ * Cada mentorada tem a própria cópia das bases, penduradas na página dela em
+ * "Área clientes". O caminho até elas é sempre o mesmo, e é por esses nomes que
+ * o app desce a árvore: callout "Área de membros" → página "La Fortuna Academy
+ * & …" → callout "Área da mentorada" → base de cartões → "Gestão de resultados"
+ * → um callout por seção, cada um com a base dentro.
+ *
+ * Renomear qualquer um desses títulos no modelo quebra a descoberta — trocar
+ * aqui junto.
+ */
+export const AREA_DE_MEMBROS = {
+  callout: 'Área de membros',
+  paginaComecaCom: 'La Fortuna Academy',
+  calloutCartoes: 'Área da mentorada',
+  cartaoGestao: 'Gestão de resultados',
+} as const;
+
+export type SecaoGestao = 'marcos' | 'ano' | 'meses' | 'trimestres';
+
+/** Título do callout que guarda cada base, dentro da página Gestão de resultados. */
+export const GESTAO_CALLOUTS: Record<SecaoGestao, string> = {
+  marcos: 'Linha do tempo',
+  ano: 'Por ano',
+  meses: 'Visão mensal financeira',
+  trimestres: 'Visão financeira trimestral',
+};
+
+export const GESTAO_MESES = {
+  mes: 'Mês',
+  categoria: 'Categoria',
+  faturamento: 'Faturamento',
+  resgate: 'Resgate',
+  despesas: 'Despesas',
+  investimento: 'Investimento',
+  lucroSemInvestimento: 'Lucro s/ investimento',
+  lucroComInvestimento: 'Lucro c/ investimento',
+  caixa: 'Caixa do Mês',
+  /** Fórmula = lucro c/ investimento ÷ faturamento — uma fração, não um número de 0 a 100. */
+  percentualLucro: '% Lucro',
+} as const;
+
+export const GESTAO_TRIMESTRES = {
+  trimestre: 'Trimestre',
+  faturamento: 'Faturamento',
+  despesas: 'Despesas',
+  lucro: 'Lucro (R$)',
+  /** Fração, como o % Lucro dos meses. */
+  percentualLucro: 'Lucro',
+} as const;
+
+export const GESTAO_ANO = {
+  ano: 'item',
+  faturamento: 'Faturamento',
+  despesas: 'Despesas',
+  investimentos: 'Investimentos',
+  lucro: 'Lucro (R$)',
+  percentualLucro: 'Lucro',
+} as const;
+
+export const GESTAO_MARCOS = {
+  titulo: 'Marco/conquista',
+  data: 'Mes',
+} as const;
