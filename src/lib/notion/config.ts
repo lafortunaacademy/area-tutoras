@@ -190,6 +190,9 @@ export function cicloAtual(hoje = new Date()): string {
 /** Só estas contam como tutoria dada. */
 export const TUTORIA_REALIZADA = 'Realizada';
 
+/** Rótulo das sessões sem nenhuma tutora na relation `Tutoras`. */
+export const SEM_TUTORA = 'Sem tutora';
+
 /** Sessões que ainda vão acontecer. "Não Realizado" não entra em nenhum dos lados. */
 export const TUTORIA_A_REALIZAR: readonly string[] = ['A realizar', 'Agendar', 'Agendado'];
 

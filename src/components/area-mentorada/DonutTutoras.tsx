@@ -1,17 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { CorDaFatia, Fatia } from './fatias';
-
-const COR: Record<CorDaFatia, string> = {
-  1: 'var(--serie-1)',
-  2: 'var(--serie-2)',
-  3: 'var(--serie-3)',
-  4: 'var(--serie-4)',
-  5: 'var(--serie-5)',
-  6: 'var(--serie-6)',
-  extra: 'var(--serie-extra)',
-};
+import type { Fatia } from './fatias';
 
 const RAIO = 52;
 const VOLTA = 2 * Math.PI * RAIO;
@@ -40,12 +30,14 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
   const folga = fatias.length > 1 ? FOLGA : 0;
 
   return (
-    <figure className="flex flex-col items-center gap-3">
+    <figure className="flex flex-col items-center gap-4">
       <figcaption className="inline-flex items-center rounded-full bg-fundo px-3 py-1 text-xs text-texto-suave">
         {rotulo}
       </figcaption>
 
-      <div className="relative size-40" onMouseLeave={() => setAtiva(null)}>
+      {/* Rosca e legenda lado a lado, do mesmo tamanho; em tela estreita a legenda desce. */}
+      <div className="flex w-full flex-col items-center justify-center gap-5 sm:flex-row sm:gap-6">
+      <div className="relative size-40 shrink-0" onMouseLeave={() => setAtiva(null)}>
         <svg viewBox="0 0 128 128" className="size-full -rotate-90" aria-hidden>
           <circle cx="64" cy="64" r={RAIO} fill="none" stroke="var(--superficie-2)" strokeWidth="12" />
           {arcos.map((a) => (
@@ -55,7 +47,7 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
                 cy="64"
                 r={RAIO}
                 fill="none"
-                stroke={COR[a.cor]}
+                stroke={a.cor}
                 strokeWidth="12"
                 strokeDasharray={`${Math.max(a.comprimento - folga, 0.5)} ${VOLTA}`}
                 strokeDashoffset={-a.inicio}
@@ -97,7 +89,9 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
       </div>
 
       {fatias.length > 0 ? (
-        <ul className="flex max-w-xs flex-wrap justify-center gap-x-4 gap-y-1.5">
+        // Uma coluna, com linhas mais juntas quando são muitas: assim a legenda
+        // fica da altura da rosca sem cortar nome de ninguém.
+        <ul className={`flex w-full max-w-xs flex-col sm:w-auto ${fatias.length > 6 ? 'gap-0.5' : 'gap-1.5'}`}>
           {fatias.map((f) => (
             <li
               key={f.tutora}
@@ -106,15 +100,18 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
               onMouseLeave={() => setAtiva(null)}
               onFocus={() => setAtiva(f.tutora)}
               onBlur={() => setAtiva(null)}
-              className="flex cursor-default items-center gap-1.5 rounded text-xs outline-none focus-visible:ring-2 focus-visible:ring-marca/30"
+              className="flex min-w-0 cursor-default items-center gap-1.5 rounded text-[10.5px] leading-tight outline-none focus-visible:ring-2 focus-visible:ring-marca/30"
             >
-              <span aria-hidden className="size-2.5 shrink-0 rounded-sm" style={{ background: COR[f.cor] }} />
-              <span className="text-texto">{f.tutora}</span>
+              <span aria-hidden className="size-2 shrink-0 rounded-sm" style={{ background: f.cor }} />
+              <span className="min-w-0 flex-1 text-texto">
+                {f.tutora}
+              </span>
               <span className="text-texto-suave tabular-nums">{f.total}</span>
             </li>
           ))}
         </ul>
       ) : null}
+      </div>
     </figure>
   );
 }

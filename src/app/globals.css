@@ -44,14 +44,19 @@
      manteiga, azul e pêssego, alternando mais e menos claros para vizinhos não se
      confundirem (validado inclusive para daltônicos). Pastel quase não contrasta
      com o fundo branco — por isso a legenda escrita embaixo é obrigatória.
-     A ordem é fixa: não embaralhar. */
+     A ordem é fixa: não embaralhar. Da décima tutora em diante as cores são geradas
+     (ver fatias.ts). */
   --serie-1: #df9f8f;
   --serie-2: #ace0b6;
   --serie-3: #cf9fc9;
   --serie-4: #e5cf94;
   --serie-5: #82b8df;
   --serie-6: #f9c59c;
-  --serie-extra: #d8cfc0;
+  --serie-7: #abaae3;
+  --serie-8: #90e2e1;
+  --serie-9: #de9caa;
+  /* "Sem tutora": neutro, como no Notion. */
+  --serie-sem: #e6e0d6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -81,7 +86,10 @@
     --serie-4: #e5cf94;
     --serie-5: #82b8df;
     --serie-6: #f9c59c;
-    --serie-extra: #6b5646;
+    --serie-7: #abaae3;
+    --serie-8: #90e2e1;
+    --serie-9: #de9caa;
+    --serie-sem: #5c4c3d;
   }
 }
 

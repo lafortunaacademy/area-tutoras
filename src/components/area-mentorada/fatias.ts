@@ -1,18 +1,34 @@
 import type { TutoriasPorTutora } from '@/lib/notion/jornada';
+import { SEM_TUTORA } from '@/lib/notion/config';
 
-/** Seis tons pastel; da sétima tutora em diante, um tom de apoio — cada uma com o próprio nome. */
-export type CorDaFatia = 1 | 2 | 3 | 4 | 5 | 6 | 'extra';
+/** `cor` já é um valor de CSS pronto para usar no gráfico. */
+export type Fatia = { tutora: string; total: number; cor: string };
 
-export type Fatia = { tutora: string; total: number; cor: CorDaFatia };
+/** Quantas cores fixas existem em globals.css (--serie-1 … --serie-9). */
+const CORES_FIXAS = 9;
 
-const CORES = 6;
+/**
+ * Cor da tutora na posição `i` do ranking.
+ *
+ * As nove primeiras vêm da paleta pastel validada. Daí em diante são geradas:
+ * o matiz anda pelo ângulo de ouro (137,5°), que nunca cai duas vezes no mesmo
+ * lugar, e a claridade alterna entre dois tons pastel — assim não há limite de
+ * tutoras e vizinhas não se confundem.
+ */
+function corDaPosicao(i: number): string {
+  if (i < CORES_FIXAS) return `var(--serie-${i + 1})`;
+  const matiz = Math.round((i * 137.508) % 360);
+  const claridade = i % 2 ? 0.86 : 0.76;
+  return `oklch(${claridade} 0.08 ${matiz})`;
+}
 
 /**
  * Dá uma cor a cada tutora, olhando as duas roscas de uma vez.
  *
  * A cor segue a tutora, não a posição: o tom de uma tutora em "Realizadas" é o
- * mesmo em "A realizar". A ordem das cores vai de quem tem mais sessões (somando as
- * duas) para quem tem menos, sempre na mesma sequência — nunca sorteada.
+ * mesmo em "A realizar". A ordem vai de quem tem mais sessões (somando as duas)
+ * para quem tem menos, sempre igual — nunca sorteada. "Sem tutora" é cinza e
+ * fica por último.
  */
 export function montarFatias(
   realizadas: TutoriasPorTutora,
@@ -24,16 +40,19 @@ export function montarFatias(
   }
 
   const ranking = [...somas.entries()]
+    .filter(([tutora]) => tutora !== SEM_TUTORA)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(([tutora]) => tutora);
-  const cores = new Map<string, CorDaFatia>(
-    ranking.map((t, i) => [t, i < CORES ? ((i + 1) as CorDaFatia) : 'extra']),
+  if (somas.has(SEM_TUTORA)) ranking.push(SEM_TUTORA);
+
+  const cores = new Map(
+    ranking.map((t, i) => [t, t === SEM_TUTORA ? 'var(--serie-sem)' : corDaPosicao(i)]),
   );
   const ordem = (t: string) => ranking.indexOf(t);
 
   const montar = (lista: TutoriasPorTutora): Fatia[] =>
     lista
-      .map(({ tutora, total }) => ({ tutora, total, cor: cores.get(tutora) ?? 'extra' }))
+      .map(({ tutora, total }) => ({ tutora, total, cor: cores.get(tutora) ?? 'var(--serie-sem)' }))
       .sort((a, b) => ordem(a.tutora) - ordem(b.tutora));
 
   return { realizadas: montar(realizadas), aRealizar: montar(aRealizar) };

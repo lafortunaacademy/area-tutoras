@@ -121,7 +121,7 @@ export default async function AreaDaMentoradaPage({
         >
           {progresso ? (
             <>
-              <div className="grid gap-8 py-2 sm:grid-cols-2">
+              <div className="grid gap-10 py-2 lg:grid-cols-2">
                 <DonutTutoras rotulo="Realizadas" fatias={fatias!.realizadas} />
                 <DonutTutoras rotulo="A realizar" fatias={fatias!.aRealizar} />
               </div>
