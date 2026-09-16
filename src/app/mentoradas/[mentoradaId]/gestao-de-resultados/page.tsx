@@ -21,11 +21,14 @@ export const dynamic = 'force-dynamic';
 /** Gestão de resultados de uma mentorada — a página do cartão de mesmo nome. */
 export default async function GestaoDeResultadosPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ mentoradaId: string }>;
+  searchParams: Promise<{ ano?: string }>;
 }) {
   const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const gestao = await gestaoDeResultados(mentorada.id).catch((e) => e as Error);
@@ -53,16 +56,29 @@ export default async function GestaoDeResultadosPage({
           quando ela passar para o modelo novo.
         </p>
       ) : (
-        <Conteudo gestao={gestao} mentoradaId={mentorada.id} />
+        <Conteudo gestao={gestao} mentoradaId={mentorada.id} anoPedido={anoPedido} />
       )}
     </div>
   );
 }
 
-function Conteudo({ gestao, mentoradaId }: { gestao: GestaoDeResultados; mentoradaId: string }) {
-  const principal = anoPrincipal(gestao, String(new Date().getFullYear()));
-  const outros = anosComMovimento(gestao).filter((a) => a !== principal);
+function Conteudo({
+  gestao,
+  mentoradaId,
+  anoPedido,
+}: {
+  gestao: GestaoDeResultados;
+  mentoradaId: string;
+  anoPedido?: string;
+}) {
+  const disponiveis = [...new Set([...anosComMovimento(gestao), ...gestao.anos.map((a) => a.ano)])].sort().reverse();
+  // O ano vem do endereço (?ano=2025); sem ele, ou com um ano que não existe, abre o atual.
+  const selecionado =
+    anoPedido && disponiveis.includes(anoPedido)
+      ? anoPedido
+      : anoPrincipal(gestao, String(new Date().getFullYear()));
   const anos = [...gestao.anos].reverse();
+  const link = (ano: string) => `/mentoradas/${mentoradaId}/gestao-de-resultados?ano=${ano}`;
 
   return (
     <>
@@ -73,13 +89,41 @@ function Conteudo({ gestao, mentoradaId }: { gestao: GestaoDeResultados; mentora
       </Grupo>
 
       <Grupo titulo="Resultados financeiros">
+        {disponiveis.length > 1 ? (
+          <nav aria-label="Ano" className="flex flex-wrap items-center gap-1">
+            {disponiveis.map((ano) => (
+              <Link
+                key={ano}
+                href={link(ano)}
+                scroll={false}
+                aria-current={ano === selecionado ? 'page' : undefined}
+                className={`rounded-lg px-3.5 py-1.5 text-sm tabular-nums transition ${
+                  ano === selecionado
+                    ? 'bg-marca font-medium text-marca-contraste'
+                    : 'border border-borda bg-superficie text-texto-suave hover:border-marca hover:text-texto'
+                }`}
+              >
+                {ano}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+
         <Bloco icone={CalendarDays} titulo="Por ano">
           {anos.length === 0 ? (
             <p className="text-sm text-texto-suave">Nenhum ano cadastrado.</p>
           ) : (
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {anos.map((a) => (
-                <li key={a.id} className="rounded-xl border border-borda bg-fundo px-4 py-3">
+                <li key={a.id}>
+                  <Link
+                    href={link(a.ano)}
+                    scroll={false}
+                    aria-current={a.ano === selecionado ? 'true' : undefined}
+                    className={`block rounded-xl border px-4 py-3 transition hover:border-marca ${
+                      a.ano === selecionado ? 'border-marca bg-fundo' : 'border-borda bg-fundo/60'
+                    }`}
+                  >
                   <p className="flex items-center gap-2 text-sm font-medium">
                     <CalendarDays aria-hidden size={14} className="text-marca" />
                     {a.ano}
@@ -100,6 +144,7 @@ function Conteudo({ gestao, mentoradaId }: { gestao: GestaoDeResultados; mentora
                       </div>
                     ))}
                   </dl>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -107,51 +152,16 @@ function Conteudo({ gestao, mentoradaId }: { gestao: GestaoDeResultados; mentora
         </Bloco>
 
         <Bloco icone={Wallet} titulo="Visão mensal financeira">
-          <PorAno
-            principal={principal}
-            outros={outros}
-            conteudo={(ano) => <VisaoMensal mentoradaId={mentoradaId} grupos={gruposDoAno(gestao.meses, ano)} />}
-          />
+          <p className="mb-1.5 px-1 text-sm font-medium">{selecionado}</p>
+          <VisaoMensal key={selecionado} mentoradaId={mentoradaId} grupos={gruposDoAno(gestao.meses, selecionado)} />
         </Bloco>
 
         <Bloco icone={CalendarRange} titulo="Visão financeira trimestral">
-          <PorAno
-            principal={principal}
-            outros={outros}
-            conteudo={(ano) => <TabelaTrimestres trimestres={gestao.trimestres.filter((t) => t.ano === ano)} />}
-          />
+          <p className="mb-1.5 px-1 text-sm font-medium">{selecionado}</p>
+          <TabelaTrimestres trimestres={gestao.trimestres.filter((t) => t.ano === selecionado)} />
         </Bloco>
       </Grupo>
     </>
-  );
-}
-
-/** O ano principal aberto; os demais recolhidos embaixo. */
-function PorAno({
-  principal,
-  outros,
-  conteudo,
-}: {
-  principal: string;
-  outros: string[];
-  conteudo: (ano: string) => React.ReactNode;
-}) {
-  return (
-    <div className="space-y-3">
-      <div>
-        <p className="mb-1.5 px-1 text-sm font-medium">{principal}</p>
-        {conteudo(principal)}
-      </div>
-      {outros.map((ano) => (
-        <details key={ano} className="group rounded-xl border border-borda">
-          <summary className="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-sm text-texto-suave transition hover:text-texto">
-            <span className="transition-transform group-open:rotate-90">›</span>
-            <span className="font-medium">{ano}</span>
-          </summary>
-          <div className="border-t border-borda p-3">{conteudo(ano)}</div>
-        </details>
-      ))}
-    </div>
   );
 }
 
