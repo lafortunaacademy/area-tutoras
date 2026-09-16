@@ -130,9 +130,9 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
             celula(l, 'resgate'),
             celula(l, 'despesas'),
             celula(l, 'investimento'),
-            <Calculado key="ls" valor={l.calculados.lucroSem} />,
-            <Calculado key="lc" valor={l.calculados.lucroCom} forte />,
-            <Calculado key="pc" valor={l.calculados.percentual} percentual />,
+            <Calculado key="ls" valor={l.calculados.lucroSem} lucro />,
+            <Calculado key="lc" valor={l.calculados.lucroCom} lucro forte />,
+            <Calculado key="pc" valor={l.calculados.percentual} lucro percentual />,
           ],
         }))}
         rodape={[
@@ -141,11 +141,12 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
           <Calculado key="t2" valor={total('resgate')} />,
           <Calculado key="t3" valor={total('despesas')} />,
           <Calculado key="t4" valor={total('investimento')} />,
-          <Calculado key="t5" valor={soma(linhas.map((l) => l.calculados.lucroSem))} />,
-          <Calculado key="t6" valor={lucroComTotal} forte />,
+          <Calculado key="t5" valor={soma(linhas.map((l) => l.calculados.lucroSem))} lucro />,
+          <Calculado key="t6" valor={lucroComTotal} lucro forte />,
           <Calculado
             key="t8"
             valor={faturamentoTotal && lucroComTotal !== null ? lucroComTotal / faturamentoTotal : null}
+            lucro
             percentual
           />,
         ]}
@@ -154,13 +155,23 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
   );
 }
 
-/** Célula só de leitura: negativo em vermelho suave, vazio bem apagado. */
-function Calculado({ valor, percentual, forte }: { valor: number | null; percentual?: boolean; forte?: boolean }) {
+/** Célula só de leitura; lucro positivo em verde, negativo sem cor; vazio bem apagado. */
+function Calculado({
+  valor,
+  percentual,
+  forte,
+  lucro,
+}: {
+  valor: number | null;
+  percentual?: boolean;
+  forte?: boolean;
+  lucro?: boolean;
+}) {
   if (valor === null || !Number.isFinite(valor)) return <Vazio />;
   const texto = percentual
     ? `${(valor * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
     : numero(valor);
-  return <span className={`${valor < 0 ? 'text-parado' : ''} ${forte ? 'font-medium' : ''}`}>{texto}</span>;
+  return <span className={`${lucro && valor > 0 ? 'text-ok' : ''} ${forte ? 'font-medium' : ''}`}>{texto}</span>;
 }
 
 function Vazio() {

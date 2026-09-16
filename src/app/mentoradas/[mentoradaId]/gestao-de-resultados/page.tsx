@@ -128,19 +128,26 @@ function Conteudo({
                     <CalendarDays aria-hidden size={14} className="text-marca" />
                     {a.ano}
                   </p>
-                  <p className="display mt-2 text-2xl leading-none tabular-nums">{reais(a.lucro)}</p>
-                  <p className="mt-0.5 text-[11px] text-texto-suave">
-                    lucro · {percentual(a.percentualLucro)}
-                  </p>
                   <dl className="mt-3 space-y-1 border-t border-borda pt-2 text-xs">
                     {[
-                      ['Faturamento', a.faturamento],
-                      ['Despesas', a.despesas],
-                      ['Investimentos', a.investimentos],
-                    ].map(([rotulo, valor]) => (
-                      <div key={rotulo as string} className="flex justify-between gap-3">
-                        <dt className="text-texto-suave">{rotulo}</dt>
-                        <dd className="tabular-nums">{reais(valor as number | null)}</dd>
+                      { rotulo: 'Faturamento', texto: reais(a.faturamento), valor: a.faturamento },
+                      { rotulo: 'Despesas', texto: reais(a.despesas), valor: a.despesas },
+                      { rotulo: 'Investimentos', texto: reais(a.investimentos), valor: a.investimentos },
+                      { rotulo: 'Lucro (R$)', texto: reais(a.lucro), valor: a.lucro, forte: true },
+                      { rotulo: 'Lucro (%)', texto: percentual(a.percentualLucro), valor: a.percentualLucro, forte: true },
+                    ].map((l) => (
+                      <div
+                        key={l.rotulo}
+                        className={`flex justify-between gap-3 ${l.rotulo === 'Lucro (R$)' ? 'mt-1.5 border-t border-borda/60 pt-1.5' : ''}`}
+                      >
+                        <dt className="text-texto-suave">{l.rotulo}</dt>
+                        <dd
+                          className={`tabular-nums ${l.forte ? 'font-medium' : ''} ${
+                            l.forte && l.valor !== null && l.valor > 0 ? 'text-ok' : ''
+                          }`}
+                        >
+                          {l.texto}
+                        </dd>
                       </div>
                     ))}
                   </dl>
