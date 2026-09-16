@@ -1,17 +1,17 @@
 import type { TutoriasPorTutora } from '@/lib/notion/jornada';
 
-/** Oito cores validadas; a partir da nona tutora, um tom neutro — cada uma com o próprio nome. */
-export type CorDaFatia = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'extra';
+/** Cinco tons de marrom da marca; da sexta tutora em diante, um tom de apoio — cada uma com o próprio nome. */
+export type CorDaFatia = 1 | 2 | 3 | 4 | 5 | 'extra';
 
 export type Fatia = { tutora: string; total: number; cor: CorDaFatia };
 
-const CORES = 8;
+const CORES = 5;
 
 /**
  * Dá uma cor a cada tutora, olhando as duas roscas de uma vez.
  *
- * A cor segue a tutora, não a posição: quem é laranja em "Realizadas" é laranja
- * em "A realizar". A ordem das cores vai de quem tem mais sessões (somando as
+ * A cor segue a tutora, não a posição: o tom de uma tutora em "Realizadas" é o
+ * mesmo em "A realizar". A ordem das cores vai de quem tem mais sessões (somando as
  * duas) para quem tem menos, sempre na mesma sequência — nunca sorteada.
  */
 export function montarFatias(
