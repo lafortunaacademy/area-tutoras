@@ -53,17 +53,18 @@ export type SectionKey = keyof typeof DATABASES;
  */
 export const MENTORADA = {
   nome: 'Cliente',
-  status: 'Situação',
+  /** Ativa/Inativa. ("Situação ", com espaço no fim, é outra coisa: Fluindo, Atenção…) */
+  status: 'Status',
   mentoria: 'Mentoria',
 } as const;
 
 /**
- * Situações que tiram a mentorada da lista.
+ * Status que tiram a mentorada da lista.
  *
- * É lista de exclusão, não de inclusão: situação nova criada no Notion aparece
+ * É lista de exclusão, não de inclusão: status novo criado no Notion aparece
  * por padrão, em vez de sumir sem ninguém entender por quê.
  */
-export const SITUACOES_ENCERRADAS = ['Finalizado'] as const;
+export const STATUS_INATIVOS = ['Inativa'] as const;
 
 /**
  * Ordem dos objetivos na tela: o que está em andamento primeiro, o que ainda

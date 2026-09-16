@@ -51,7 +51,7 @@ ok(
   typeof mentorada.mentoria === 'string',
   `mentoria: ${mentorada.mentoria ? `"${mentorada.mentoria}"` : '(vazia — depende da base não compartilhada)'}`,
 );
-ok(Boolean(mentorada.status), `situação lida: "${mentorada.status}"`);
+ok(Boolean(mentorada.status), `status lido: "${mentorada.status}"`);
 ok(normalizarId(mentorada.id.replace(/-/g, '')) === mentorada.id, 'normalizarId ida e volta');
 
 const mapa = await mapaDaCliente(mentorada);

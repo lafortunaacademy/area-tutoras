@@ -2,7 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { MENTORADA, SITUACOES_ENCERRADAS } from './config';
+import { MENTORADA, STATUS_INATIVOS } from './config';
 import { iconeUrl, texto, titulo } from './props';
 
 /**
@@ -44,7 +44,7 @@ export const carteiraDaTutora = cache(async (): Promise<Mentorada[]> => {
 
   return paginas
     .map(paraMentorada)
-    .filter((m) => !SITUACOES_ENCERRADAS.includes(m.status as (typeof SITUACOES_ENCERRADAS)[number]))
+    .filter((m) => !STATUS_INATIVOS.includes(m.status as (typeof STATUS_INATIVOS)[number]))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 });
 
