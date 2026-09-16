@@ -107,7 +107,7 @@ function Conteudo({
                     <CalendarDays aria-hidden size={14} className="text-marca" />
                     {a.ano}
                   </p>
-                  <dl className="mt-3 space-y-1 border-t border-borda pt-2 text-xs">
+                  <dl className="mt-2.5 space-y-1 text-xs">
                     {[
                       { rotulo: 'Faturamento', texto: reais(a.faturamento), valor: a.faturamento },
                       { rotulo: 'Despesas', texto: reais(a.despesas), valor: a.despesas },
