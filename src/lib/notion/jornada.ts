@@ -1,7 +1,7 @@
 import 'server-only';
 import { queryDatabase } from './client';
 import { resolverDatabaseId } from './resolver';
-import { TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA } from './config';
+import { TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA, cicloAtual } from './config';
 import { data, texto } from './props';
 import type { Mentorada } from './carteira';
 
@@ -11,26 +11,36 @@ import type { Mentorada } from './carteira';
  * Sai da mesma base de controle que conta as tutorias da tutora
  * ("Acompanhamento de clientes"), só que recortada pela relation `Mentorada`,
  * que aponta para a página da cliente em "Área clientes".
+ *
+ * Só conta o ciclo atual (propriedade `Ciclo`): sessão de ciclo anterior — ou
+ * sem ciclo preenchido — fica de fora.
  */
 
 export type ProgressoDaMentoria = {
+  ciclo: string;
   realizadas: number;
   aRealizar: number;
   proxima: { sessao: string; data: string } | null;
 };
 
 export async function progressoDaMentoria(mentorada: Mentorada): Promise<ProgressoDaMentoria> {
+  const ciclo = cicloAtual();
   if (mentorada.areaDaClienteIds.length === 0) {
-    return { realizadas: 0, aRealizar: 0, proxima: null };
+    return { ciclo, realizadas: 0, aRealizar: 0, proxima: null };
   }
 
   const dbId = await resolverDatabaseId('tutorias');
   const linhas = await queryDatabase(dbId, {
     filter: {
-      or: mentorada.areaDaClienteIds.map((id) => ({
-        property: TUTORIA.mentorada,
-        relation: { contains: id },
-      })),
+      and: [
+        {
+          or: mentorada.areaDaClienteIds.map((id) => ({
+            property: TUTORIA.mentorada,
+            relation: { contains: id },
+          })),
+        },
+        { property: TUTORIA.ciclo, select: { equals: ciclo } },
+      ],
     },
     limite: 500,
   });
@@ -52,6 +62,7 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
     .sort((a, b) => a.data.localeCompare(b.data))[0];
 
   return {
+    ciclo,
     realizadas,
     aRealizar: futuras.length,
     proxima: proxima ? { sessao: proxima.sessao, data: diaMesAno(proxima.data) } : null,

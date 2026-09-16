@@ -176,7 +176,14 @@ export const TUTORIA = {
   dataRealizada: 'Data realizada',
   dataPrevista: 'Data prevista',
   mesPrevisto: 'Mês previsto',
+  /** Select "Ciclo 2026", "Ciclo 2027"… — um ciclo por ano. */
+  ciclo: 'Ciclo',
 } as const;
+
+/** O ciclo que o progresso da mentoria mostra: o do ano corrente. */
+export function cicloAtual(hoje = new Date()): string {
+  return `Ciclo ${hoje.getFullYear()}`;
+}
 
 /** Só estas contam como tutoria dada. */
 export const TUTORIA_REALIZADA = 'Realizada';

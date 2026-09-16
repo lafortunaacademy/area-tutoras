@@ -112,6 +112,7 @@ export default async function AreaDaMentoradaPage({
           icone={CircleDot}
           titulo="Progresso da mentoria"
           descricao="Tudo o que já foi realizado no seu processo de mentoria e o que está por vir."
+          acao={progresso ? <span className="text-xs whitespace-nowrap text-texto-suave">{progresso.ciclo}</span> : undefined}
         >
           {progresso ? (
             <>
