@@ -20,7 +20,7 @@ const FOLGA = 2.5;
 /**
  * Rosca das sessões de um status, dividida por tutora.
  *
- * A legenda embaixo carrega nome, quantidade e percentual em texto — a cor
+ * A legenda embaixo carrega nome e quantidade em texto — a cor
  * nunca é a única pista. Passar o mouse (ou o foco) numa fatia ou num item da
  * legenda destaca a tutora e troca o número do centro.
  */
@@ -37,7 +37,6 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
     return arco;
   });
   const folga = fatias.length > 1 ? FOLGA : 0;
-  const pct = (n: number) => `${Math.round((n / (total || 1)) * 100)}%`;
 
   return (
     <figure className="flex flex-col items-center gap-3">
@@ -110,9 +109,7 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
             >
               <span aria-hidden className="size-2.5 shrink-0 rounded-sm" style={{ background: COR[f.cor] }} />
               <span className="text-texto">{f.tutora}</span>
-              <span className="text-texto-suave tabular-nums">
-                {f.total} ({pct(f.total)})
-              </span>
+              <span className="text-texto-suave tabular-nums">{f.total}</span>
             </li>
           ))}
         </ul>
