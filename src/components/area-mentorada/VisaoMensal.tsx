@@ -28,7 +28,6 @@ const COLUNAS: Coluna[] = [
   { nome: 'Investimento', numero: true },
   { nome: 'Lucro s/ invest.', numero: true, destaque: true },
   { nome: 'Lucro c/ invest.', numero: true, destaque: true },
-  { nome: 'Caixa', numero: true },
   { nome: '% Lucro', numero: true, destaque: true },
 ];
 
@@ -55,7 +54,7 @@ const soma = (valores: (number | null)[]) => {
 /**
  * A visão mês a mês, com negócio e pessoal em abas, como no Notion.
  *
- * Faturamento, resgate, despesas, investimento e caixa se editam clicando no
+ * Faturamento, resgate, despesas e investimento se editam clicando no
  * valor; o que é gravado vai para o mesmo mês no Notion, e as colunas de lucro
  * (fórmulas de lá) voltam recalculadas.
  */
@@ -133,7 +132,6 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
             celula(l, 'investimento'),
             <Calculado key="ls" valor={l.calculados.lucroSem} />,
             <Calculado key="lc" valor={l.calculados.lucroCom} forte />,
-            celula(l, 'caixa'),
             <Calculado key="pc" valor={l.calculados.percentual} percentual />,
           ],
         }))}
@@ -145,7 +143,6 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
           <Calculado key="t4" valor={total('investimento')} />,
           <Calculado key="t5" valor={soma(linhas.map((l) => l.calculados.lucroSem))} />,
           <Calculado key="t6" valor={lucroComTotal} forte />,
-          <Calculado key="t7" valor={total('caixa')} />,
           <Calculado
             key="t8"
             valor={faturamentoTotal && lucroComTotal !== null ? lucroComTotal / faturamentoTotal : null}
