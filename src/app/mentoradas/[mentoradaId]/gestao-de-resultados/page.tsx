@@ -8,7 +8,7 @@ import {
   type MesFinanceiro,
   type TrimestreFinanceiro,
 } from '@/lib/notion/gestao';
-import { percentual, reais, soma } from '@/lib/formato';
+import { percentual, reais } from '@/lib/formato';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
 import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
@@ -166,9 +166,8 @@ function TabelaTrimestres({ trimestres }: { trimestres: TrimestreFinanceiro[] })
 
   return (
     <TabelaFinanceira
-      minimo="36rem"
       colunas={[
-        { nome: 'Trimestre', largura: 'w-44' },
+        { nome: 'Trimestre' },
         { nome: 'Faturamento', numero: true },
         { nome: 'Despesas', numero: true },
         { nome: 'Lucro (R$)', numero: true },
@@ -201,13 +200,14 @@ function gruposDoAno(meses: MesFinanceiro[], ano: string): GrupoMensal[] {
     return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
   });
 
-  return categorias.map((categoria) => {
-    const linhas = doAno.filter((m) => m.categoria === categoria);
-    return {
-      categoria,
-      linhas: linhas.map((m) => ({
+  return categorias.map((categoria) => ({
+    categoria,
+    linhas: doAno
+      .filter((m) => m.categoria === categoria)
+      .map((m) => ({
         id: m.id,
-        mes: m.rotulo,
+        mes: MESES_CURTOS[m.ordem - 1] ?? m.rotulo,
+        mesCompleto: m.rotulo,
         editaveis: {
           faturamento: m.faturamento,
           resgate: m.resgate,
@@ -216,22 +216,12 @@ function gruposDoAno(meses: MesFinanceiro[], ano: string): GrupoMensal[] {
           caixa: m.caixa,
         },
         calculados: {
-          lucroSem: reais(m.lucroSemInvestimento),
-          lucroCom: reais(m.lucroComInvestimento),
-          percentual: percentual(m.percentualLucro),
+          lucroSem: m.lucroSemInvestimento,
+          lucroCom: m.lucroComInvestimento,
+          percentual: m.percentualLucro,
         },
       })),
-      // As mesmas somas que o Notion mostra no rodapé da visão.
-      somas: [
-        reais(soma(linhas.map((l) => l.faturamento))),
-        '',
-        reais(soma(linhas.map((l) => l.despesas))),
-        reais(soma(linhas.map((l) => l.investimento))),
-        '',
-        '',
-        '',
-        '',
-      ],
-    };
-  });
+  }));
 }
+
+const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
