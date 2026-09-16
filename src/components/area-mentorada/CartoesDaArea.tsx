@@ -42,7 +42,8 @@ export function CartoesDaArea({ mentoradaId }: { mentoradaId: string }) {
             ) : (
               <div aria-disabled className={classes}>
                 {titulo}
-                <span className="absolute right-2.5 bottom-1.5 text-[9px] tracking-wide uppercase opacity-60">
+                {/* Em tela estreita o selo cai em cima do título; lá ele sai. */}
+                <span className="absolute right-2.5 bottom-1.5 hidden text-[9px] tracking-wide uppercase opacity-60 sm:block">
                   em breve
                 </span>
               </div>

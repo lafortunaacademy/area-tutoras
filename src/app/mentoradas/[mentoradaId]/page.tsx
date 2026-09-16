@@ -21,7 +21,8 @@ import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
 import { CartoesDaArea } from '@/components/area-mentorada/CartoesDaArea';
-import { Donut } from '@/components/area-mentorada/Donut';
+import { DonutTutoras } from '@/components/area-mentorada/DonutTutoras';
+import { montarFatias } from '@/components/area-mentorada/fatias';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
 import { anoPrincipal } from '@/components/area-mentorada/financeiro';
@@ -53,7 +54,9 @@ export default async function AreaDaMentoradaPage({
   ]);
 
   const ano = String(new Date().getFullYear());
-  const totalSessoes = progresso ? progresso.realizadas + progresso.aRealizar : 0;
+  const fatias = progresso
+    ? montarFatias(progresso.porTutora.realizadas, progresso.porTutora.aRealizar)
+    : null;
 
   // Quem está na Pronta Para Fazer Dinheiro ganha a capa em taupe. Com as duas
   // mentorias, vale a My Partner — mesma regra do valor da sessão.
@@ -117,8 +120,8 @@ export default async function AreaDaMentoradaPage({
           {progresso ? (
             <>
               <div className="grid gap-8 py-2 sm:grid-cols-2">
-                <Donut rotulo="Realizadas" valor={progresso.realizadas} total={totalSessoes} tom="marca" />
-                <Donut rotulo="A realizar" valor={progresso.aRealizar} total={totalSessoes} tom="destaque" />
+                <DonutTutoras rotulo="Realizadas" fatias={fatias!.realizadas} />
+                <DonutTutoras rotulo="A realizar" fatias={fatias!.aRealizar} />
               </div>
               {progresso.proxima ? (
                 <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-borda pt-4 text-sm">

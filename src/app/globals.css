@@ -40,6 +40,20 @@
   --parado: #8a4038;
   --parado-suave: #f2e3e0;
   --sombra: 0 1px 2px rgb(46 35 28 / 0.06), 0 8px 24px -12px rgb(46 35 28 / 0.22);
+  /* Séries de gráfico por categoria (uma cor por tutora). Os marrons da marca
+     não se distinguem entre si nem para daltônicos; estas oito passam na
+     validação lado a lado, com fundo claro e escuro. Três delas ficam abaixo de
+     3:1 no claro — por isso o gráfico sempre traz a legenda escrita. A ordem é
+     fixa: não embaralhar. */
+  --serie-1: #2a78d6;
+  --serie-2: #eb6834;
+  --serie-3: #1baf7a;
+  --serie-4: #eda100;
+  --serie-5: #e87ba4;
+  --serie-6: #008300;
+  --serie-7: #4a3aa7;
+  --serie-8: #e34948;
+  --serie-extra: #a79c90;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -62,6 +76,15 @@
     --parado: #d99a91;
     --parado-suave: #2f1e1b;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
+    --serie-1: #3987e5;
+    --serie-2: #d95926;
+    --serie-3: #199e70;
+    --serie-4: #c98500;
+    --serie-5: #d55181;
+    --serie-6: #008300;
+    --serie-7: #9085e9;
+    --serie-8: #e66767;
+    --serie-extra: #7d7064;
   }
 }
 

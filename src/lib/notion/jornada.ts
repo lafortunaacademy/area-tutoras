@@ -1,5 +1,5 @@
 import 'server-only';
-import { queryDatabase } from './client';
+import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA, cicloAtual } from './config';
 import { data, texto } from './props';
@@ -16,18 +16,29 @@ import type { Mentorada } from './carteira';
  * sem ciclo preenchido — fica de fora.
  */
 
+export type TutoriasPorTutora = { tutora: string; total: number }[];
+
 export type ProgressoDaMentoria = {
   ciclo: string;
   realizadas: number;
   aRealizar: number;
+  /** Quantas sessões de cada tutora, como os gráficos do Notion agrupam. */
+  porTutora: { realizadas: TutoriasPorTutora; aRealizar: TutoriasPorTutora };
   proxima: { sessao: string; data: string } | null;
 };
 
+const SEM_TUTORA = 'Sem tutora';
+
 export async function progressoDaMentoria(mentorada: Mentorada): Promise<ProgressoDaMentoria> {
   const ciclo = cicloAtual();
-  if (mentorada.areaDaClienteIds.length === 0) {
-    return { ciclo, realizadas: 0, aRealizar: 0, proxima: null };
-  }
+  const vazio: ProgressoDaMentoria = {
+    ciclo,
+    realizadas: 0,
+    aRealizar: 0,
+    porTutora: { realizadas: [], aRealizar: [] },
+    proxima: null,
+  };
+  if (mentorada.areaDaClienteIds.length === 0) return vazio;
 
   const dbId = await resolverDatabaseId('tutorias');
   const linhas = await queryDatabase(dbId, {
@@ -45,28 +56,48 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
     limite: 500,
   });
 
-  let realizadas = 0;
-  const futuras: { sessao: string; data: string | null }[] = [];
-
+  const realizadas: NotionPage[] = [];
+  const futuras: NotionPage[] = [];
   for (const p of linhas) {
     const status = texto(p, TUTORIA.status);
-    if (status === TUTORIA_REALIZADA) realizadas++;
-    else if (TUTORIA_A_REALIZAR.includes(status)) {
-      futuras.push({ sessao: texto(p, TUTORIA.sessao), data: data(p, TUTORIA.dataPrevista) });
-    }
+    if (status === TUTORIA_REALIZADA) realizadas.push(p);
+    else if (TUTORIA_A_REALIZAR.includes(status)) futuras.push(p);
   }
 
   const hoje = new Date().toISOString().slice(0, 10);
   const proxima = futuras
+    .map((p) => ({ sessao: texto(p, TUTORIA.sessao), data: data(p, TUTORIA.dataPrevista) }))
     .filter((f): f is { sessao: string; data: string } => Boolean(f.data && f.data >= hoje))
     .sort((a, b) => a.data.localeCompare(b.data))[0];
 
   return {
     ciclo,
-    realizadas,
+    realizadas: realizadas.length,
     aRealizar: futuras.length,
+    porTutora: { realizadas: contarPorTutora(realizadas), aRealizar: contarPorTutora(futuras) },
     proxima: proxima ? { sessao: proxima.sessao, data: diaMesAno(proxima.data) } : null,
   };
+}
+
+/**
+ * `Tutora` é campo de pessoa. Sessão com duas tutoras conta para as duas — é o
+ * que o gráfico do Notion faz ao agrupar por pessoa.
+ */
+function contarPorTutora(paginas: NotionPage[]): TutoriasPorTutora {
+  const contagem = new Map<string, number>();
+  for (const p of paginas) {
+    const prop = p.properties?.[TUTORIA.tutora];
+    const nomes =
+      prop?.type === 'people'
+        ? ((prop.people as { name?: string }[]) ?? []).map((u) => u.name?.trim()).filter((n): n is string => Boolean(n))
+        : [];
+    for (const nome of nomes.length > 0 ? nomes : [SEM_TUTORA]) {
+      contagem.set(nome, (contagem.get(nome) ?? 0) + 1);
+    }
+  }
+  return [...contagem.entries()]
+    .map(([tutora, total]) => ({ tutora, total }))
+    .sort((a, b) => b.total - a.total || a.tutora.localeCompare(b.tutora));
 }
 
 /**
