@@ -57,6 +57,9 @@
   --serie-9: #de9caa;
   /* "Sem tutora": neutro, como no Notion. */
   --serie-sem: #e6e0d6;
+  /* Gráficos de barras do dashboard: verde leve para faturamento, azul leve para lucro. */
+  --grafico-verde: #b3dcbb;
+  --grafico-azul: #a9cbe8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -90,6 +93,8 @@
     --serie-8: #90e2e1;
     --serie-9: #de9caa;
     --serie-sem: #5c4c3d;
+    --grafico-verde: #8fc79b;
+    --grafico-azul: #86b3dc;
   }
 }
 

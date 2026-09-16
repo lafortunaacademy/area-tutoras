@@ -26,6 +26,7 @@ import { DonutTutoras } from '@/components/area-mentorada/DonutTutoras';
 import { montarFatias } from '@/components/area-mentorada/fatias';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
+import { GraficoLinha } from '@/components/area-mentorada/GraficoLinha';
 import { anoPrincipal } from '@/components/area-mentorada/financeiro';
 import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
 import { Tarefas } from '@/components/area-mentorada/Tarefas';
@@ -232,32 +233,32 @@ function DashboardFinanceiro({ gestao }: { gestao: GestaoDeResultados }) {
   return (
     <>
       <Grupo titulo="Faturamento">
-        <GraficoBarras icone={TrendingUp} titulo="Faturamento mensal" periodo={ano} formato="reais" pontos={porMes('faturamento')} />
+        <GraficoLinha icone={TrendingUp} titulo="Faturamento mensal" tom="verde" periodo={ano} formato="reais" pontos={porMes('faturamento')} />
         <div className="grid gap-4 lg:grid-cols-3">
           <GraficoBarras
             icone={TrendingUp}
-            titulo="Faturamento trimestral"
+            titulo="Faturamento trimestral" tom="verde"
             periodo={ano}
             formato="reais"
             pontos={trimestres.map((t) => ({ rotulo: t.rotulo, valor: t.item?.faturamento ?? null }))}
             className="lg:col-span-2"
           />
-          <GraficoBarras icone={TrendingUp} titulo="Faturamento anual" formato="reais" pontos={porAno('faturamento')} />
+          <GraficoBarras icone={TrendingUp} titulo="Faturamento anual" tom="verde" formato="reais" pontos={porAno('faturamento')} />
         </div>
       </Grupo>
 
       <Grupo titulo="Lucro">
-        <GraficoBarras icone={PiggyBank} titulo="Lucro mensal" periodo={ano} formato="reais" pontos={porMes('lucroComInvestimento')} />
+        <GraficoLinha icone={PiggyBank} titulo="Lucro mensal" tom="azul" periodo={ano} formato="reais" pontos={porMes('lucroComInvestimento')} />
         <GraficoBarras
           icone={PiggyBank}
-          titulo="Lucro trimestral"
+          titulo="Lucro trimestral" tom="azul"
           periodo={ano}
           formato="reais"
           pontos={trimestres.map((t) => ({ rotulo: t.rotulo, valor: t.item?.lucro ?? null }))}
         />
         <div className="grid gap-4 lg:grid-cols-2">
-          <GraficoBarras icone={PiggyBank} titulo="Lucro anual" formato="reais" pontos={porAno('lucro')} />
-          <GraficoBarras icone={Percent} titulo="Lucro anual (%)" formato="percentual" pontos={porAno('percentualLucro')} />
+          <GraficoBarras icone={PiggyBank} titulo="Lucro anual" tom="azul" formato="reais" pontos={porAno('lucro')} />
+          <GraficoBarras icone={Percent} titulo="Lucro anual (%)" tom="azul" formato="percentual" pontos={porAno('percentualLucro')} />
         </div>
       </Grupo>
     </>

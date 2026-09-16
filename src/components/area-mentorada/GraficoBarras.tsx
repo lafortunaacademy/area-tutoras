@@ -1,16 +1,15 @@
 import type { LucideIcon } from 'lucide-react';
-import { percentual, reais, reaisCompacto } from '@/lib/formato';
+import { percentual, reais } from '@/lib/formato';
 import { Bloco, SemDados } from './Bloco';
+import { COR_DO_TOM, escala, rotuloCurto } from './escala';
+import { Eixo, Grade } from './GraficoLinha';
 
 export type Ponto = { rotulo: string; valor: number | null };
 
 /**
- * Barras de uma série só — sem legenda, o título diz o que é.
- *
- * A linha do zero acompanha os dados: lucro pode ser negativo, e aí a barra
- * desce abaixo dela em vez de sumir. Com poucas barras (trimestres, anos) o
- * valor vai escrito em cima; com doze, só no `title`, senão os rótulos se
- * atropelam.
+ * Barras finas com o valor escrito em cima e a escala à esquerda — como os
+ * gráficos trimestral e anual do Notion. Lucro negativo desce abaixo do zero,
+ * no mesmo tom, mais apagado.
  */
 export function GraficoBarras({
   icone,
@@ -18,6 +17,7 @@ export function GraficoBarras({
   periodo,
   pontos,
   formato,
+  tom,
   className,
 }: {
   icone: LucideIcon;
@@ -25,18 +25,17 @@ export function GraficoBarras({
   periodo?: string;
   pontos: Ponto[];
   formato: 'reais' | 'percentual';
+  /** Faturamento em verde, lucro em azul — tons leves, como os gráficos do Notion. */
+  tom: 'verde' | 'azul';
   className?: string;
 }) {
-  const valores = pontos.map((p) => p.valor ?? 0);
+  const cor = COR_DO_TOM[tom];
+  const { min, max, marcas } = escala(pontos.map((p) => p.valor));
+  const faixa = max - min || 1;
+  const y = (v: number) => 100 - ((v - min) / faixa) * 100;
+  const zero = y(0);
   const temDados = pontos.some((p) => p.valor !== null && p.valor !== 0);
-  const maximo = Math.max(0, ...valores);
-  const minimo = Math.min(0, ...valores);
-  const faixa = maximo - minimo || 1;
-  const zero = (-minimo / faixa) * 100;
-  const poucas = pontos.length <= 4;
-
   const cheio = (v: number | null) => (formato === 'reais' ? reais(v) : percentual(v));
-  const curto = (v: number) => (formato === 'reais' ? reaisCompacto(v) : percentual(v));
 
   return (
     <Bloco
@@ -45,56 +44,56 @@ export function GraficoBarras({
       className={className}
       acao={periodo ? <span className="text-xs text-texto-suave">{periodo}</span> : undefined}
     >
-      <div className={`relative h-40 ${poucas ? 'mt-4' : ''}`}>
-        <div aria-hidden className="absolute inset-0 flex flex-col justify-between">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="border-b border-borda/45" />
-          ))}
-        </div>
-        <div aria-hidden className="absolute inset-x-0 border-b border-borda" style={{ bottom: `${zero}%` }} />
+      <div className="flex gap-2">
+        <Eixo marcas={marcas} y={y} formato={formato} />
 
-        <div aria-hidden className="absolute inset-0 flex gap-1.5">
-          {pontos.map((p, i) => {
-            const v = p.valor ?? 0;
-            const altura = (Math.abs(v) / faixa) * 100;
-            const base = v >= 0 ? zero : zero - altura;
+        <div className="min-w-0 flex-1">
+          <div className="relative mt-5 h-44">
+            <Grade marcas={marcas} y={y} />
 
-            return (
-              <div key={i} className="relative min-w-0 flex-1" title={`${p.rotulo}: ${cheio(p.valor)}`}>
-                {v !== 0 ? (
-                  <div
-                    className={`absolute inset-x-[14%] ${
-                      v > 0 ? 'rounded-t-[4px] bg-marca/85' : 'rounded-b-[4px] bg-parado/70'
-                    }`}
-                    style={{ bottom: `${base}%`, height: `${Math.max(altura, 1)}%` }}
-                  />
-                ) : null}
-                {poucas && v !== 0 ? (
-                  <span
-                    className="absolute inset-x-0 text-center text-[10px] whitespace-nowrap text-texto-suave tabular-nums"
-                    style={{ bottom: v > 0 ? `calc(${base + altura}% + 4px)` : `calc(${base}% - 16px)` }}
-                  >
-                    {curto(v)}
-                  </span>
-                ) : null}
+            <div className="absolute inset-0 flex">
+              {pontos.map((p, i) => {
+                const v = p.valor ?? 0;
+                const topo = y(Math.max(v, 0));
+                const base = y(Math.min(v, 0));
+                return (
+                  <div key={i} className="relative min-w-0 flex-1" title={`${p.rotulo}: ${cheio(p.valor)}`}>
+                    {v !== 0 ? (
+                      <>
+                        <div
+                          className={`absolute left-1/2 w-3 -translate-x-1/2 ${v > 0 ? 'rounded-t-sm' : 'rounded-b-sm'}`}
+                          style={{ top: `${topo}%`, height: `${Math.max(base - topo, 0.5)}%`, background: cor, opacity: v > 0 ? 1 : 0.55 }}
+                        />
+                        <span
+                          className="absolute left-1/2 -translate-x-1/2 text-[9.5px] whitespace-nowrap text-texto-suave tabular-nums"
+                          style={v > 0 ? { bottom: `calc(${100 - topo}% + 4px)` } : { top: `calc(${base}% + 4px)` }}
+                        >
+                          {rotuloCurto(v, formato)}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            {!temDados ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <SemDados />
               </div>
-            );
-          })}
-        </div>
-
-        {!temDados ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <SemDados />
+            ) : null}
+            {/* Mantém a linha do zero à vista quando há negativos. */}
+            {min < 0 ? <div aria-hidden className="absolute inset-x-0 border-t border-borda" style={{ top: `${zero}%` }} /> : null}
           </div>
-        ) : null}
-      </div>
 
-      <div aria-hidden className="mt-2 flex gap-1.5">
-        {pontos.map((p, i) => (
-          <span key={i} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
-            {p.rotulo}
-          </span>
-        ))}
+          <div aria-hidden className="mt-2 flex">
+            {pontos.map((p, i) => (
+              <span key={i} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
+                {p.rotulo}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       <table className="sr-only">
