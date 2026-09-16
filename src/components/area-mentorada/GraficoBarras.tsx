@@ -66,7 +66,12 @@ export function GraficoBarras({
                         />
                         <span
                           className="absolute left-1/2 -translate-x-1/2 text-[9.5px] whitespace-nowrap text-texto-suave tabular-nums"
-                          style={v > 0 ? { bottom: `calc(${100 - topo}% + 4px)` } : { top: `calc(${base}% + 4px)` }}
+                          // Com mais de quatro barras os valores vizinhos se encostariam: alternam de altura.
+                          style={
+                            v > 0
+                              ? { bottom: `calc(${100 - topo}% + ${4 + (pontos.length > 4 && i % 2 ? 13 : 0)}px)` }
+                              : { top: `calc(${base}% + ${4 + (pontos.length > 4 && i % 2 ? 13 : 0)}px)` }
+                          }
                         >
                           {rotuloCurto(v, formato)}
                         </span>

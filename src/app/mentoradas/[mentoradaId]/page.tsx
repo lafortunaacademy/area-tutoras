@@ -27,7 +27,8 @@ import { montarFatias } from '@/components/area-mentorada/fatias';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
 import { GraficoLinha } from '@/components/area-mentorada/GraficoLinha';
-import { anoPrincipal } from '@/components/area-mentorada/financeiro';
+import { anoSelecionado, anosDisponiveis } from '@/components/area-mentorada/financeiro';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
 import { Tarefas } from '@/components/area-mentorada/Tarefas';
 import { MESES, TRIMESTRES } from '@/components/area-mentorada/eixos';
@@ -41,11 +42,14 @@ export const dynamic = 'force-dynamic';
  */
 export default async function AreaDaMentoradaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ mentoradaId: string }>;
+  searchParams: Promise<{ ano?: string }>;
 }) {
   const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const [progresso, plano, gestao, tarefas] = await Promise.all([
@@ -203,7 +207,7 @@ export default async function AreaDaMentoradaPage({
       </Grupo>
 
       {gestao ? (
-        <DashboardFinanceiro gestao={gestao} />
+        <DashboardFinanceiro gestao={gestao} mentoradaId={mentorada.id} anoPedido={anoPedido} />
       ) : (
         <DashboardVazio ano={ano} />
       )}
@@ -212,8 +216,16 @@ export default async function AreaDaMentoradaPage({
 }
 
 /** Os gráficos do Dashboard, lidos das mesmas bases da Gestão de resultados. */
-function DashboardFinanceiro({ gestao }: { gestao: GestaoDeResultados }) {
-  const ano = anoPrincipal(gestao, String(new Date().getFullYear()));
+function DashboardFinanceiro({
+  gestao,
+  mentoradaId,
+  anoPedido,
+}: {
+  gestao: GestaoDeResultados;
+  mentoradaId: string;
+  anoPedido?: string;
+}) {
+  const ano = anoSelecionado(gestao, anoPedido);
 
   // Os gráficos mensais olham para o negócio; o pessoal fica na visão mensal
   // da Gestão de resultados.
@@ -232,6 +244,10 @@ function DashboardFinanceiro({ gestao }: { gestao: GestaoDeResultados }) {
 
   return (
     <>
+      <div className="mt-6">
+        <SeletorDeAno anos={anosDisponiveis(gestao)} selecionado={ano} caminho={`/mentoradas/${mentoradaId}`} />
+      </div>
+
       <Grupo titulo="Faturamento">
         <GraficoLinha icone={TrendingUp} titulo="Faturamento mensal" tom="verde" periodo={ano} formato="reais" pontos={porMes('faturamento')} />
         <div className="grid gap-4 lg:grid-cols-3">

@@ -11,3 +11,15 @@ export function anoPrincipal(g: GestaoDeResultados, anoAtual: string): string {
   const anos = anosComMovimento(g);
   return anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
 }
+
+/** Todos os anos com algum dado (meses, trimestres ou a base de anos), do mais recente ao mais antigo. */
+export function anosDisponiveis(g: GestaoDeResultados): string[] {
+  return [...new Set([...anosComMovimento(g), ...g.anos.map((a) => a.ano)])].filter(Boolean).sort().reverse();
+}
+
+/** O ano pedido no endereço (?ano=), se existir; senão o principal. */
+export function anoSelecionado(g: GestaoDeResultados, pedido: string | undefined): string {
+  return pedido && anosDisponiveis(g).includes(pedido)
+    ? pedido
+    : anoPrincipal(g, String(new Date().getFullYear()));
+}

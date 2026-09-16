@@ -14,7 +14,8 @@ import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
 import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
 import { TabelaFinanceira } from '@/components/area-mentorada/TabelaFinanceira';
 import { VisaoMensal, type GrupoMensal } from '@/components/area-mentorada/VisaoMensal';
-import { anoPrincipal, anosComMovimento } from '@/components/area-mentorada/financeiro';
+import { anoSelecionado, anosDisponiveis } from '@/components/area-mentorada/financeiro';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,12 +72,8 @@ function Conteudo({
   mentoradaId: string;
   anoPedido?: string;
 }) {
-  const disponiveis = [...new Set([...anosComMovimento(gestao), ...gestao.anos.map((a) => a.ano)])].sort().reverse();
-  // O ano vem do endereço (?ano=2025); sem ele, ou com um ano que não existe, abre o atual.
-  const selecionado =
-    anoPedido && disponiveis.includes(anoPedido)
-      ? anoPedido
-      : anoPrincipal(gestao, String(new Date().getFullYear()));
+  const disponiveis = anosDisponiveis(gestao);
+  const selecionado = anoSelecionado(gestao, anoPedido);
   const anos = [...gestao.anos].reverse();
   const link = (ano: string) => `/mentoradas/${mentoradaId}/gestao-de-resultados?ano=${ano}`;
 
@@ -89,25 +86,7 @@ function Conteudo({
       </Grupo>
 
       <Grupo titulo="Resultados financeiros">
-        {disponiveis.length > 1 ? (
-          <nav aria-label="Ano" className="flex flex-wrap items-center gap-1">
-            {disponiveis.map((ano) => (
-              <Link
-                key={ano}
-                href={link(ano)}
-                scroll={false}
-                aria-current={ano === selecionado ? 'page' : undefined}
-                className={`rounded-lg px-3.5 py-1.5 text-sm tabular-nums transition ${
-                  ano === selecionado
-                    ? 'bg-marca font-medium text-marca-contraste'
-                    : 'border border-borda bg-superficie text-texto-suave hover:border-marca hover:text-texto'
-                }`}
-              >
-                {ano}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
+        <SeletorDeAno anos={disponiveis} selecionado={selecionado} caminho={`/mentoradas/${mentoradaId}/gestao-de-resultados`} />
 
         <Bloco icone={CalendarDays} titulo="Por ano">
           {anos.length === 0 ? (
