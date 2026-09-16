@@ -40,15 +40,17 @@
   --parado: #8a4038;
   --parado-suave: #f2e3e0;
   --sombra: 0 1px 2px rgb(46 35 28 / 0.06), 0 8px 24px -12px rgb(46 35 28 / 0.22);
-  /* Uma cor por tutora nos gráficos, só com os marrons da marca. Como são tons
-     do mesmo marrom, o que separa uma tutora da outra é a claridade: do mais
-     escuro (quem tem mais sessões) ao mais claro. Validado degrau a degrau e
-     contra o fundo; a legenda escrita embaixo continua obrigatória. */
-  --serie-1: #2e231c;
-  --serie-2: #4b3424;
-  --serie-3: #725b49;
-  --serie-4: #9e8a76;
-  --serie-5: #c0ae9a;
+  /* Uma cor por tutora nos gráficos, em tons pastel: terracota, sálvia, lilás,
+     manteiga, azul e pêssego, alternando mais e menos claros para vizinhos não se
+     confundirem (validado inclusive para daltônicos). Pastel quase não contrasta
+     com o fundo branco — por isso a legenda escrita embaixo é obrigatória.
+     A ordem é fixa: não embaralhar. */
+  --serie-1: #df9f8f;
+  --serie-2: #ace0b6;
+  --serie-3: #cf9fc9;
+  --serie-4: #e5cf94;
+  --serie-5: #82b8df;
+  --serie-6: #f9c59c;
   --serie-extra: #d8cfc0;
 }
 
@@ -72,13 +74,14 @@
     --parado: #d99a91;
     --parado-suave: #2f1e1b;
     --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
-    /* No escuro a escada inverte: o mais claro é quem tem mais sessões. */
-    --serie-1: #f5f2e9;
-    --serie-2: #d8cfc0;
-    --serie-3: #af9b87;
-    --serie-4: #8a735f;
-    --serie-5: #6b5646;
-    --serie-extra: #4b3424;
+    /* Pastel já se destaca sobre o marrom escuro: os mesmos tons do claro. */
+    --serie-1: #df9f8f;
+    --serie-2: #ace0b6;
+    --serie-3: #cf9fc9;
+    --serie-4: #e5cf94;
+    --serie-5: #82b8df;
+    --serie-6: #f9c59c;
+    --serie-extra: #6b5646;
   }
 }
 

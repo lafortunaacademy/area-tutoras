@@ -9,6 +9,7 @@ const COR: Record<CorDaFatia, string> = {
   3: 'var(--serie-3)',
   4: 'var(--serie-4)',
   5: 'var(--serie-5)',
+  6: 'var(--serie-6)',
   extra: 'var(--serie-extra)',
 };
 

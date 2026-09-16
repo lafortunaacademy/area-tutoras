@@ -1,11 +1,11 @@
 import type { TutoriasPorTutora } from '@/lib/notion/jornada';
 
-/** Cinco tons de marrom da marca; da sexta tutora em diante, um tom de apoio — cada uma com o próprio nome. */
-export type CorDaFatia = 1 | 2 | 3 | 4 | 5 | 'extra';
+/** Seis tons pastel; da sétima tutora em diante, um tom de apoio — cada uma com o próprio nome. */
+export type CorDaFatia = 1 | 2 | 3 | 4 | 5 | 6 | 'extra';
 
 export type Fatia = { tutora: string; total: number; cor: CorDaFatia };
 
-const CORES = 5;
+const CORES = 6;
 
 /**
  * Dá uma cor a cada tutora, olhando as duas roscas de uma vez.
