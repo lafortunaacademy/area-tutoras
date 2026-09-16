@@ -16,6 +16,7 @@ import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { planejamento } from '@/lib/notion/mentorada';
 import { progressoDaMentoria } from '@/lib/notion/jornada';
 import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao';
+import { tarefasDaMentorada } from '@/lib/notion/tarefas';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
@@ -46,11 +47,12 @@ export default async function AreaDaMentoradaPage({
   const { mentoradaId } = await params;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [progresso, plano, gestao] = await Promise.all([
+  const [progresso, plano, gestao, tarefas] = await Promise.all([
     progressoDaMentoria(mentorada).catch(() => null),
     planejamento(mentorada).catch((e) => e as Error),
     // Falhar aqui só apaga os gráficos; o resto da página continua de pé.
     gestaoDeResultados(mentorada.id).catch(() => null),
+    tarefasDaMentorada(mentorada.id).catch(() => null),
   ]);
 
   const ano = String(new Date().getFullYear());
@@ -169,9 +171,26 @@ export default async function AreaDaMentoradaPage({
           </div>
         </Bloco>
 
+        <div id="tarefas" className="scroll-mt-6">
         <Bloco icone={ListChecks} titulo="Tarefas da mentoria">
-          <Tarefas tarefas={[]} />
+          {tarefas ? (
+            <Tarefas
+              mentoradaId={mentorada.id}
+              tarefas={tarefas.map((t) => ({
+                id: t.id,
+                tarefa: t.tarefa,
+                prazo: t.prazo ? t.prazo.slice(0, 10).split('-').reverse().join('/') : '',
+                observacoes: t.observacoes,
+                feita: t.feita,
+              }))}
+            />
+          ) : (
+            <p className="py-6 text-center text-sm text-texto-suave">
+              Não foi possível carregar as tarefas agora.
+            </p>
+          )}
         </Bloco>
+        </div>
       </div>
 
       <h2 className="display mt-16 text-3xl text-marca">Dashboard Bem-Sucedida</h2>

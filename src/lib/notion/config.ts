@@ -383,7 +383,7 @@ export type HandsoffSecaoKey = (typeof HANDSOFF_SECOES)[number]['key'];
  * Cada mentorada tem a própria cópia das bases, penduradas na página dela em
  * "Área clientes". O caminho até elas é sempre o mesmo, e é por esses nomes que
  * o app desce a árvore: callout "Área de membros" → página "La Fortuna Academy
- * & …" → callout "Área da mentorada" → base de cartões → "Gestão de resultados"
+ * & …" (qualquer título) → callout "Área da mentorada" → base de cartões → "Gestão de resultados"
  * → um callout por seção, cada um com a base dentro.
  *
  * Renomear qualquer um desses títulos no modelo quebra a descoberta — trocar
@@ -391,10 +391,22 @@ export type HandsoffSecaoKey = (typeof HANDSOFF_SECOES)[number]['key'];
  */
 export const AREA_DE_MEMBROS = {
   callout: 'Área de membros',
-  paginaComecaCom: 'La Fortuna Academy',
   calloutCartoes: 'Área da mentorada',
+  calloutTarefas: 'Tarefas da mentoria',
   cartaoGestao: 'Gestão de resultados',
 } as const;
+
+/** Base "Tarefas" de cada mentorada, dentro do callout "Tarefas da mentoria". */
+export const TAREFAS = {
+  tarefa: 'Tarefa',
+  prazo: 'Prazo',
+  observacoes: 'Observações',
+  /** Caixa de seleção: marcada = feita. */
+  feita: 'Status',
+} as const;
+
+/** Ícone do modelo "Nova página" das tarefas no Notion: o lápis marrom nativo (não o emoji). */
+export const TAREFAS_ICONE = { name: 'pencil', color: 'brown' } as const;
 
 export type SecaoGestao = 'marcos' | 'ano' | 'meses' | 'trimestres';
 

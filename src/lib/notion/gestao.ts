@@ -1,7 +1,8 @@
 import 'server-only';
 import { cache } from 'react';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { getBlockChildren, queryDatabase, NotionError, type NotionBlock, type NotionPage } from './client';
+import { getBlockChildren, getPage, queryDatabase, updatePage, NotionError, type NotionBlock, type NotionPage } from './client';
+import { normalizarId } from './carteira';
 import {
   AREA_DE_MEMBROS,
   GESTAO_ANO,
@@ -120,6 +121,31 @@ export const gestaoDeResultados = cache(
   },
 );
 
+/** Os números que a pessoa digita; os de lucro são fórmula no Notion e só se leem. */
+export const CAMPOS_EDITAVEIS_DO_MES = ['faturamento', 'resgate', 'despesas', 'investimento', 'caixa'] as const;
+export type CampoEditavelDoMes = (typeof CAMPOS_EDITAVEIS_DO_MES)[number];
+
+/**
+ * Grava um número num mês. O ID do mês veio do navegador: só escreve se a
+ * página morar na base de meses DESTA mentorada.
+ */
+export async function atualizarValorDoMes(
+  mentoradaId: string,
+  mesId: string,
+  campo: CampoEditavelDoMes,
+  valor: number | null,
+): Promise<boolean> {
+  const bases = await basesDaMentorada(mentoradaId);
+  if (!bases) return false;
+
+  const pagina = await getPage(mesId).catch(() => null);
+  const dona = pagina?.parent?.database_id;
+  if (!dona || normalizarId(dona) !== normalizarId(bases.meses)) return false;
+
+  await updatePage(mesId, { [GESTAO_MESES[campo]]: { number: valor } });
+  return true;
+}
+
 async function lerBases(bases: Bases): Promise<Record<SecaoGestao, NotionPage[]>> {
   const lidas = await Promise.all(
     SECOES.map(async (s) => [s, await queryDatabase(bases[s], { limite: 500 })] as const),
@@ -161,19 +187,25 @@ async function esquecerBases(mentoradaId: string): Promise<void> {
   await supabaseAdmin().from('notion_resolved_ids').delete().like('section_key', `gestao:${mentoradaId}:%`);
 }
 
-async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
+/**
+ * A página "La Fortuna Academy & …" da área de membros, pendurada na página da
+ * mentorada. Ponto de partida de tudo que é do modelo novo.
+ */
+export async function paginaDaAreaDeMembros(mentoradaId: string): Promise<string | null> {
   const membros = await acharFilho(mentoradaId, (b) => ehCallout(b, AREA_DE_MEMBROS.callout));
   if (!membros) return null;
 
-  const pagina = await acharFilho(
-    membros.id,
-    (b) =>
-      b.type === 'child_page' &&
-      textoDoBloco(b).toLowerCase().startsWith(AREA_DE_MEMBROS.paginaComecaCom.toLowerCase()),
-  );
+  // Pelo tipo, não pelo título: a página acompanha o nome da mentorada e muda
+  // quando alguém renomeia ("La Fortuna Academy & Nome", "Teste"…).
+  const pagina = await acharFilho(membros.id, (b) => b.type === 'child_page');
+  return pagina?.id ?? null;
+}
+
+async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
+  const pagina = await paginaDaAreaDeMembros(mentoradaId);
   if (!pagina) return null;
 
-  const calloutCartoes = await acharFilho(pagina.id, (b) => ehCallout(b, AREA_DE_MEMBROS.calloutCartoes));
+  const calloutCartoes = await acharFilho(pagina, (b) => ehCallout(b, AREA_DE_MEMBROS.calloutCartoes));
   if (!calloutCartoes) return null;
 
   const baseCartoes = await acharFilho(calloutCartoes.id, (b) => b.type === 'child_database');
@@ -202,7 +234,7 @@ async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
  * Primeiro bloco que satisfaz `aceita`, descendo por callouts, colunas e
  * toggles — nunca para dentro de outra página ou base.
  */
-async function acharFilho(
+export async function acharFilho(
   raizId: string,
   aceita: (b: NotionBlock) => boolean,
   profundidade = 2,
@@ -228,7 +260,7 @@ function textoDoBloco(b: NotionBlock): string {
 }
 
 const mesmoTexto = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-const ehCallout = (b: NotionBlock, nome: string) => b.type === 'callout' && mesmoTexto(textoDoBloco(b), nome);
+export const ehCallout = (b: NotionBlock, nome: string) => b.type === 'callout' && mesmoTexto(textoDoBloco(b), nome);
 
 // --- Linhas -> dados ----------------------------------------------------------
 

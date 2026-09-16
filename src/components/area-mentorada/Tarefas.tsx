@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Etiqueta } from '@/components/Etiqueta';
+import Link from 'next/link';
+import { useFormStatus } from 'react-dom';
+import { Check, Plus } from 'lucide-react';
+import { alternarTarefa } from '@/app/mentoradas/actions';
 
 export type Tarefa = {
   id: string;
   tarefa: string;
-  status: string;
+  /** Já formatado ("20/09/2026"), ou vazio. */
   prazo: string;
   observacoes: string;
   feita: boolean;
@@ -20,8 +23,11 @@ const ABAS = [
 
 type Aba = (typeof ABAS)[number]['chave'];
 
-/** As tarefas da mentoria, separadas como no Notion: a fazer, feitas, todas. */
-export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
+/**
+ * As tarefas da mentoria, separadas como no Notion: a fazer, feitas, todas.
+ * Criar ou marcar como feita aqui grava na mesma base do Notion.
+ */
+export function Tarefas({ mentoradaId, tarefas }: { mentoradaId: string; tarefas: Tarefa[] }) {
   const [aba, setAba] = useState<Aba>('fazer');
   const atual = ABAS.find((a) => a.chave === aba)!;
 
@@ -31,7 +37,8 @@ export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
 
   return (
     <div>
-      <div role="tablist" aria-label="Filtrar tarefas" className="mb-3 flex gap-1">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div role="tablist" aria-label="Filtrar tarefas" className="flex gap-1">
         {ABAS.map((a) => (
           <button
             key={a.chave}
@@ -48,6 +55,15 @@ export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
             {a.rotulo}
           </button>
         ))}
+        </div>
+
+        <Link
+          href={`/mentoradas/${mentoradaId}/tarefas/nova`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90"
+        >
+          <Plus aria-hidden size={14} />
+          Adicionar tarefa
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-borda">
@@ -55,7 +71,7 @@ export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
           <thead>
             <tr className="border-b border-borda text-left">
               {[
-                ['Status', 'w-32'],
+                ['Status', 'w-20'],
                 ['Tarefa', ''],
                 ['Prazo', 'w-28'],
                 ['Observações', 'w-1/3'],
@@ -79,11 +95,21 @@ export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
             ) : (
               visiveis.map((t) => (
                 <tr key={t.id} className="border-b border-borda last:border-0">
-                  <td className="px-4 py-2.5">{t.status ? <Etiqueta texto={t.status} /> : null}</td>
-                  <td className="truncate px-4 py-2.5" title={t.tarefa}>
+                  <td className="px-4 py-2">
+                    <form action={alternarTarefa}>
+                      <input type="hidden" name="mentoradaId" value={mentoradaId} />
+                      <input type="hidden" name="tarefaId" value={t.id} />
+                      <input type="hidden" name="feita" value={String(!t.feita)} />
+                      <CaixaFeita feita={t.feita} tarefa={t.tarefa} />
+                    </form>
+                  </td>
+                  <td
+                    className={`truncate px-4 py-2.5 ${t.feita ? 'text-texto-suave line-through' : ''}`}
+                    title={t.tarefa}
+                  >
                     {t.tarefa}
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave">{t.prazo}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">{t.prazo}</td>
                   <td className="truncate px-4 py-2.5 text-texto-suave" title={t.observacoes}>
                     {t.observacoes}
                   </td>
@@ -94,5 +120,24 @@ export function Tarefas({ tarefas }: { tarefas: Tarefa[] }) {
         </table>
       </div>
     </div>
+  );
+}
+
+function CaixaFeita({ feita, tarefa }: { feita: boolean; tarefa: string }) {
+  const { pending } = useFormStatus();
+  // Enquanto grava, a caixa já mostra o estado novo.
+  const marcada = pending ? !feita : feita;
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-label={feita ? `Desmarcar "${tarefa}"` : `Marcar "${tarefa}" como feita`}
+      aria-pressed={marcada}
+      className={`flex size-5 items-center justify-center rounded-md border transition ${
+        marcada ? 'border-marca bg-marca text-marca-contraste' : 'border-borda bg-superficie hover:border-marca'
+      } ${pending ? 'opacity-60' : ''}`}
+    >
+      {marcada ? <Check aria-hidden size={13} strokeWidth={3} /> : null}
+    </button>
   );
 }

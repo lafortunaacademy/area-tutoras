@@ -53,13 +53,13 @@ export default async function GestaoDeResultadosPage({
           quando ela passar para o modelo novo.
         </p>
       ) : (
-        <Conteudo gestao={gestao} />
+        <Conteudo gestao={gestao} mentoradaId={mentorada.id} />
       )}
     </div>
   );
 }
 
-function Conteudo({ gestao }: { gestao: GestaoDeResultados }) {
+function Conteudo({ gestao, mentoradaId }: { gestao: GestaoDeResultados; mentoradaId: string }) {
   const principal = anoPrincipal(gestao, String(new Date().getFullYear()));
   const outros = anosComMovimento(gestao).filter((a) => a !== principal);
   const anos = [...gestao.anos].reverse();
@@ -110,7 +110,7 @@ function Conteudo({ gestao }: { gestao: GestaoDeResultados }) {
           <PorAno
             principal={principal}
             outros={outros}
-            conteudo={(ano) => <VisaoMensal grupos={gruposDoAno(gestao.meses, ano)} />}
+            conteudo={(ano) => <VisaoMensal mentoradaId={mentoradaId} grupos={gruposDoAno(gestao.meses, ano)} />}
           />
         </Bloco>
 
@@ -208,16 +208,18 @@ function gruposDoAno(meses: MesFinanceiro[], ano: string): GrupoMensal[] {
       linhas: linhas.map((m) => ({
         id: m.id,
         mes: m.rotulo,
-        valores: [
-          reais(m.faturamento),
-          reais(m.resgate),
-          reais(m.despesas),
-          reais(m.investimento),
-          reais(m.lucroSemInvestimento),
-          reais(m.lucroComInvestimento),
-          reais(m.caixa),
-          percentual(m.percentualLucro),
-        ],
+        editaveis: {
+          faturamento: m.faturamento,
+          resgate: m.resgate,
+          despesas: m.despesas,
+          investimento: m.investimento,
+          caixa: m.caixa,
+        },
+        calculados: {
+          lucroSem: reais(m.lucroSemInvestimento),
+          lucroCom: reais(m.lucroComInvestimento),
+          percentual: percentual(m.percentualLucro),
+        },
       })),
       // As mesmas somas que o Notion mostra no rodapé da visão.
       somas: [
