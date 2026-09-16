@@ -14,3 +14,16 @@ export async function exigirMentorada(mentoradaId: string): Promise<Mentorada> {
   if (!mentorada) notFound();
   return mentorada;
 }
+
+/**
+ * Porta das páginas da área das mentoradas: além de existir, a mentorada tem de
+ * estar no modelo novo. Quem ainda está na área antiga dá 404, como se não
+ * existisse ali.
+ */
+export async function exigirMentoradaDoModeloNovo(mentoradaId: string): Promise<Mentorada> {
+  const { mentoradasDoModeloNovo } = await import('./modelo');
+  const lista = await mentoradasDoModeloNovo();
+  const mentorada = lista.find((m) => m.id === normalizarId(mentoradaId));
+  if (!mentorada) notFound();
+  return mentorada;
+}

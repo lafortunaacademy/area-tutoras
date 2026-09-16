@@ -12,7 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { exigirAdmin } from '@/lib/session';
-import { exigirMentorada } from '@/lib/notion/guard';
+import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { planejamento } from '@/lib/notion/mentorada';
 import { progressoDaMentoria } from '@/lib/notion/jornada';
 import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao';
@@ -43,7 +43,7 @@ export default async function AreaDaMentoradaPage({
 }) {
   const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
-  const mentorada = await exigirMentorada(mentoradaId);
+  const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const [progresso, plano, gestao] = await Promise.all([
     progressoDaMentoria(mentorada).catch(() => null),

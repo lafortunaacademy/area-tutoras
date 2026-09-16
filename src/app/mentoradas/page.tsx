@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { exigirAdmin } from '@/lib/session';
-import { carteiraDaTutora } from '@/lib/notion/carteira';
+import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { iniciais } from '@/lib/iniciais';
 
@@ -11,7 +11,7 @@ export default async function MentoradasPage() {
 
   let mentoradas;
   try {
-    mentoradas = await carteiraDaTutora();
+    mentoradas = await mentoradasDoModeloNovo();
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }
@@ -21,7 +21,9 @@ export default async function MentoradasPage() {
       <div className="mb-8">
         <h1 className="display text-3xl">Área das mentoradas</h1>
         <p className="mt-1 text-sm text-texto-suave">
-          Abra uma mentorada para ver a área de membros como ela vai ver.
+          {mentoradas.length === 0
+            ? 'Nenhuma mentorada está na área de membros nova ainda.'
+            : 'Abra uma mentorada para ver a área de membros como ela vai ver.'}
         </p>
       </div>
 

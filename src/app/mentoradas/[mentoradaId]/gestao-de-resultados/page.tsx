@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeft, CalendarDays, CalendarRange, Flag, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CalendarRange, Flag, Wallet } from 'lucide-react';
 import { exigirAdmin } from '@/lib/session';
-import { exigirMentorada } from '@/lib/notion/guard';
+import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import {
   gestaoDeResultados,
   type GestaoDeResultados,
@@ -26,7 +26,7 @@ export default async function GestaoDeResultadosPage({
 }) {
   const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
-  const mentorada = await exigirMentorada(mentoradaId);
+  const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const gestao = await gestaoDeResultados(mentorada.id).catch((e) => e as Error);
 
@@ -39,18 +39,6 @@ export default async function GestaoDeResultadosPage({
         <ArrowLeft aria-hidden size={14} />
         {mentorada.nome}
       </Link>
-
-      {/* Capa */}
-      <div className="relative mb-12">
-        <div className="flex h-36 items-center justify-center overflow-hidden rounded-2xl border border-[#d8cfc0] bg-[#ede8dc] px-6 sm:h-44">
-          <p className="display text-center text-3xl leading-none tracking-[0.06em] text-[#af9b87] uppercase sm:text-6xl">
-            Gestão de resultados
-          </p>
-        </div>
-        <span className="absolute -bottom-7 left-6 flex size-14 items-center justify-center rounded-2xl border-4 border-fundo bg-[#4b3424] text-[#f5f2e9]">
-          <TrendingUp aria-hidden size={22} />
-        </span>
-      </div>
 
       <h1 className="display text-3xl sm:text-4xl">Gestão de resultados</h1>
       <p className="mt-1 text-sm text-texto-suave">{mentorada.nome}</p>
