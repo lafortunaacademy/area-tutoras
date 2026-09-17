@@ -6,8 +6,12 @@ import type { ItemDeMaterial } from '@/lib/notion/pilares';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { Icone } from './IconeNotion';
+import { FormularioPreSessao } from './FormularioPreSessao';
 
 type Material = { titulo: string; blocos: BlocoSimples[] };
+
+const ehPreSessao = (t: string) =>
+  /^pre[-\s]?sessao/.test(t.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase());
 
 const buscas = new Map<string, Promise<Material>>();
 function buscarMaterial(id: string, mentoradaId: string): Promise<Material> {
@@ -112,7 +116,18 @@ function CartaoMaterial({ item, mentoradaId, aoFechar }: { item: ItemDeMaterial;
             </p>
           ) : null}
           {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
-          {material ? <BlocosNotion blocos={material.blocos} /> : null}
+          {material ? (
+            ehPreSessao(item.titulo) ? (
+              <FormularioPreSessao
+                blocos={material.blocos}
+                materialId={item.id}
+                mentoradaId={mentoradaId}
+                aoSalvar={() => buscas.delete(`${mentoradaId}:${item.id}`)}
+              />
+            ) : (
+              <BlocosNotion blocos={material.blocos} />
+            )
+          ) : null}
         </div>
       </div>
     </div>

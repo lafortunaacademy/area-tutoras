@@ -1,6 +1,17 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { getBlock, getBlockChildren, getDatabase, getPage, NotionError, queryDatabase, type NotionBlock, type Pai } from './client';
+import {
+  appendChildren,
+  getBlock,
+  getBlockChildren,
+  getDatabase,
+  getPage,
+  NotionError,
+  queryDatabase,
+  updateBlock,
+  type NotionBlock,
+  type Pai,
+} from './client';
 import { lerBlocos, type BlocoSimples } from './blocks';
 import { AREA_DE_MEMBROS, TEMAS_DE_TUTORIA } from './config';
 import { normalizarId, type Mentorada } from './carteira';
@@ -129,6 +140,67 @@ export async function materialDaMentorada(
   return { titulo: titulo(pagina).split('|')[0].trim(), blocos: await lerBlocos(pagina.id, 3) };
 }
 
+/** Pré-sessões são os únicos materiais que a mentorada preenche. */
+export const ehPreSessao = (t: string) => /^pre[-\s]?sessao/.test(normal(t));
+
+export type RespostaDaPreSessao =
+  | { acao: 'marcar'; blocoId: string; marcado: boolean }
+  | { acao: 'texto'; blocoId: string; texto: string }
+  /** Pergunta ainda sem parágrafo de resposta: cria um dentro do callout. */
+  | { acao: 'adicionar'; blocoId: string; texto: string };
+
+/**
+ * Grava uma resposta na pré-sessão, direto no Notion. Os IDs vêm do navegador:
+ * a página precisa ser uma pré-sessão dentro da página Tutorias desta mentorada,
+ * e o bloco precisa morar nessa página — e ser do tipo que a ação espera.
+ * Devolve o ID do bloco escrito (o novo, quando cria).
+ */
+export async function responderPreSessao(
+  mentoradaId: string,
+  paginaId: string,
+  resposta: RespostaDaPreSessao,
+): Promise<string | null> {
+  const [tutorias, pagina, bloco] = await Promise.all([
+    paginaDeTutorias(mentoradaId),
+    getPage(paginaId).catch(() => null),
+    getBlock(resposta.blocoId).catch(() => null),
+  ]);
+  if (!tutorias || !pagina || !bloco || !ehPreSessao(titulo(pagina))) return null;
+  if (!(await blocoDaPagina(bloco.parent, pagina.id)) || !(await desceDe(pagina.parent, tutorias))) return null;
+
+  if (resposta.acao === 'marcar') {
+    if (bloco.type !== 'to_do') return null;
+    await updateBlock(bloco.id, { to_do: { checked: resposta.marcado } });
+    return bloco.id;
+  }
+  if (resposta.acao === 'texto') {
+    if (bloco.type !== 'paragraph') return null;
+    await updateBlock(bloco.id, { paragraph: { rich_text: textoRico(resposta.texto) } });
+    return bloco.id;
+  }
+  if (bloco.type !== 'callout') return null;
+  const [novo] = await appendChildren(bloco.id, [
+    { object: 'block', type: 'paragraph', paragraph: { rich_text: textoRico(resposta.texto) } },
+  ]);
+  return novo?.id ?? null;
+}
+
+/** O Notion aceita até 2.000 caracteres por pedaço de texto. */
+function textoRico(texto: string) {
+  const pedacos = texto.match(/[\s\S]{1,2000}/g) ?? [];
+  return pedacos.slice(0, 100).map((content) => ({ type: 'text', text: { content } }));
+}
+
+/** O bloco mora dentro da página (subindo por callouts, colunas, toggles), sem passar por outra página. */
+async function blocoDaPagina(pai: Pai | undefined, paginaId: string): Promise<boolean> {
+  for (let salto = 0; pai && salto < 8; salto++) {
+    if (pai.type === 'page_id') return Boolean(pai.page_id) && normalizarId(pai.page_id!) === normalizarId(paginaId);
+    if (pai.type !== 'block_id' || !pai.block_id) return false;
+    pai = (await getBlock(pai.block_id).catch(() => null))?.parent;
+  }
+  return false;
+}
+
 async function desceDe(pai: Pai | undefined, raiz: string): Promise<boolean> {
   // Material -> base -> callout -> toggle -> callout -> página Tutorias: poucos saltos.
   for (let salto = 0; pai && salto < 10; salto++) {
@@ -205,8 +277,6 @@ function sessoesDoTema(tituloDaTutoria: string, ctx: Contexto): SessaoDaLista[] 
         a.sessao.localeCompare(b.sessao, 'pt-BR', { numeric: true }),
     );
 }
-
-const ehPreSessao = (t: string) => normal(t).startsWith('pre-sessao') || normal(t).startsWith('pre sessao');
 
 const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 function ordemDoMes(mes: string): number {

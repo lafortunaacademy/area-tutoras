@@ -221,8 +221,14 @@ export async function deleteBlock(blockId: string): Promise<void> {
   await call(`/blocks/${blockId}`, { method: 'DELETE' });
 }
 
-export async function appendChildren(blockId: string, children: unknown[]): Promise<void> {
-  await call(`/blocks/${blockId}/children`, { method: 'PATCH', body: { children } });
+export async function appendChildren(blockId: string, children: unknown[]): Promise<NotionBlock[]> {
+  const res = await call<Lista<NotionBlock>>(`/blocks/${blockId}/children`, { method: 'PATCH', body: { children } });
+  return res.results;
+}
+
+/** Muda o conteúdo de um bloco (texto de um parágrafo, marcação de um to-do…). */
+export async function updateBlock(blockId: string, body: Record<string, unknown>): Promise<NotionBlock> {
+  return call<NotionBlock>(`/blocks/${blockId}`, { method: 'PATCH', body });
 }
 
 export async function updatePage(
