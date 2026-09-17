@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Paperclip } from 'lucide-react';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
+
+type Anexar = (calloutId: string, arquivo: File) => Promise<BlocoSimples | 'grande' | null>;
 
 type Salvar = (corpo: { acao: 'marcar'; blocoId: string; marcado: boolean } | { acao: 'texto' | 'adicionar'; blocoId: string; texto: string }) => Promise<string | null>;
 
@@ -36,13 +38,24 @@ export function FormularioPreSessao({
     return ((await r.json()) as { id: string }).id;
   };
 
+  const anexar: Anexar = async (calloutId, arquivo) => {
+    const form = new FormData();
+    form.append('mentorada', mentoradaId);
+    form.append('bloco', calloutId);
+    form.append('arquivo', arquivo);
+    const r = await fetch(`/api/materiais/${materialId}/arquivos`, { method: 'POST', body: form });
+    if (!r.ok) return r.status === 413 ? 'grande' : null;
+    aoSalvar();
+    return ((await r.json()) as { bloco: BlocoSimples }).bloco;
+  };
+
   return (
     <div className="space-y-3 text-sm leading-relaxed">
       <p className="rounded-lg bg-superficie-2 px-3 py-2 text-xs text-texto-suave">
         As respostas são salvas sozinhas: as opções na hora, os textos quando você sai do campo.
       </p>
       {blocos.map((b) => (
-        <Bloco key={b.id} bloco={b} salvar={salvar} />
+        <Bloco key={b.id} bloco={b} salvar={salvar} anexar={anexar} />
       ))}
     </div>
   );
@@ -50,13 +63,19 @@ export function FormularioPreSessao({
 
 const ehPergunta = (t: string) => /[?:]\s*$/.test(t.trim());
 
-function Bloco({ bloco, salvar }: { bloco: BlocoSimples; salvar: Salvar }) {
+const TIPOS_DE_ARQUIVO = new Set(['image', 'file', 'pdf', 'video', 'column_list']);
+/** A pergunta pede arquivo: fala em print, foto, anexo… ou já tem arquivo dentro. */
+const pedeArquivo = (b: BlocoSimples) =>
+  /print|arquivo|anex|foto|imagem|upload|documento|pdf/i.test(b.texto) || b.filhos.some((f) => TIPOS_DE_ARQUIVO.has(f.tipo));
+
+function Bloco({ bloco, salvar, anexar }: { bloco: BlocoSimples; salvar: Salvar; anexar: Anexar }) {
   if (bloco.tipo.startsWith('heading')) {
     return <h3 className="display pt-4 text-lg text-marca first:pt-0">{bloco.texto}</h3>;
   }
   if (bloco.tipo !== 'callout') return <BlocosNotion blocos={[bloco]} />;
 
   const temResposta = bloco.filhos.some((f) => f.tipo === 'to_do' || (f.tipo === 'paragraph' && !ehPergunta(f.texto)));
+  const comArquivo = pedeArquivo(bloco);
 
   return (
     <div className="rounded-lg bg-superficie-2 p-3.5">
@@ -71,7 +90,8 @@ function Bloco({ bloco, salvar }: { bloco: BlocoSimples; salvar: Salvar }) {
             <BlocosNotion key={f.id} blocos={[f]} />
           ),
         )}
-        {temResposta ? null : <Resposta calloutId={bloco.id} inicial="" salvar={salvar} />}
+        {temResposta || comArquivo ? null : <Resposta calloutId={bloco.id} inicial="" salvar={salvar} />}
+        {comArquivo ? <EnviarArquivo calloutId={bloco.id} anexar={anexar} /> : null}
       </div>
     </div>
   );
@@ -162,6 +182,54 @@ function Resposta({
       <p className="h-4 text-right text-[11px] text-texto-suave" aria-live="polite">
         {estado === 'salvando' ? 'Salvando…' : estado === 'salvo' ? 'Salvo' : estado === 'erro' ? <span className="text-parado">Não salvou. Saia do campo de novo para tentar.</span> : ''}
       </p>
+    </div>
+  );
+}
+
+function EnviarArquivo({ calloutId, anexar }: { calloutId: string; anexar: Anexar }) {
+  const [enviados, setEnviados] = useState<BlocoSimples[]>([]);
+  const [estado, setEstado] = useState<'parado' | 'enviando' | 'erro' | 'grande'>('parado');
+
+  const enviar = async (arquivos: FileList | null) => {
+    if (!arquivos?.length) return;
+    setEstado('enviando');
+    for (const arquivo of Array.from(arquivos)) {
+      if (arquivo.size > 4 * 1024 * 1024) {
+        setEstado('grande');
+        return;
+      }
+      const bloco = await anexar(calloutId, arquivo);
+      if (bloco === 'grande' || !bloco) {
+        setEstado(bloco === 'grande' ? 'grande' : 'erro');
+        return;
+      }
+      setEnviados((atual) => [...atual, bloco]);
+    }
+    setEstado('parado');
+  };
+
+  return (
+    <div className="space-y-2">
+      {enviados.length ? <BlocosNotion blocos={enviados} /> : null}
+      <label
+        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-borda bg-superficie px-3 py-2 text-xs font-medium transition hover:border-marca hover:text-marca ${
+          estado === 'enviando' ? 'pointer-events-none opacity-60' : ''
+        }`}
+      >
+        {estado === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Paperclip aria-hidden size={14} />}
+        {estado === 'enviando' ? 'Enviando…' : 'Adicionar arquivo'}
+        <input
+          type="file"
+          multiple
+          className="sr-only"
+          onChange={(e) => {
+            void enviar(e.target.files);
+            e.target.value = '';
+          }}
+        />
+      </label>
+      {estado === 'grande' ? <p className="text-xs text-parado">Cada arquivo pode ter até 4 MB.</p> : null}
+      {estado === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
     </div>
   );
 }

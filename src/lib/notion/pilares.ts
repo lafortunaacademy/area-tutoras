@@ -8,6 +8,7 @@ import {
   getPage,
   NotionError,
   queryDatabase,
+  subirArquivo,
   updateBlock,
   type NotionBlock,
   type Pai,
@@ -160,13 +161,8 @@ export async function responderPreSessao(
   paginaId: string,
   resposta: RespostaDaPreSessao,
 ): Promise<string | null> {
-  const [tutorias, pagina, bloco] = await Promise.all([
-    paginaDeTutorias(mentoradaId),
-    getPage(paginaId).catch(() => null),
-    getBlock(resposta.blocoId).catch(() => null),
-  ]);
-  if (!tutorias || !pagina || !bloco || !ehPreSessao(titulo(pagina))) return null;
-  if (!(await blocoDaPagina(bloco.parent, pagina.id)) || !(await desceDe(pagina.parent, tutorias))) return null;
+  const bloco = await blocoDaPreSessao(mentoradaId, paginaId, resposta.blocoId);
+  if (!bloco) return null;
 
   if (resposta.acao === 'marcar') {
     if (bloco.type !== 'to_do') return null;
@@ -183,6 +179,42 @@ export async function responderPreSessao(
     { object: 'block', type: 'paragraph', paragraph: { rich_text: textoRico(resposta.texto) } },
   ]);
   return novo?.id ?? null;
+}
+
+/**
+ * Anexa um arquivo dentro de uma pergunta (callout) da pré-sessão: imagem vira
+ * bloco de imagem, PDF de PDF, o resto de arquivo. Mesmas conferências de
+ * `responderPreSessao`. Devolve o bloco criado, já no formato da tela.
+ */
+export async function anexarNaPreSessao(
+  mentoradaId: string,
+  paginaId: string,
+  calloutId: string,
+  arquivo: File,
+): Promise<BlocoSimples | null> {
+  const callout = await blocoDaPreSessao(mentoradaId, paginaId, calloutId);
+  if (!callout || callout.type !== 'callout') return null;
+
+  const upload = await subirArquivo(arquivo, arquivo.name);
+  const tipo = arquivo.type.startsWith('image/') ? 'image' : arquivo.type === 'application/pdf' ? 'pdf' : 'file';
+  const [novo] = await appendChildren(callout.id, [
+    { object: 'block', type: tipo, [tipo]: { type: 'file_upload', file_upload: { id: upload } } },
+  ]);
+  if (!novo) return null;
+  const conteudo = novo[tipo] as { file?: { url: string } } | undefined;
+  return { id: novo.id, tipo, texto: '', url: conteudo?.file?.url, legenda: arquivo.name, filhos: [] };
+}
+
+/** O bloco, se ele mora numa pré-sessão dentro da página Tutorias desta mentorada. */
+async function blocoDaPreSessao(mentoradaId: string, paginaId: string, blocoId: string) {
+  const [tutorias, pagina, bloco] = await Promise.all([
+    paginaDeTutorias(mentoradaId),
+    getPage(paginaId).catch(() => null),
+    getBlock(blocoId).catch(() => null),
+  ]);
+  if (!tutorias || !pagina || !bloco || !ehPreSessao(titulo(pagina))) return null;
+  if (!(await blocoDaPagina(bloco.parent, pagina.id)) || !(await desceDe(pagina.parent, tutorias))) return null;
+  return bloco;
 }
 
 /** O Notion aceita até 2.000 caracteres por pedaço de texto. */
