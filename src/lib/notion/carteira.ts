@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { MENTORADA, STATUS_INATIVOS } from './config';
-import { iconeUrl, texto, titulo } from './props';
+import { corDaOpcao, iconeUrl, texto, titulo } from './props';
 
 /**
  * Quem a tutora vê.
@@ -21,6 +21,9 @@ export type Mentorada = {
   nome: string;
   mentoria: string;
   status: string;
+  /** "Situação " da cliente (Fluindo, Atenção…) e a cor da opção no Notion. */
+  situacao: string;
+  corSituacao: string;
   /** A própria linha. Mantido em lista para o resto do código não mudar. */
   areaDaClienteIds: string[];
   /** Ícone da página dela. URL assinada, expira — só serve ao vivo. */
@@ -33,6 +36,8 @@ function paraMentorada(page: NotionPage): Mentorada {
     nome: texto(page, MENTORADA.nome) || titulo(page),
     mentoria: texto(page, MENTORADA.mentoria),
     status: texto(page, MENTORADA.status),
+    situacao: texto(page, MENTORADA.situacao),
+    corSituacao: corDaOpcao(page, MENTORADA.situacao),
     areaDaClienteIds: [page.id],
     foto: iconeUrl(page),
   };

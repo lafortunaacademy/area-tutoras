@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { exigirAdmin } from '@/lib/session';
 import { visaoGeral, type ResumoDaMentorada } from '@/lib/notion/visaoGeral';
 import { AvisoNotion } from '@/components/AvisoNotion';
-import { Etiqueta } from '@/components/Etiqueta';
+import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { iniciais } from '@/lib/iniciais';
 
 export const dynamic = 'force-dynamic';
@@ -87,8 +87,8 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                         <Retrato nome={m.mentorada.nome} foto={m.mentorada.foto} />
                         <span className="min-w-0">
                           <span className="flex flex-wrap items-center gap-2 font-medium">
+                            <EtiquetaNotion texto={m.mentorada.situacao || 'Sem situação'} cor={m.mentorada.situacao ? m.mentorada.corSituacao : 'default'} />
                             {m.mentorada.nome}
-                            {m.mentorada.status ? <Etiqueta texto={m.mentorada.status} /> : null}
                           </span>
                           {m.mentorada.mentoria ? <span className="block text-xs text-texto-suave">{m.mentorada.mentoria}</span> : null}
                         </span>

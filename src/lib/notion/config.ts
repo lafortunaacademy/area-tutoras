@@ -55,6 +55,8 @@ export const MENTORADA = {
   nome: 'Cliente',
   /** Ativa/Inativa. ("Situação ", com espaço no fim, é outra coisa: Fluindo, Atenção…) */
   status: 'Status',
+  /** Fluindo, Atenção, Em crise… Com espaço no fim, sim. */
+  situacao: 'Situação ',
   mentoria: 'Mentoria',
 } as const;
 

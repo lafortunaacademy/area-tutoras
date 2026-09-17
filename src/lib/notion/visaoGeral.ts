@@ -15,7 +15,7 @@ import { tarefasDaMentorada } from './tarefas';
  */
 
 export type ResumoDaMentorada = {
-  mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria' | 'status'>;
+  mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria' | 'situacao' | 'corSituacao'>;
   precisaAgendar: boolean;
   /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
   proximaAAgendar: string | null;
@@ -80,7 +80,7 @@ async function resumir(m: Mentorada, hoje: string, ano: string): Promise<ResumoD
   const atrasadas = (tarefas ?? []).filter((t) => !t.feita && t.prazo && t.prazo.slice(0, 10) < hoje);
 
   return {
-    mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, status: m.status },
+    mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, situacao: m.situacao, corSituacao: m.corSituacao },
     precisaAgendar: aRealizar.length > 0 && !agendada,
     proximaAAgendar: aRealizar[0]?.sessao || null,
     realizadas: realizadas.length,
