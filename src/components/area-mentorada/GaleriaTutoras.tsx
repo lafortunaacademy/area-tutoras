@@ -31,7 +31,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
 
   return (
     <>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {tutoras.map((t) => (
           <li key={t.id}>
             <button
@@ -41,11 +41,11 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
               onFocus={() => void buscarTutora(t.id).catch(() => {})}
               className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
             >
-              <Foto tutora={t} className="h-36 w-full" />
-              <div className="flex flex-1 flex-col gap-2 p-3.5">
-                <p className="text-sm font-medium">{t.nome}</p>
+              <Foto tutora={t} className="h-32 w-full" />
+              <div className="flex flex-1 flex-col gap-1.5 p-2.5">
+                <p className="text-[13px] font-medium leading-tight">{t.nome}</p>
                 <Etiquetas itens={t.especialidades} />
-                {t.legendaEntregaveis ? <p className="text-xs text-texto-suave">{t.legendaEntregaveis}</p> : null}
+                {t.legendaEntregaveis ? <p className="text-[11px] text-texto-suave">{t.legendaEntregaveis}</p> : null}
                 <Etiquetas itens={t.topicos} suave />
               </div>
             </button>
@@ -60,8 +60,9 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
 
 function Foto({ tutora, className }: { tutora: TutoraDoHub; className: string }) {
   return tutora.foto ? (
+    // Fotos de retrato: o recorte parte do alto, para o rosto não ser cortado.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={tutora.foto} alt="" className={`${className} object-cover`} />
+    <img src={tutora.foto} alt="" className={`${className} object-cover object-[center_15%]`} />
   ) : (
     <span aria-hidden className={`${className} display flex items-center justify-center bg-marca-suave text-3xl text-marca`}>
       {iniciais(tutora.nome)}
@@ -76,7 +77,7 @@ function Etiquetas({ itens, suave }: { itens: string[]; suave?: boolean }) {
       {itens.map((i) => (
         <li
           key={i}
-          className={`rounded-md px-1.5 py-0.5 text-[11px] ${suave ? 'bg-superficie-2 text-texto-suave' : 'bg-marca-suave text-marca'}`}
+          className={`rounded px-1.5 py-px text-[10px] ${suave ? 'bg-superficie-2 text-texto-suave' : 'bg-marca-suave text-marca'}`}
         >
           {i}
         </li>
