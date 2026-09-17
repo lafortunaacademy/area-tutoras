@@ -14,6 +14,13 @@ function juntar(rt: unknown): string {
  * número cru (1000), como string já formatada ("R$ 1.000,00") ou como array de
  * valores. Os três caminhos caem aqui.
  */
+/** A cor da opção escolhida num select ou status do Notion ("green", "default"…). */
+export function corDaOpcao(page: NotionPage, nome: string): string {
+  const p = page.properties?.[nome];
+  if (p?.type !== 'select' && p?.type !== 'status') return 'default';
+  return (p[p.type] as { color?: string } | null)?.color ?? 'default';
+}
+
 export function texto(page: NotionPage, nome: string): string {
   const p = page.properties?.[nome];
   return textoDeProp(p);

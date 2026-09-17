@@ -3,7 +3,7 @@ import { getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
 import { TUTORIA, cicloAtual } from './config';
-import { data, relationIds, texto, titulo } from './props';
+import { corDaOpcao, data, relationIds, texto, titulo } from './props';
 import { nomesDasTutoras } from './tutora';
 import { lerBlocos, type BlocoSimples } from './blocks';
 
@@ -21,6 +21,8 @@ export type SessaoDaLista = {
   id: string;
   sessao: string;
   status: string;
+  /** Cor da opção de Status no Notion, para a etiqueta sair igual. */
+  corStatus: string;
   /** "2026-09-20": a realizada, se houver; senão a prevista. */
   data: string | null;
   realizada: boolean;
@@ -129,6 +131,7 @@ function paraSessao(p: NotionPage, nomes: Map<string, string>): SessaoDaLista {
     id: p.id,
     sessao: texto(p, TUTORIA.sessao) || titulo(p),
     status,
+    corStatus: corDaOpcao(p, TUTORIA.status),
     data: realizada ?? data(p, TUTORIA.dataPrevista),
     realizada: status === 'Realizada',
     tutoras: relationIds(p, TUTORIA.tutoras)

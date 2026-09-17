@@ -6,7 +6,7 @@ import type { ConteudoDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMent
 import type { TarefaDaMentoria } from '@/lib/notion/tarefas';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
-import { Etiqueta } from '@/components/Etiqueta';
+import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 
 type Detalhe = { conteudo: ConteudoDaSessao; tarefas: TarefaDaMentoria[] | null };
 
@@ -91,7 +91,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   onMouseEnter={() => void buscarSessao(s.id, mentoradaId).catch(() => {})}
                   className="cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
-                  <td className="px-4 py-2.5 whitespace-nowrap">{s.status ? <Etiqueta texto={s.status} /> : null}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
                   <td className="px-4 py-2.5 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
                       {s.sessao}
@@ -164,7 +164,7 @@ function CartaoSessao({
           <div className="min-w-0 flex-1">
             <p className="display text-xl leading-tight">{sessao.sessao}</p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-texto-suave">
-              {sessao.status ? <Etiqueta texto={sessao.status} /> : null}
+              {sessao.status ? <EtiquetaNotion texto={sessao.status} cor={sessao.corStatus} /> : null}
               <span className="tabular-nums">{dataCurta(sessao.data)}</span>
               {sessao.tutoras.length ? <span>· {sessao.tutoras.join(', ')}</span> : null}
             </p>
