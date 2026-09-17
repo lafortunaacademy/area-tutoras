@@ -1,15 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSessao } from '@/lib/session';
+import { getVisitante } from '@/lib/session';
+import { podeVer } from '@/lib/acesso';
 import { normalizarId } from '@/lib/notion/carteira';
 import { responderPreSessao, type RespostaDaPreSessao } from '@/lib/notion/pilares';
 
 /**
  * Grava uma resposta da pré-sessão no Notion (marcar opção, escrever resposta).
- * Por enquanto só o administrativo entra na área das mentoradas.
+ * Entram o administrativo e a própria mentorada.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ materialId: string }> }) {
-  const sessao = await getSessao();
-  if (!sessao?.real.is_admin) {
+  const visitante = await getVisitante();
+  if (!visitante) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 401 });
   }
 
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const resposta = validar(corpo);
   if (!corpo?.mentorada || !resposta) {
     return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
+  }
+  if (!podeVer(visitante, corpo.mentorada)) {
+    return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
 
   const { materialId } = await params;

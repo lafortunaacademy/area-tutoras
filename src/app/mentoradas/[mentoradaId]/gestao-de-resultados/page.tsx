@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, CalendarDays, CalendarRange, Flag, Wallet } from 'lucide-react';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import {
   gestaoDeResultados,
@@ -27,8 +27,8 @@ export default async function GestaoDeResultadosPage({
   params: Promise<{ mentoradaId: string }>;
   searchParams: Promise<{ ano?: string }>;
 }) {
-  const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const visitante = await exigirAcessoAMentorada(mentoradaId);
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
@@ -49,7 +49,7 @@ export default async function GestaoDeResultadosPage({
 
       {gestao instanceof Error ? (
         <div className="mt-8">
-          <AvisoNotion erro={gestao} detalhar={sessao.real.is_admin} />
+          <AvisoNotion erro={gestao} detalhar={visitante.admin} />
         </div>
       ) : gestao === null ? (
         <p className="mt-8 rounded-xl border border-dashed border-borda px-4 py-8 text-center text-sm text-texto-suave">

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSessao } from '@/lib/session';
+import { getVisitante } from '@/lib/session';
+import { podeVer } from '@/lib/acesso';
 import { normalizarId } from '@/lib/notion/carteira';
 import { lerCenario } from '@/lib/notion/cenarios';
 
@@ -8,18 +9,18 @@ import { lerCenario } from '@/lib/notion/cenarios';
  * GET e não Server Action, pelo mesmo motivo do `notion-content`: leitura não
  * deve re-renderizar a rota inteira.
  *
- * A área das mentoradas é só do administrativo por enquanto; a mentorada e o
+ * A área das mentoradas é de quem entrou: o administrativo ou a própria mentorada. A mentorada e o
  * cartão são conferidos aqui de novo, porque os dois IDs vêm do navegador.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ cenarioId: string }> }) {
-  const sessao = await getSessao();
-  if (!sessao?.real.is_admin) {
+  const visitante = await getVisitante();
+  if (!visitante) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 401 });
   }
 
   const mentoradaId = request.nextUrl.searchParams.get('mentorada');
-  if (!mentoradaId) {
-    return NextResponse.json({ erro: 'mentorada não informada' }, { status: 400 });
+  if (!mentoradaId || !podeVer(visitante, mentoradaId)) {
+    return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
 
   const { cenarioId } = await params;

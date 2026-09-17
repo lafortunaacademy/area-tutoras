@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Sessao } from '@/lib/session';
+import type { Sessao, Visitante } from '@/lib/session';
 
 export type Area = 'admin' | 'tutoras' | 'mentoradas';
 
@@ -17,10 +17,20 @@ const AREAS: { chave: Area; rotulo: string; nome: string; href: string }[] = [
  * das mentoradas, e as páginas de lá ainda conferem o admin no servidor — o
  * link escondido é conforto, não proteção.
  */
-export function Cabecalho({ sessao, area }: { sessao: Sessao; area: Area }) {
+export function Cabecalho({
+  sessao,
+  visitante,
+  area,
+}: {
+  sessao?: Sessao;
+  /** Quem entrou na área das mentoradas, quando não é uma tutora. */
+  visitante?: Visitante;
+  area: Area;
+}) {
   const atual = AREAS.find((a) => a.chave === area)!;
   // Na área das tutoras, durante um "ver como", o nome é o de quem está sendo vista.
-  const nome = area === 'tutoras' ? sessao.tutora.nome : sessao.real.nome;
+  const nome = sessao ? (area === 'tutoras' ? sessao.tutora.nome : sessao.real.nome) : (visitante?.nome ?? '');
+  const admin = sessao ? sessao.real.is_admin : Boolean(visitante?.admin);
 
   return (
     <header className="border-b border-borda bg-superficie">
@@ -42,7 +52,7 @@ export function Cabecalho({ sessao, area }: { sessao: Sessao; area: Area }) {
         </Link>
 
         <div className="flex min-w-0 items-center gap-3 text-sm sm:gap-4">
-          {sessao.real.is_admin ? (
+          {admin ? (
             <nav aria-label="Áreas" className="flex items-center gap-0.5 rounded-lg border border-borda p-0.5">
               {AREAS.map((a) => (
                 <Link

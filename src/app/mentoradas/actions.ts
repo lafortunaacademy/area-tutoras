@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { criarTarefa, marcarTarefa } from '@/lib/notion/tarefas';
 import { atualizarValorDoMes, CAMPOS_EDITAVEIS_DO_MES, type CampoEditavelDoMes } from '@/lib/notion/gestao';
@@ -14,8 +14,9 @@ export type EstadoTarefa = { erro?: string };
  * de novo no servidor antes de qualquer escrita.
  */
 export async function adicionarTarefa(_anterior: EstadoTarefa, form: FormData): Promise<EstadoTarefa> {
-  await exigirAdmin();
-  const mentorada = await exigirMentoradaDoModeloNovo(String(form.get('mentoradaId') ?? ''));
+  const mentoradaId = String(form.get('mentoradaId') ?? '');
+  await exigirAcessoAMentorada(mentoradaId);
+  const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const tarefa = String(form.get('tarefa') ?? '').trim();
   const prazo = String(form.get('prazo') ?? '').trim();
@@ -40,8 +41,9 @@ export async function adicionarTarefa(_anterior: EstadoTarefa, form: FormData): 
 }
 
 export async function alternarTarefa(form: FormData): Promise<void> {
-  await exigirAdmin();
-  const mentorada = await exigirMentoradaDoModeloNovo(String(form.get('mentoradaId') ?? ''));
+  const mentoradaId = String(form.get('mentoradaId') ?? '');
+  await exigirAcessoAMentorada(mentoradaId);
+  const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
   const tarefaId = String(form.get('tarefaId') ?? '');
   if (!tarefaId) return;
 
@@ -60,7 +62,7 @@ export async function salvarValorDoMes(
   campo: CampoEditavelDoMes,
   valor: number | null,
 ): Promise<ResultadoValor> {
-  await exigirAdmin();
+  await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   if (!CAMPOS_EDITAVEIS_DO_MES.includes(campo)) return { ok: false, erro: 'Campo não editável.' };

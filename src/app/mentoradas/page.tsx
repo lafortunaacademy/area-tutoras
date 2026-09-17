@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { exigirAdmin } from '@/lib/session';
+import { redirect } from 'next/navigation';
+import { exigirVisitante } from '@/lib/session';
 import { visaoGeral, type ResumoDaMentorada } from '@/lib/notion/visaoGeral';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
@@ -9,7 +10,9 @@ import { iniciais } from '@/lib/iniciais';
 export const dynamic = 'force-dynamic';
 
 export default async function MentoradasPage() {
-  const sessao = await exigirAdmin();
+  const visitante = await exigirVisitante();
+  // A mentorada não tem visão geral: vai direto para a própria área.
+  if (!visitante.admin) redirect(`/mentoradas/${visitante.mentoradaId}`);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -20,7 +23,7 @@ export default async function MentoradasPage() {
       </p>
 
       <Suspense fallback={<Carregando />}>
-        <Conteudo detalharErro={sessao.real.is_admin} />
+        <Conteudo detalharErro={visitante.admin} />
       </Suspense>
     </div>
   );

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { anoDaSessao, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { cicloAtual } from '@/lib/notion/config';
@@ -19,8 +19,8 @@ export default async function SessoesPage({
   params: Promise<{ mentoradaId: string }>;
   searchParams: Promise<{ ano?: string }>;
 }) {
-  const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const visitante = await exigirAcessoAMentorada(mentoradaId);
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
@@ -61,7 +61,7 @@ export default async function SessoesPage({
         acao={<span className="text-xs whitespace-nowrap text-texto-suave">Ciclo {ano}</span>}
       >
         {sessoes instanceof Error ? (
-          <AvisoNotion erro={sessoes} detalhar={sessao.real.is_admin} />
+          <AvisoNotion erro={sessoes} detalhar={visitante.admin} />
         ) : (
           <ListaDeSessoes key={ano} mentoradaId={mentorada.id} sessoes={sessoes} />
         )}

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { supabaseServer } from '@/lib/supabase/server';
+import { destinoDepoisDoLogin } from '@/lib/session';
 
 /**
  * Fim do magic link. Aceita as duas formas que o Supabase usa:
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] verifyOtp falhou:', error.message);
       return NextResponse.redirect(`${origin}/login?erro=link_expirado`);
     }
-    return NextResponse.redirect(`${origin}/painel`);
+    return NextResponse.redirect(`${origin}${await destinoDepoisDoLogin()}`);
   }
 
   if (code) {
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] troca de código falhou:', error.message);
       return NextResponse.redirect(`${origin}/login?erro=link_expirado`);
     }
-    return NextResponse.redirect(`${origin}/painel`);
+    return NextResponse.redirect(`${origin}${await destinoDepoisDoLogin()}`);
   }
 
   return NextResponse.redirect(`${origin}/login?erro=link_invalido`);

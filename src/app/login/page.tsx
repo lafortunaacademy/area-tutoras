@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSessao, supabaseConfigurado } from '@/lib/session';
+import { destinoDepoisDoLogin, getAcessoMentorada, getSessao, supabaseConfigurado } from '@/lib/session';
 
 // Depende da sessão do request: nunca pode virar HTML estático.
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ erro?: string }>;
 }) {
-  if (await getSessao()) redirect('/painel');
+  if ((await getSessao()) || (await getAcessoMentorada())) redirect(await destinoDepoisDoLogin());
 
   const { erro } = await searchParams;
   const aviso = erro ? (MENSAGENS[erro] ?? 'Não consegui te autenticar. Peça um novo link.') : null;
@@ -28,7 +28,7 @@ export default async function LoginPage({
           <p className="rotulo text-xs text-texto-suave">
             La Fortuna Academy
           </p>
-          <h1 className="display mt-3 text-3xl">Área das tutoras</h1>
+          <h1 className="display mt-3 text-3xl">Entrar</h1>
           <p className="mt-2 text-sm text-texto-suave">
             Entre com o e-mail cadastrado. Enviamos um link de acesso — sem senha.
           </p>

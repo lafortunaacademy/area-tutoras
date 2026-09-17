@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { tutorasDoHub } from '@/lib/notion/hub';
 import { pilaresDaMentorada } from '@/lib/notion/pilares';
@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 
 /** Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares da mentorada. */
 export default async function TutoriasPage({ params }: { params: Promise<{ mentoradaId: string }> }) {
-  const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const visitante = await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   const [tutoras, pilares] = await Promise.all([
@@ -37,7 +37,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
 
       <Bloco icone={Users} titulo="Tutorias do HUB">
         {tutoras instanceof Error ? (
-          <AvisoNotion erro={tutoras} detalhar={sessao.real.is_admin} />
+          <AvisoNotion erro={tutoras} detalhar={visitante.admin} />
         ) : (
           <GaleriaTutoras tutoras={tutoras} />
         )}
@@ -45,7 +45,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
 
       <div className="mt-4">
         {pilares instanceof Error ? (
-          <AvisoNotion erro={pilares} detalhar={sessao.real.is_admin} />
+          <AvisoNotion erro={pilares} detalhar={visitante.admin} />
         ) : pilares && pilares.length ? (
           <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} />
         ) : null}

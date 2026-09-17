@@ -10,7 +10,8 @@
     "tutora:add": "node scripts/add-tutora.mjs",
     "notion:doctor": "node scripts/notion-doctor.mjs",
     "notion:smoke": "tsx --conditions=react-server scripts/smoke.mts",
-    "deploy:env": "node scripts/deploy-env.mjs"
+    "deploy:env": "node scripts/deploy-env.mjs",
+    "mentorada:add": "node scripts/add-mentorada.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { FormularioTarefa } from '@/components/area-mentorada/FormularioTarefa';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NovaTarefaPage({ params }: { params: Promise<{ mentoradaId: string }> }) {
-  await exigirAdmin();
   const { mentoradaId } = await params;
+  await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   return (

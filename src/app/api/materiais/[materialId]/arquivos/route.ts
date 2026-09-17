@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSessao } from '@/lib/session';
+import { getVisitante } from '@/lib/session';
+import { podeVer } from '@/lib/acesso';
 import { normalizarId } from '@/lib/notion/carteira';
 import { anexarNaPreSessao } from '@/lib/notion/pilares';
 
@@ -10,8 +11,8 @@ import { anexarNaPreSessao } from '@/lib/notion/pilares';
 const LIMITE_BYTES = 4 * 1024 * 1024;
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ materialId: string }> }) {
-  const sessao = await getSessao();
-  if (!sessao?.real.is_admin) {
+  const visitante = await getVisitante();
+  if (!visitante) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 401 });
   }
 
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const arquivo = form?.get('arquivo');
   if (typeof mentorada !== 'string' || typeof callout !== 'string' || !(arquivo instanceof File) || arquivo.size === 0) {
     return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
+  }
+  if (!podeVer(visitante, mentorada)) {
+    return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
   if (arquivo.size > LIMITE_BYTES) {
     return NextResponse.json({ erro: 'arquivo maior que 4 MB' }, { status: 413 });

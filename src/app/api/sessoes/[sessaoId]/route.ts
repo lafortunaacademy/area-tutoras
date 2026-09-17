@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSessao } from '@/lib/session';
+import { getVisitante } from '@/lib/session';
+import { podeVer } from '@/lib/acesso';
 import { normalizarId } from '@/lib/notion/carteira';
 import { conteudoDaSessao } from '@/lib/notion/sessoesDaMentorada';
 import { tarefasDaMentorada } from '@/lib/notion/tarefas';
@@ -10,14 +11,14 @@ import { tarefasDaMentorada } from '@/lib/notion/tarefas';
  * da própria mentorada.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ sessaoId: string }> }) {
-  const sessao = await getSessao();
-  if (!sessao?.real.is_admin) {
+  const visitante = await getVisitante();
+  if (!visitante) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 401 });
   }
 
   const mentoradaId = request.nextUrl.searchParams.get('mentorada');
-  if (!mentoradaId) {
-    return NextResponse.json({ erro: 'mentorada não informada' }, { status: 400 });
+  if (!mentoradaId || !podeVer(visitante, mentoradaId)) {
+    return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
 
   const { sessaoId } = await params;

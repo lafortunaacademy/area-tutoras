@@ -12,7 +12,7 @@ import {
   Target,
   TrendingUp,
 } from 'lucide-react';
-import { exigirAdmin } from '@/lib/session';
+import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import type { Mentorada } from '@/lib/notion/carteira';
 import { planejamento } from '@/lib/notion/mentorada';
@@ -54,8 +54,8 @@ export default async function AreaDaMentoradaPage({
   params: Promise<{ mentoradaId: string }>;
   searchParams: Promise<{ ano?: string }>;
 }) {
-  const sessao = await exigirAdmin();
   const { mentoradaId } = await params;
+  const visitante = await exigirAcessoAMentorada(mentoradaId);
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
@@ -125,7 +125,7 @@ export default async function AreaDaMentoradaPage({
 
         <div id="planejamento" className="scroll-mt-6">
           <Suspense fallback={<Carregando icone={Target} titulo="Planejamento estratégico" altura="h-48" />}>
-            <SecaoPlanejamento mentorada={mentorada} detalhar={sessao.real.is_admin} />
+            <SecaoPlanejamento mentorada={mentorada} detalhar={visitante.admin} />
           </Suspense>
         </div>
 

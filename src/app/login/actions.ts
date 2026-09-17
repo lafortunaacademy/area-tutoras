@@ -16,18 +16,17 @@ export async function enviarMagicLink(
     return { erro: 'Digite um e-mail válido.' };
   }
 
-  // Só e-mail cadastrado recebe link. `shouldCreateUser: false` no signInWithOtp
+  // Só e-mail cadastrado recebe link — de tutora ou de mentorada. `shouldCreateUser: false` no signInWithOtp
   // já barraria a criação, mas conferir aqui evita mandar e-mail para quem não
   // é tutora — e devolve a mesma mensagem nos dois casos, para não revelar
   // quem está ou não cadastrada.
-  const { data: tutora } = await supabaseAdmin()
-    .from('tutoras')
-    .select('id')
-    .eq('email', email)
-    .eq('ativa', true)
-    .maybeSingle();
+  const db = supabaseAdmin();
+  const [{ data: tutora }, { data: mentorada }] = await Promise.all([
+    db.from('tutoras').select('id').eq('email', email).eq('ativa', true).maybeSingle(),
+    db.from('mentoradas_acesso').select('id').eq('email', email).eq('ativa', true).maybeSingle(),
+  ]);
 
-  if (!tutora) return { enviado: true };
+  if (!tutora && !mentorada) return { enviado: true };
 
   const origem = (await headers()).get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL;
   const supabase = await supabaseServer();
