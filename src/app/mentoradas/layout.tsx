@@ -2,6 +2,7 @@ import { exigirAdmin } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { Cabecalho } from '@/components/Cabecalho';
 import { MenuMentoradas } from '@/components/MenuMentoradas';
+import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
 
 /**
  * Área das mentoradas.
@@ -26,12 +27,23 @@ export default async function MentoradasLayout({ children }: { children: React.R
             <MenuMentoradas
               base="/mentoradas"
               inicio={{ href: '/mentoradas', rotulo: 'Visão geral' }}
+              secoes={[
+                { rotulo: 'Progresso da mentoria', ancora: 'progresso' },
+                { rotulo: 'Área da mentorada', ancora: 'area' },
+                { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
+                { rotulo: 'Tarefas da mentoria', ancora: 'tarefas' },
+                { rotulo: 'Marcos & Conquistas', ancora: 'marcos' },
+                { rotulo: 'Faturamento', ancora: 'faturamento' },
+                { rotulo: 'Lucro', ancora: 'lucro' },
+                { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
+              ]}
               mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
             />
           </div>
         </aside>
 
         <main className="min-w-0 flex-1">{children}</main>
+        <RolarParaAncora />
       </div>
     </div>
   );

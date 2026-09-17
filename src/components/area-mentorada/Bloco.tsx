@@ -34,9 +34,9 @@ export function Bloco({
 }
 
 /** Um grupo de blocos sob um título da marca ("Faturamento", "Lucro"…). */
-export function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+export function Grupo({ titulo, id, children }: { titulo: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10">
+    <section id={id} className="mt-10 scroll-mt-6">
       <h3 className="display mb-4 text-xl text-marca">{titulo}</h3>
       <div className="space-y-4">{children}</div>
     </section>

@@ -110,17 +110,24 @@ export default async function AreaDaMentoradaPage({
       </header>
 
       <div className="space-y-4">
-        <Suspense fallback={<Carregando icone={CircleDot} titulo="Progresso da mentoria" altura="h-56" />}>
-          <SecaoProgresso mentorada={mentorada} />
-        </Suspense>
+        {/* Os ids são as âncoras do menu lateral (layout de /mentoradas). */}
+        <div id="progresso" className="scroll-mt-6">
+          <Suspense fallback={<Carregando icone={CircleDot} titulo="Progresso da mentoria" altura="h-56" />}>
+            <SecaoProgresso mentorada={mentorada} />
+          </Suspense>
+        </div>
 
-        <Bloco icone={LayoutGrid} titulo="Área da mentorada">
-          <CartoesDaArea mentoradaId={mentorada.id} />
-        </Bloco>
+        <div id="area" className="scroll-mt-6">
+          <Bloco icone={LayoutGrid} titulo="Área da mentorada">
+            <CartoesDaArea mentoradaId={mentorada.id} />
+          </Bloco>
+        </div>
 
-        <Suspense fallback={<Carregando icone={Target} titulo="Planejamento estratégico" altura="h-48" />}>
-          <SecaoPlanejamento mentorada={mentorada} detalhar={sessao.real.is_admin} />
-        </Suspense>
+        <div id="planejamento" className="scroll-mt-6">
+          <Suspense fallback={<Carregando icone={Target} titulo="Planejamento estratégico" altura="h-48" />}>
+            <SecaoPlanejamento mentorada={mentorada} detalhar={sessao.real.is_admin} />
+          </Suspense>
+        </div>
 
         <div id="tarefas" className="scroll-mt-6">
           <Suspense fallback={<Carregando icone={ListChecks} titulo="Tarefas da mentoria" altura="h-32" />}>
@@ -252,11 +259,13 @@ async function SecaoDashboard({ mentoradaId, anoPedido }: { mentoradaId: string;
 
   return (
     <>
-      <Grupo titulo="Marcos & Conquistas">
-        <Bloco icone={Flag} titulo="Linha do tempo">
-          <LinhaDoTempo marcos={gestao?.marcos} />
-        </Bloco>
-      </Grupo>
+      <div id="marcos" className="scroll-mt-6">
+        <Grupo titulo="Marcos & Conquistas">
+          <Bloco icone={Flag} titulo="Linha do tempo">
+            <LinhaDoTempo marcos={gestao?.marcos} />
+          </Bloco>
+        </Grupo>
+      </div>
 
       {gestao ? (
         <DashboardFinanceiro gestao={gestao} mentoradaId={mentoradaId} anoPedido={anoPedido} />
@@ -300,7 +309,7 @@ function DashboardFinanceiro({
         <SeletorDeAno anos={anosDisponiveis(gestao)} selecionado={ano} caminho={`/mentoradas/${mentoradaId}`} />
       </div>
 
-      <Grupo titulo="Faturamento">
+      <Grupo id="faturamento" titulo="Faturamento">
         <GraficoLinha icone={TrendingUp} titulo="Faturamento mensal" tom="verde" periodo={ano} formato="reais" pontos={porMes('faturamento')} />
         <div className="grid gap-4 lg:grid-cols-3">
           <GraficoBarras
@@ -316,7 +325,7 @@ function DashboardFinanceiro({
         </div>
       </Grupo>
 
-      <Grupo titulo="Lucro">
+      <Grupo id="lucro" titulo="Lucro">
         <GraficoLinha icone={PiggyBank} titulo="Lucro mensal" tom="azul" periodo={ano} formato="reais" pontos={porMes('lucroComInvestimento')} />
         <GraficoBarras
           icone={PiggyBank}
@@ -339,7 +348,7 @@ function DashboardFinanceiro({
 function DashboardVazio({ ano }: { ano: string }) {
   return (
     <>
-      <Grupo titulo="Faturamento">
+      <Grupo id="faturamento" titulo="Faturamento">
         <GraficoVazio icone={TrendingUp} titulo="Faturamento mensal" periodo={ano} eixo={MESES} />
         <div className="grid gap-4 lg:grid-cols-3">
           <GraficoVazio icone={TrendingUp} titulo="Faturamento trimestral" periodo={ano} eixo={TRIMESTRES} className="lg:col-span-2" />
@@ -347,7 +356,7 @@ function DashboardVazio({ ano }: { ano: string }) {
         </div>
       </Grupo>
 
-      <Grupo titulo="Lucro">
+      <Grupo id="lucro" titulo="Lucro">
         <GraficoVazio icone={PiggyBank} titulo="Lucro mensal" periodo={ano} eixo={MESES} />
         <GraficoVazio icone={PiggyBank} titulo="Lucro trimestral" periodo={ano} eixo={TRIMESTRES} />
         <div className="grid gap-4 lg:grid-cols-2">

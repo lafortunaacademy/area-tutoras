@@ -9,6 +9,12 @@ import { iniciais } from '@/lib/iniciais';
 export type ItemMenu = { id: string; nome: string; foto: string | null };
 
 /**
+ * Atalho para uma parte da página da mentorada. `ancora` é o id da seção na
+ * página; `rota` leva a uma subpágina (ex.: "gestao-de-resultados").
+ */
+export type SecaoMenu = { rotulo: string; ancora?: string; rota?: string };
+
+/**
  * Menu lateral com todas as mentoradas.
  *
  * São 44 nomes: sem um filtro, achar alguém vira rolagem e paciência. O filtro
@@ -22,10 +28,13 @@ export function MenuMentoradas({
   mentoradas,
   base,
   inicio,
+  secoes = [],
 }: {
   mentoradas: ItemMenu[];
   base: string;
   inicio: { href: string; rotulo: string };
+  /** Mostradas embaixo da mentorada aberta. */
+  secoes?: SecaoMenu[];
 }) {
   const [busca, setBusca] = useState('');
   const caminho = usePathname();
@@ -111,6 +120,28 @@ export function MenuMentoradas({
                     <Retrato nome={m.nome} foto={m.foto} />
                     <span className="min-w-0 flex-1">{m.nome}</span>
                   </Link>
+
+                  {atual && secoes.length > 0 ? (
+                    <ul className="mt-1 mb-2 ml-4 space-y-px border-l border-borda pl-2">
+                      {secoes.map((s) => {
+                        const href = `${base}/${m.id}${s.rota ? `/${s.rota}` : ''}${s.ancora ? `#${s.ancora}` : ''}`;
+                        const naRota = s.rota ? caminho.startsWith(`${base}/${m.id}/${s.rota}`) : false;
+                        return (
+                          <li key={s.rotulo}>
+                            <Link
+                              href={href}
+                              aria-current={naRota ? 'page' : undefined}
+                              className={`block rounded-md px-2 py-1 text-[12px] leading-snug transition ${
+                                naRota ? 'font-medium text-marca' : 'text-texto-suave hover:bg-superficie hover:text-texto'
+                              }`}
+                            >
+                              {s.rotulo}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
                 </li>
               );
             })}
