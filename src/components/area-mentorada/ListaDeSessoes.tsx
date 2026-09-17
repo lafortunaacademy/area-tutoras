@@ -69,7 +69,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-borda text-left">
-              {['Sessão', 'Status', 'Data', 'Tutora', ''].map((c, i) => (
+              {['Status', 'Sessão', 'Data', 'Tutora', ''].map((c, i) => (
                 <th key={i} className="px-4 py-2.5 text-[11px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
@@ -91,12 +91,12 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   onMouseEnter={() => void buscarSessao(s.id, mentoradaId).catch(() => {})}
                   className="cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
+                  <td className="px-4 py-2.5 whitespace-nowrap">{s.status ? <Etiqueta texto={s.status} /> : null}</td>
                   <td className="px-4 py-2.5 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
                       {s.sessao}
                     </button>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">{s.status ? <Etiqueta texto={s.status} /> : null}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>
                   <td className="px-4 py-2.5 text-texto-suave">{s.tutoras.join(', ') || '—'}</td>
                   <td className="w-8 px-2 text-texto-suave">
