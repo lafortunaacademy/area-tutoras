@@ -11,7 +11,7 @@ import Link from 'next/link';
 const CARTOES: { titulo: string; tom: 'claro' | 'escuro'; rota?: string }[] = [
   { titulo: 'La Fortuna', tom: 'claro' },
   { titulo: 'Sessões', tom: 'escuro' },
-  { titulo: 'Tutorias', tom: 'escuro' },
+  { titulo: 'Tutorias', tom: 'escuro', rota: 'tutorias' },
   { titulo: 'Gestão de resultados', tom: 'escuro', rota: 'gestao-de-resultados' },
 ];
 

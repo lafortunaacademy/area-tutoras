@@ -206,7 +206,12 @@ export const TUTORA = {
   programa: 'Programa',
   mentoria: 'Mentoria',
   topicos: 'Principais tópicos',
+  /** Com dois-pontos e espaço no fim, sim. */
+  legendaEntregaveis: 'Legenda entregáveis: ',
 } as const;
+
+/** Quem aparece na galeria "Tutorias do HUB" (o grupo "em andamento" do Status). */
+export const TUTORAS_ATIVAS: readonly string[] = ['Ativa'];
 
 /**
  * Base "Mapas das clientes": o retrato da mentorada preenchido por ela.

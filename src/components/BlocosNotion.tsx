@@ -92,10 +92,18 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
       );
 
     case 'callout':
+      // Callout é uma caixa: o texto dele funciona como título e o conteúdo vem
+      // logo abaixo, sem a linha lateral dos blocos aninhados comuns.
       return (
         <div className="rounded-lg bg-superficie-2 p-3.5">
-          {bloco.texto}
-          {filhos}
+          {bloco.texto ? <p className="font-medium">{bloco.texto}</p> : null}
+          {bloco.filhos.length ? (
+            <div className={`space-y-2 ${bloco.texto ? 'mt-2' : ''}`}>
+              {bloco.filhos.map((f) => (
+                <Bloco key={f.id} bloco={f} />
+              ))}
+            </div>
+          ) : null}
         </div>
       );
 
@@ -108,9 +116,32 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
 
     case 'image':
       return bloco.url ? (
+        // Altura contida: foto de retrato do Notion ocuparia a tela inteira.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={bloco.url} alt={bloco.legenda ?? ''} className="rounded-lg" />
+        <img src={bloco.url} alt={bloco.legenda ?? ''} className="max-h-80 w-full rounded-lg object-cover" />
       ) : null;
+
+    case 'column_list':
+      // Colunas do Notion lado a lado (em tela estreita, uma embaixo da outra).
+      return (
+        <div
+          className="grid gap-4 md:[grid-template-columns:repeat(var(--colunas),minmax(0,1fr))]"
+          style={{ ['--colunas' as string]: String(Math.max(bloco.filhos.length, 1)) }}
+        >
+          {bloco.filhos.map((f) => (
+            <Bloco key={f.id} bloco={f} />
+          ))}
+        </div>
+      );
+
+    case 'column':
+      return (
+        <div className="min-w-0 space-y-2">
+          {bloco.filhos.map((f) => (
+            <Bloco key={f.id} bloco={f} />
+          ))}
+        </div>
+      );
 
     case 'file':
     case 'pdf':
