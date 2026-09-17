@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { exigirAdmin } from '@/lib/session';
-import { DIAS_ATENCAO, DIAS_CRITICO, TAREFAS_CRITICO, visaoGeral, type Nivel, type ResumoDaMentorada } from '@/lib/notion/visaoGeral';
+import { visaoGeral, type ResumoDaMentorada } from '@/lib/notion/visaoGeral';
 import { AvisoNotion } from '@/components/AvisoNotion';
+import { Etiqueta } from '@/components/Etiqueta';
 import { iniciais } from '@/lib/iniciais';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export default async function MentoradasPage() {
       <p className="text-[11px] tracking-[0.14em] text-texto-suave uppercase">Área das mentoradas</p>
       <h1 className="display mt-1 text-3xl sm:text-4xl">Visão geral</h1>
       <p className="mt-1 text-sm text-texto-suave">
-        Os alertas de acompanhamento e em que ponto cada mentorada está no ciclo. Só as mentoradas do modelo novo.
+        Quem precisa agendar sessão e em que ponto cada mentorada está no ciclo. Só as mentoradas do modelo novo.
       </p>
 
       <Suspense fallback={<Carregando />}>
@@ -44,6 +45,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
   const comAtraso = mentoradas.filter((m) => m.tarefasAtrasadas > 0).length;
+  const semAgenda = mentoradas.filter((m) => m.precisaAgendar);
 
   return (
     <>
@@ -59,46 +61,58 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
       <Secao
         titulo="Alertas de acompanhamento"
-        descricao={`Crítico: ${TAREFAS_CRITICO} ou mais tarefas atrasadas, ou ${DIAS_CRITICO} dias sem sessão. Atenção: tarefa atrasada, ${DIAS_ATENCAO} dias sem sessão, sessão prevista vencida ou tutoria sem tutora.`}
+        descricao={`Quem ainda tem sessão a realizar no ${ciclo} e nenhuma agendada (nem status Agendado, nem data prevista de hoje em diante).`}
       >
-        <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-borda text-left">
-                {['Mentorada', 'Nível', 'Por quê', 'Última sessão'].map((c) => (
-                  <th key={c} className="px-4 py-2.5 text-[11px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
-                    {c}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {mentoradas.map((m) => (
-                <tr key={m.mentorada.id} className="border-b border-borda/60 last:border-0">
-                  <td className="px-4 py-2.5">
-                    <Link href={`/mentoradas/${m.mentorada.id}`} className="flex items-center gap-2.5 hover:text-marca">
-                      <Retrato nome={m.mentorada.nome} foto={m.mentorada.foto} />
-                      <span className="min-w-0">
-                        <span className="block font-medium">{m.mentorada.nome}</span>
-                        {m.mentorada.mentoria ? <span className="block text-xs text-texto-suave">{m.mentorada.mentoria}</span> : null}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap">
-                    <SeloNivel nivel={m.nivel} />
-                  </td>
-                  <td className="px-4 py-2.5 text-texto-suave">
-                    {m.motivos.length ? m.motivos.join(' · ') : 'Tudo em dia'}
-                    {m.incompleto ? <span className="block text-xs">Parte dos dados não carregou agora.</span> : null}
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
-                    {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : '—'}
-                  </td>
+        {semAgenda.length === 0 ? (
+          <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
+            Todas as mentoradas estão com a próxima sessão agendada.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-borda text-left">
+                  {['Mentorada', 'Próxima a agendar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
+                    <th key={c} className="px-4 py-2.5 text-[11px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
+                      {c}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {semAgenda.map((m) => (
+                  <tr key={m.mentorada.id} className="border-b border-borda/60 last:border-0">
+                    <td className="px-4 py-2.5">
+                      <Link href={`/mentoradas/${m.mentorada.id}/sessoes`} className="flex items-center gap-2.5 hover:text-marca">
+                        <Retrato nome={m.mentorada.nome} foto={m.mentorada.foto} />
+                        <span className="min-w-0">
+                          <span className="flex flex-wrap items-center gap-2 font-medium">
+                            {m.mentorada.nome}
+                            {m.mentorada.status ? <Etiqueta texto={m.mentorada.status} /> : null}
+                          </span>
+                          {m.mentorada.mentoria ? <span className="block text-xs text-texto-suave">{m.mentorada.mentoria}</span> : null}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[10.5px] font-medium tracking-wide text-andamento uppercase">
+                        Agendar
+                      </span>
+                      <span className="ml-2">{m.proximaAAgendar ?? '—'}</span>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
+                      {m.aRealizar} {m.aRealizar === 1 ? 'sessão' : 'sessões'}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
+                      {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : '—'}
+                      {m.incompleto ? <span className="block text-xs">Parte dos dados não carregou agora.</span> : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Secao>
 
       <Secao titulo="Onde cada mentorada está" descricao={`Sessões realizadas no ${ciclo}, de todas as previstas.`}>
@@ -150,21 +164,6 @@ function Secao({ titulo, descricao, children }: { titulo: string; descricao: str
       <p className="mt-1 mb-4 text-sm text-texto-suave">{descricao}</p>
       {children}
     </section>
-  );
-}
-
-const NIVEIS: Record<Nivel, { rotulo: string; classe: string }> = {
-  critico: { rotulo: 'Crítico', classe: 'bg-parado-suave text-parado' },
-  atencao: { rotulo: 'Atenção', classe: 'bg-andamento-suave text-andamento' },
-  'em-dia': { rotulo: 'Em dia', classe: 'bg-ok-suave text-ok' },
-};
-
-function SeloNivel({ nivel }: { nivel: Nivel }) {
-  const n = NIVEIS[nivel];
-  return (
-    <span className={`inline-block shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-medium tracking-wide uppercase ${n.classe}`}>
-      {n.rotulo}
-    </span>
   );
 }
 

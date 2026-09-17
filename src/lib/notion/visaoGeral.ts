@@ -6,32 +6,23 @@ import { anoDaSessao, sessoesPorCiclo } from './sessoesDaMentorada';
 import { tarefasDaMentorada } from './tarefas';
 
 /**
- * A Visão geral da área das mentoradas: quem precisa do time e em que ponto
- * cada uma está no ciclo atual. Só lê, das mesmas bases das páginas de cada
- * mentorada (sessões e tarefas).
+ * A Visão geral da área das mentoradas: quem precisa agendar sessão e em que
+ * ponto cada uma está no ciclo atual. Só lê, das mesmas bases das páginas de
+ * cada mentorada (sessões e tarefas).
  *
- * Níveis:
- * - Crítico: 3 ou mais tarefas atrasadas, ou 45 dias ou mais sem sessão realizada.
- * - Atenção: alguma tarefa atrasada, 30 dias ou mais sem sessão, sessão com data
- *   prevista vencida e ainda a realizar, ou tutoria a realizar sem tutora.
- * - Em dia: nada disso.
+ * Precisa agendar: ainda tem sessão a realizar no ciclo, mas nenhuma agendada —
+ * nem com status "Agendado", nem com data prevista de hoje em diante.
  */
 
-export const DIAS_ATENCAO = 30;
-export const DIAS_CRITICO = 45;
-export const TAREFAS_CRITICO = 3;
-
-export type Nivel = 'critico' | 'atencao' | 'em-dia';
-
 export type ResumoDaMentorada = {
-  mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria'>;
-  nivel: Nivel;
-  motivos: string[];
+  mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria' | 'status'>;
+  precisaAgendar: boolean;
+  /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
+  proximaAAgendar: string | null;
   realizadas: number;
   aRealizar: number;
   total: number;
   tarefasAtrasadas: number;
-  tarefasPendentes: number;
   /** "2026-09-10", a sessão realizada mais recente com data. */
   ultimaSessao: string | null;
   diasSemSessao: number | null;
@@ -45,6 +36,7 @@ export type VisaoGeral = {
 };
 
 const EM_PARALELO = 3;
+const AGENDADO = 'Agendado';
 
 export async function visaoGeral(): Promise<VisaoGeral> {
   const mentoradas = await mentoradasDoModeloNovo();
@@ -56,8 +48,12 @@ export async function visaoGeral(): Promise<VisaoGeral> {
     resumos.push(...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ano)))));
   }
 
-  const peso: Record<Nivel, number> = { critico: 0, atencao: 1, 'em-dia': 2 };
-  resumos.sort((a, b) => peso[a.nivel] - peso[b.nivel] || a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'));
+  // Quem está há mais tempo sem sessão primeiro; sem data nenhuma, antes de todas.
+  resumos.sort(
+    (a, b) =>
+      (b.diasSemSessao ?? Infinity) - (a.diasSemSessao ?? Infinity) ||
+      a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'),
+  );
   return { ciclo: cicloAtual(), mentoradas: resumos };
 }
 
@@ -70,6 +66,9 @@ async function resumir(m: Mentorada, hoje: string, ano: string): Promise<ResumoD
   const doCiclo = (sessoes?.sessoes ?? []).filter((s) => anoDaSessao(s) === ano);
   const realizadas = doCiclo.filter((s) => s.status === TUTORIA_REALIZADA);
   const aRealizar = doCiclo.filter((s) => TUTORIA_A_REALIZAR.includes(s.status));
+  const agendada = aRealizar.some(
+    (s) => s.status === AGENDADO || (s.dataPrevista !== null && s.dataPrevista.slice(0, 10) >= hoje),
+  );
 
   const ultimaSessao =
     (sessoes?.sessoes ?? [])
@@ -77,33 +76,19 @@ async function resumir(m: Mentorada, hoje: string, ano: string): Promise<ResumoD
       .map((s) => s.dataRealizada!.slice(0, 10))
       .sort()
       .at(-1) ?? null;
-  const diasSemSessao = ultimaSessao ? diasEntre(ultimaSessao, hoje) : null;
 
-  const pendentes = (tarefas ?? []).filter((t) => !t.feita);
-  const atrasadas = pendentes.filter((t) => t.prazo && t.prazo.slice(0, 10) < hoje);
-  const vencidas = aRealizar.filter((s) => s.dataPrevista && s.dataPrevista.slice(0, 10) < hoje);
-  const semTutora = aRealizar.filter((s) => /^tutoria/i.test(s.sessao.trim()) && s.tutoraIds.length === 0);
-
-  const motivos: string[] = [];
-  if (atrasadas.length) motivos.push(`${atrasadas.length} ${atrasadas.length === 1 ? 'tarefa atrasada' : 'tarefas atrasadas'}`);
-  if (diasSemSessao !== null && diasSemSessao >= DIAS_ATENCAO) motivos.push(`${diasSemSessao} dias sem sessão realizada`);
-  if (vencidas.length) motivos.push(`${vencidas.length} ${vencidas.length === 1 ? 'sessão prevista já passou' : 'sessões previstas já passaram'} e segue a realizar`);
-  if (semTutora.length) motivos.push(`${semTutora.length} ${semTutora.length === 1 ? 'tutoria sem tutora definida' : 'tutorias sem tutora definida'}`);
-
-  const critico = atrasadas.length >= TAREFAS_CRITICO || (diasSemSessao !== null && diasSemSessao >= DIAS_CRITICO);
-  const nivel: Nivel = critico ? 'critico' : motivos.length ? 'atencao' : 'em-dia';
+  const atrasadas = (tarefas ?? []).filter((t) => !t.feita && t.prazo && t.prazo.slice(0, 10) < hoje);
 
   return {
-    mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria },
-    nivel,
-    motivos,
+    mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, status: m.status },
+    precisaAgendar: aRealizar.length > 0 && !agendada,
+    proximaAAgendar: aRealizar[0]?.sessao || null,
     realizadas: realizadas.length,
     aRealizar: aRealizar.length,
     total: doCiclo.length,
     tarefasAtrasadas: atrasadas.length,
-    tarefasPendentes: pendentes.length,
     ultimaSessao,
-    diasSemSessao,
+    diasSemSessao: ultimaSessao ? diasEntre(ultimaSessao, hoje) : null,
     incompleto: sessoes === null || tarefas === null,
   };
 }
