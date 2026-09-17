@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Columns3, LayoutGrid, Loader2, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import type { TutoraDoHub } from '@/lib/notion/hub';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
@@ -22,13 +22,12 @@ function buscarTutora(id: string): Promise<BlocoSimples[]> {
 }
 
 /**
- * A galeria "Tutorias do HUB", só para ver, com as duas visualizações do Notion:
- * todas as tutoras, ou agrupadas por área (Áreas/Especialidades). Cada cartão
- * abre por cima da página.
+ * A galeria "Tutorias do HUB", só para ver: as tutoras agrupadas por área
+ * (Áreas/Especialidades), como o quadro "por área" do Notion. Cada cartão abre
+ * por cima da página.
  */
 export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
   const [aberta, setAberta] = useState<TutoraDoHub | null>(null);
-  const [visao, setVisao] = useState<'todas' | 'area'>('todas');
 
   if (tutoras.length === 0) {
     return <p className="text-sm text-texto-suave">Nenhuma tutora ativa no momento.</p>;
@@ -42,50 +41,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
 
   return (
     <>
-      <div role="tablist" aria-label="Visualização" className="mb-3 flex gap-1">
-        {[
-          { chave: 'todas' as const, rotulo: 'Todas', icone: LayoutGrid },
-          { chave: 'area' as const, rotulo: 'Por área', icone: Columns3 },
-        ].map(({ chave, rotulo, icone: Icone }) => (
-          <button
-            key={chave}
-            type="button"
-            role="tab"
-            aria-selected={visao === chave}
-            onClick={() => setVisao(chave)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition ${
-              visao === chave ? 'bg-marca font-medium text-marca-contraste' : 'text-texto-suave hover:bg-fundo hover:text-texto'
-            }`}
-          >
-            <Icone aria-hidden size={13} />
-            {rotulo}
-          </button>
-        ))}
-      </div>
-
-      {visao === 'todas' ? (
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-          {tutoras.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                {...eventos(t)}
-                className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
-              >
-                <Foto tutora={t} className="h-24 w-full" />
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-2">
-                  <p className="text-[12px] font-medium leading-tight">{t.nome}</p>
-                  <Etiquetas itens={t.especialidades} />
-                  {t.legendaEntregaveis ? <p className="text-[10px] font-medium text-destaque">{t.legendaEntregaveis}</p> : null}
-                  <Etiquetas itens={t.topicos} suave />
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <PorArea tutoras={tutoras} eventos={eventos} />
-      )}
+      <PorArea tutoras={tutoras} eventos={eventos} />
 
       {aberta ? <Cartao tutora={aberta} aoFechar={() => setAberta(null)} /> : null}
     </>
@@ -118,12 +74,12 @@ function PorArea({
     <div className="-mx-1 overflow-x-auto px-1 pb-2">
       <div className="flex items-start gap-3">
         {areas.map((area) => (
-          <section key={area} className="w-48 shrink-0 rounded-xl bg-fundo p-2">
-            <h4 className="mb-2 flex items-center gap-2 px-1 text-xs">
+          <section key={area} className="w-40 shrink-0 rounded-xl bg-fundo p-1.5">
+            <h4 className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] leading-tight">
               <span className="rounded bg-superficie-2 px-1.5 py-0.5 font-medium">{area}</span>
               <span className="text-texto-suave tabular-nums">{grupos.get(area)!.length}</span>
             </h4>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {grupos.get(area)!.map((t) => (
                 <li key={t.id}>
                   <button
@@ -131,9 +87,9 @@ function PorArea({
                     {...eventos(t)}
                     className="flex w-full flex-col overflow-hidden rounded-lg border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
                   >
-                    <Foto tutora={t} className="h-32 w-full" />
-                    <div className="flex min-w-0 flex-col gap-1.5 p-2">
-                      <p className="text-[12px] font-medium leading-tight">{t.nome}</p>
+                    <Foto tutora={t} className="h-24 w-full" />
+                    <div className="flex min-w-0 flex-col gap-1 p-1.5">
+                      <p className="text-[11.5px] font-medium leading-tight">{t.nome}</p>
                       {t.legendaEntregaveis ? <p className="text-[10px] font-medium text-destaque">{t.legendaEntregaveis}</p> : null}
                       <Etiquetas itens={t.topicos} suave />
                     </div>
