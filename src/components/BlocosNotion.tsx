@@ -163,6 +163,33 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
         </a>
       ) : null;
 
+    case 'table':
+      return (
+        <div className="overflow-x-auto rounded-lg border border-borda">
+          <table className="w-full text-[13px]">
+            <tbody>
+              {bloco.filhos.map((linha, i) => {
+                const Celula = bloco.cabecalho && i === 0 ? 'th' : 'td';
+                return (
+                  <tr key={linha.id} className="border-b border-borda last:border-0">
+                    {(linha.celulas ?? []).map((c, j) => (
+                      <Celula
+                        key={j}
+                        className={`border-r border-borda px-3 py-2 text-left align-top last:border-r-0 ${
+                          Celula === 'th' ? 'bg-superficie-2 font-medium' : ''
+                        }`}
+                      >
+                        {c}
+                      </Celula>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      );
+
     case 'divider':
       return <hr className="border-borda" />;
 

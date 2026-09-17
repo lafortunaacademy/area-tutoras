@@ -1,6 +1,7 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { getBlockChildren, NotionError, queryDatabase, type NotionBlock } from './client';
+import { getBlock, getBlockChildren, getDatabase, getPage, NotionError, queryDatabase, type NotionBlock, type Pai } from './client';
+import { lerBlocos, type BlocoSimples } from './blocks';
 import { AREA_DE_MEMBROS, TEMAS_DE_TUTORIA } from './config';
 import { normalizarId, type Mentorada } from './carteira';
 import { acharFilho, ehCallout, paginaDaAreaDeMembros } from './gestao';
@@ -111,6 +112,38 @@ export async function pilaresDaMentorada(mentorada: Mentorada): Promise<Pilar[] 
       return { ...pilar, tutorias: await Promise.all(ordenadas.map((f) => lerTutoria(f, ctx))) };
     }),
   );
+}
+
+/**
+ * Conteúdo de um material (Pré-sessão, Carteira de investimentos…). O ID vem do
+ * navegador: só devolve se a página estiver dentro da página Tutorias desta
+ * mentorada, subindo a árvore pelos pais.
+ */
+export async function materialDaMentorada(
+  mentoradaId: string,
+  paginaId: string,
+): Promise<{ titulo: string; blocos: BlocoSimples[] } | null> {
+  const [tutorias, pagina] = await Promise.all([paginaDeTutorias(mentoradaId), getPage(paginaId).catch(() => null)]);
+  if (!tutorias || !pagina || !(await desceDe(pagina.parent, tutorias))) return null;
+
+  return { titulo: titulo(pagina).split('|')[0].trim(), blocos: await lerBlocos(pagina.id, 3) };
+}
+
+async function desceDe(pai: Pai | undefined, raiz: string): Promise<boolean> {
+  // Material -> base -> callout -> toggle -> callout -> página Tutorias: poucos saltos.
+  for (let salto = 0; pai && salto < 10; salto++) {
+    if (pai.type === 'page_id' && pai.page_id) {
+      if (normalizarId(pai.page_id) === normalizarId(raiz)) return true;
+      pai = (await getPage(pai.page_id).catch(() => null))?.parent;
+    } else if (pai.type === 'database_id' && pai.database_id) {
+      pai = (await getDatabase(pai.database_id).catch(() => null))?.parent;
+    } else if (pai.type === 'block_id' && pai.block_id) {
+      pai = (await getBlock(pai.block_id).catch(() => null))?.parent;
+    } else {
+      return false;
+    }
+  }
+  return false;
 }
 
 type FonteDeTutoria = { id: string; titulo: string; icone: IconeNotion };

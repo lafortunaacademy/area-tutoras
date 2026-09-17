@@ -1,5 +1,7 @@
 import { ChevronRight } from 'lucide-react';
-import type { IconeNotion, ParteDaTutoria, Pilar } from '@/lib/notion/pilares';
+import type { ParteDaTutoria, Pilar } from '@/lib/notion/pilares';
+import { Icone } from './IconeNotion';
+import { MateriaisDaTutoria } from './MateriaisDaTutoria';
 import { SessoesDaTutoria } from './SessoesDaTutoria';
 
 /**
@@ -60,34 +62,9 @@ function Parte({ parte, mentoradaId }: { parte: ParteDaTutoria; mentoradaId: str
 
       {parte.tipo === 'sessoes' ? (
         <SessoesDaTutoria mentoradaId={mentoradaId} sessoes={parte.sessoes} />
-      ) : parte.itens.length ? (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {parte.itens.map((i) => (
-            <li
-              key={i.id}
-              className="flex min-h-11 items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm font-medium shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-            >
-              <Icone icone={i.icone} tamanho={16} />
-              <span className="leading-snug">{i.titulo}</span>
-            </li>
-          ))}
-        </ul>
       ) : (
-        <p className="text-sm text-texto-suave">Nenhum material ainda.</p>
+        <MateriaisDaTutoria mentoradaId={mentoradaId} itens={parte.itens} />
       )}
     </div>
   );
-}
-
-function Icone({ icone, tamanho }: { icone: IconeNotion; tamanho: number }) {
-  if (!icone) return null;
-  if (icone.tipo === 'emoji') {
-    return (
-      <span aria-hidden className="shrink-0 leading-none" style={{ fontSize: tamanho }}>
-        {icone.emoji}
-      </span>
-    );
-  }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={icone.url} alt="" width={tamanho} height={tamanho} className="shrink-0" />;
 }

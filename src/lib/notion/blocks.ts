@@ -15,6 +15,10 @@ export type BlocoSimples = {
   marcado?: boolean;
   url?: string;
   legenda?: string;
+  /** Linha de tabela: o texto de cada célula. */
+  celulas?: string[];
+  /** Tabela: a primeira linha é cabeçalho. */
+  cabecalho?: boolean;
   filhos: BlocoSimples[];
 };
 
@@ -62,15 +66,21 @@ async function converter(bloco: NotionBlock, profundidade: number): Promise<Bloc
     simples.legenda = juntar(arquivo?.caption);
   }
 
+  if (bloco.type === 'table_row') {
+    simples.celulas = ((conteudo?.cells as unknown[]) ?? []).map(juntar);
+  }
+  if (bloco.type === 'table') simples.cabecalho = Boolean(conteudo?.has_column_header);
+
   if (bloco.type === 'bookmark' || bloco.type === 'embed' || bloco.type === 'link_preview') {
     simples.url = conteudo?.url as string | undefined;
   }
 
   // `child_database` aqui é quase sempre uma visualização vinculada; a API não
   // devolve as linhas dela. As bases de verdade são lidas pelo resolver.
-  if (bloco.has_children && profundidade > 0 && bloco.type !== 'child_database') {
+  // As linhas de uma tabela vêm sempre, mesmo no limite de profundidade: sem elas a tabela some.
+  if (bloco.has_children && (profundidade > 0 || bloco.type === 'table') && bloco.type !== 'child_database') {
     const filhos = await getBlockChildren(bloco.id).catch(() => []);
-    simples.filhos = await Promise.all(filhos.map((f) => converter(f, profundidade - 1)));
+    simples.filhos = await Promise.all(filhos.map((f) => converter(f, Math.max(profundidade - 1, 0))));
   }
 
   return simples;

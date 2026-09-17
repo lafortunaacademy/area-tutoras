@@ -176,11 +176,20 @@ export async function getPage(pageId: string): Promise<NotionPage> {
 
 export async function getDatabase(databaseId: string): Promise<{
   id: string;
+  parent: Pai;
   title: { plain_text: string }[];
   properties: Record<string, { id: string; name: string; type: string }>;
 }> {
   return call(`/databases/${databaseId}`);
 }
+
+/** Um bloco sozinho, para subir a árvore pelo `parent`. */
+export async function getBlock(blockId: string): Promise<NotionBlock & { parent: Pai }> {
+  return call(`/blocks/${blockId}`);
+}
+
+/** De onde uma página, base ou bloco pendura. */
+export type Pai = { type: string; page_id?: string; database_id?: string; block_id?: string; workspace?: boolean };
 
 /** Filhos diretos de um bloco/página. Não desce na árvore — quem desce é `blocks.ts`. */
 export async function getBlockChildren(blockId: string): Promise<NotionBlock[]> {
