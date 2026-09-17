@@ -104,7 +104,8 @@ export function MenuMentoradas({
                     href={`${base}/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
                     className={`-ml-px flex items-center gap-2.5 border-l-2 py-1.5 pr-3 pl-3.5 text-[13px] leading-snug transition ${
-                      atual ? SUB_ATIVO : SUB_INATIVO
+                      // A mentorada aberta continua com o fundo marrom da marca.
+                      atual ? 'rounded-r-lg border-destaque bg-marca font-medium text-marca-contraste' : SUB_INATIVO
                     }`}
                   >
                     <Retrato nome={m.nome} foto={m.foto} />
