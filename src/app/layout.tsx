@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Geist } from 'next/font/google';
+import { Belleza, Cormorant_Garamond, Geist } from 'next/font/google';
 import './globals.css';
 
 const geist = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -11,6 +11,10 @@ const cormorant = Cormorant_Garamond({
   weight: ['500', '600', '700'],
 });
 
+// Substituta da Optima em quem não tem a fonte (Windows, Android). No Mac a Optima
+// do sistema vence — ver `.optima` no globals.css.
+const belleza = Belleza({ variable: '--font-belleza', subsets: ['latin'], weight: '400' });
+
 export const metadata: Metadata = {
   title: 'La Fortuna Academy',
   description: 'Área das tutoras e área das mentoradas.',
@@ -19,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`${geist.variable} ${cormorant.variable} antialiased`}>{children}</body>
+      <body className={`${geist.variable} ${cormorant.variable} ${belleza.variable} antialiased`}>{children}</body>
     </html>
   );
 }

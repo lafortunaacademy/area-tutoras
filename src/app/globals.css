@@ -146,6 +146,12 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Optima nos títulos dos cartões; onde não existir, a Belleza, que tem o mesmo desenho. */
+.optima {
+  font-family: Optima, 'Optima Nova', var(--font-belleza), Candara, ui-sans-serif, sans-serif;
+  font-weight: 400;
+}
+
 .rotulo {
   font-family: var(--font-cormorant), ui-serif, Georgia, serif;
   text-transform: uppercase;

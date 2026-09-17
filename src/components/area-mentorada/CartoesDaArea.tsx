@@ -19,13 +19,13 @@ export function CartoesDaArea({ mentoradaId }: { mentoradaId: string }) {
   return (
     <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {CARTOES.map((c) => {
-        const classes = `relative flex aspect-[16/10] items-center justify-center rounded-xl px-3 text-center ${
+        const classes = `relative flex h-20 items-center justify-center rounded-xl px-3 text-center sm:h-24 ${
           c.tom === 'claro'
             ? 'border border-[#d8cfc0] bg-[#ede8dc] text-[#4b3424]'
             : 'bg-[#4b3424] text-[#f5f2e9]'
         }`;
         const titulo = (
-          <span className="display text-sm leading-tight tracking-[0.14em] uppercase sm:text-base">
+          <span className="optima text-xs leading-tight tracking-[0.12em] uppercase sm:text-sm">
             {c.titulo}
           </span>
         );
@@ -43,7 +43,7 @@ export function CartoesDaArea({ mentoradaId }: { mentoradaId: string }) {
               <div aria-disabled className={classes}>
                 {titulo}
                 {/* Em tela estreita o selo cai em cima do título; lá ele sai. */}
-                <span className="absolute right-2.5 bottom-1.5 hidden text-[9px] tracking-wide uppercase opacity-60 sm:block">
+                <span className="absolute right-2 bottom-1 hidden text-[8px] tracking-wide uppercase opacity-60 sm:block">
                   em breve
                 </span>
               </div>
