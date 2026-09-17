@@ -136,7 +136,7 @@ export default async function AreaDaMentoradaPage({
         </div>
       </div>
 
-      <h2 className="display mt-16 text-3xl text-marca">Dashboard Bem-Sucedida</h2>
+      <h2 id="dashboard" className="display mt-16 scroll-mt-6 text-3xl text-marca">Dashboard Bem-Sucedida</h2>
 
       <Suspense
         fallback={
