@@ -27,7 +27,7 @@ export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; m
           {p.tutorias.length ? (
             <div className="mt-4 space-y-3">
               {p.tutorias.map((t) => (
-                <details key={t.id} open className="group rounded-xl border border-borda">
+                <details key={t.id} open className="group rounded-xl bg-marca-suave/60">
                   <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
                     <ChevronRight aria-hidden size={15} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
                     <Icone icone={t.icone} tamanho={15} />
@@ -54,7 +54,7 @@ export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; m
 
 function Parte({ parte, mentoradaId }: { parte: ParteDaTutoria; mentoradaId: string }) {
   return (
-    <div className="rounded-xl border border-borda p-4">
+    <div className="rounded-xl border border-borda bg-superficie p-4">
       <h4 className="mb-3 flex items-center gap-2 text-sm font-medium">
         <Icone icone={parte.icone} tamanho={16} />
         {parte.titulo}
