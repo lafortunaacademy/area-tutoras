@@ -16,7 +16,7 @@ export function SessoesDaTutoria({ mentoradaId, sessoes }: { mentoradaId: string
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-borda text-left">
-              {['Status', 'Sessão', 'Tutoras', 'Mês previsto', 'Data prevista', 'Data realizada', ''].map((c, i) => (
+              {['Status', 'Sessão', 'Tutoras', 'Data realizada', ''].map((c, i) => (
                 <th key={i} className="px-3 py-2 text-[11px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
@@ -26,7 +26,7 @@ export function SessoesDaTutoria({ mentoradaId, sessoes }: { mentoradaId: string
           <tbody>
             {sessoes.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-sm text-texto-suave">
+                <td colSpan={5} className="px-3 py-6 text-center text-sm text-texto-suave">
                   Nenhuma sessão ainda.
                 </td>
               </tr>
@@ -46,8 +46,6 @@ export function SessoesDaTutoria({ mentoradaId, sessoes }: { mentoradaId: string
                     </button>
                   </td>
                   <td className="px-3 py-2 text-texto-suave">{s.tutoras.join(', ') || '—'}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-texto-suave">{s.mesPrevisto || '—'}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.dataPrevista)}</td>
                   <td className="px-3 py-2 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.dataRealizada)}</td>
                   <td className="w-8 px-2 text-texto-suave">
                     <ChevronRight aria-hidden size={14} />
