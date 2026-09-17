@@ -5,8 +5,21 @@ import Link from 'next/link';
  * já desenha a página certa e o link pode ser compartilhado. Com um ano só, não
  * aparece nada.
  */
-export function SeletorDeAno({ anos, selecionado, caminho }: { anos: string[]; selecionado: string; caminho: string }) {
-  if (anos.length < 2) return null;
+export function SeletorDeAno({
+  anos,
+  selecionado,
+  caminho,
+  rotulo = (ano) => ano,
+  mesmoComUm = false,
+}: {
+  anos: string[];
+  selecionado: string;
+  caminho: string;
+  rotulo?: (ano: string) => string;
+  /** Mostra os botões mesmo quando só há um ano. */
+  mesmoComUm?: boolean;
+}) {
+  if (anos.length === 0 || (anos.length < 2 && !mesmoComUm)) return null;
 
   return (
     <nav aria-label="Ano" className="flex flex-wrap items-center gap-1">
@@ -22,7 +35,7 @@ export function SeletorDeAno({ anos, selecionado, caminho }: { anos: string[]; s
               : 'border border-borda bg-superficie text-texto-suave hover:border-marca hover:text-texto'
           }`}
         >
-          {ano}
+          {rotulo(ano)}
         </Link>
       ))}
     </nav>

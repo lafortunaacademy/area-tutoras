@@ -37,29 +37,35 @@ export type ConteudoDaSessao = {
   gravacao: string | null;
 };
 
-export async function sessoesDaMentorada(mentorada: Mentorada): Promise<SessaoDaLista[]> {
+/**
+ * Todas as sessões da mentorada, de todos os ciclos, com os anos em que ela
+ * teve sessões (o mais recente primeiro). Sessão sem ciclo conta no ciclo
+ * atual, como no progresso da mentoria.
+ */
+export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: string[]; sessoes: SessaoDaLista[] }> {
   const dbId = await resolverDatabaseId('tutorias');
-  const ciclo = cicloAtual();
   const [linhas, nomes] = await Promise.all([
     queryDatabase(dbId, {
       filter: {
-        and: [
-          { or: mentorada.areaDaClienteIds.map((id) => ({ property: TUTORIA.mentorada, relation: { contains: id } })) },
-          {
-            or: [
-              { property: TUTORIA.ciclo, select: { equals: ciclo } },
-              { property: TUTORIA.ciclo, select: { is_empty: true } },
-            ],
-          },
-        ],
+        or: mentorada.areaDaClienteIds.map((id) => ({ property: TUTORIA.mentorada, relation: { contains: id } })),
       },
-      limite: 500,
+      limite: 1000,
     }),
     nomesDasTutoras(),
   ]);
 
-  return linhas
-    .map((p) => paraSessao(p, nomes))
+  const sessoes = ordenar(linhas.map((p) => paraSessao(p, nomes)));
+  const anos = [...new Set(sessoes.map(anoDaSessao))].sort((a, b) => b.localeCompare(a));
+  return { anos, sessoes };
+}
+
+/** "2026", tirado de "Ciclo 2026"; sem ciclo, o ano do ciclo atual. */
+export function anoDaSessao(s: SessaoDaLista): string {
+  return (s.ciclo || cicloAtual()).match(/\d{4}/)?.[0] ?? s.ciclo;
+}
+
+function ordenar(sessoes: SessaoDaLista[]): SessaoDaLista[] {
+  return sessoes
     // Como no Notion: primeiro as realizadas, depois as a realizar; dentro de
     // cada grupo, pelo nome ("[1] Planejamento…", "Call SOS…", "Check-in…", "Tutoria 01…").
     .sort((a, b) => ordemDoStatus(a.status) - ordemDoStatus(b.status) || compararNomes(a.sessao, b.sessao));
