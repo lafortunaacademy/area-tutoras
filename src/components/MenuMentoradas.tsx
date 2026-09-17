@@ -135,7 +135,7 @@ export function MenuMentoradas({
                                 s.rota
                                   ? // Atalhos que abrem outra página: fundo marrom claro e letra bege
                                     // (a aberta no momento, no marrom da marca).
-                                    `mt-1 font-medium text-[#f5f2e9] ${naRota ? 'bg-marca' : 'bg-[#96806b] hover:bg-[#85705c]'}`
+                                    `mt-1 font-medium text-[#f5f2e9] ${naRota ? 'bg-marca' : 'bg-[#7d6552] hover:bg-[#6d5645]'}`
                                   : 'text-texto-suave hover:bg-superficie hover:text-texto'
                               }`}
                             >
