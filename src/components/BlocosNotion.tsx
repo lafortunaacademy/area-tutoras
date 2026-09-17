@@ -116,23 +116,27 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
 
     case 'image':
       return bloco.url ? (
-        // Altura contida: foto de retrato do Notion ocuparia a tela inteira.
+        // Altura contida e centralizada: foto de retrato do Notion ocuparia a tela inteira.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={bloco.url} alt={bloco.legenda ?? ''} className="max-h-80 w-full rounded-lg object-cover" />
+        <img src={bloco.url} alt={bloco.legenda ?? ''} className="mx-auto block h-auto max-h-80 w-auto max-w-full rounded-lg" />
       ) : null;
 
-    case 'column_list':
+    case 'column_list': {
       // Colunas do Notion lado a lado (em tela estreita, uma embaixo da outra).
+      // Coluna vazia sai: senão a outra fica espremida num canto em vez de
+      // ocupar o espaço e ficar centralizada.
+      const cheias = bloco.filhos.filter(temConteudo);
       return (
         <div
           className="grid gap-4 md:[grid-template-columns:repeat(var(--colunas),minmax(0,1fr))]"
-          style={{ ['--colunas' as string]: String(Math.max(bloco.filhos.length, 1)) }}
+          style={{ ['--colunas' as string]: String(Math.max(cheias.length, 1)) }}
         >
-          {bloco.filhos.map((f) => (
+          {cheias.map((f) => (
             <Bloco key={f.id} bloco={f} />
           ))}
         </div>
       );
+    }
 
     case 'column':
       return (
@@ -177,4 +181,9 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
         filhos
       );
   }
+}
+
+/** Tem algo para mostrar (texto, arquivo/imagem) em si ou em algum filho? */
+function temConteudo(b: BlocoSimples): boolean {
+  return Boolean(b.texto.trim() || b.url) || b.filhos.some(temConteudo);
 }
