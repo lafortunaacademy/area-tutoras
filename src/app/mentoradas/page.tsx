@@ -15,7 +15,7 @@ export default async function MentoradasPage() {
       <p className="text-[11px] tracking-[0.14em] text-texto-suave uppercase">Área das mentoradas</p>
       <h1 className="display mt-1 text-3xl sm:text-4xl">Visão geral</h1>
       <p className="mt-1 text-sm text-texto-suave">
-        Quem precisa do time agora e em que ponto cada mentorada está no ciclo. Só as mentoradas do modelo novo.
+        Os alertas de acompanhamento e em que ponto cada mentorada está no ciclo. Só as mentoradas do modelo novo.
       </p>
 
       <Suspense fallback={<Carregando />}>
@@ -42,15 +42,13 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
     return <p className="mt-8 text-sm text-texto-suave">Nenhuma mentorada está na área de membros nova ainda.</p>;
   }
 
-  const esperando = mentoradas.filter((m) => m.nivel !== 'em-dia');
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
   const comAtraso = mentoradas.filter((m) => m.tarefasAtrasadas > 0).length;
 
   return (
     <>
-      <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Numero rotulo="Mentoradas" valor={mentoradas.length} detalhe="no modelo novo" />
-        <Numero rotulo="Sessões realizadas" valor={soma((m) => m.realizadas)} detalhe={`no ${ciclo}`} />
         <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} detalhe={`no ${ciclo}`} />
         <Numero
           rotulo="Tarefas atrasadas"
@@ -58,40 +56,6 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
           detalhe={comAtraso ? `em ${comAtraso} ${comAtraso === 1 ? 'mentorada' : 'mentoradas'}` : 'nenhuma mentorada'}
         />
       </ul>
-
-      <Secao titulo="Esperando alguém do time" descricao="Quem tem algo parado agora. Críticas primeiro.">
-        {esperando.length === 0 ? (
-          <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
-            Ninguém esperando o time agora. Tudo em dia.
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {esperando.map((m) => (
-              <li key={m.mentorada.id}>
-                <Link
-                  href={`/mentoradas/${m.mentorada.id}`}
-                  className={`block h-full rounded-xl border border-borda border-l-4 bg-superficie p-4 transition hover:shadow-[var(--sombra)] ${
-                    m.nivel === 'critico' ? 'border-l-parado' : 'border-l-andamento'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{m.mentorada.nome}</p>
-                    <SeloNivel nivel={m.nivel} />
-                  </div>
-                  <ul className="mt-2 space-y-1 text-xs text-texto-suave">
-                    {m.motivos.map((motivo) => (
-                      <li key={motivo} className="flex gap-1.5">
-                        <span aria-hidden>·</span>
-                        {motivo}
-                      </li>
-                    ))}
-                  </ul>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Secao>
 
       <Secao
         titulo="Alertas de acompanhamento"
