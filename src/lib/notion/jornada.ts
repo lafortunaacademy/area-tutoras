@@ -41,6 +41,7 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
   if (mentorada.areaDaClienteIds.length === 0) return vazio;
 
   const dbId = await resolverDatabaseId('tutorias');
+  const nomesPromessa = nomesDasTutoras();
   const linhas = await queryDatabase(dbId, {
     filter: {
       and: [
@@ -63,7 +64,7 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
     limite: 500,
   });
 
-  const nomes = await nomesDasTutoras();
+  const nomes = await nomesPromessa;
 
   const realizadas: NotionPage[] = [];
   const futuras: NotionPage[] = [];

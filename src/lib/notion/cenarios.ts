@@ -57,19 +57,19 @@ export async function lerCenario(
  * do mesmo jeito.
  */
 async function colunasDoCartao(paginaId: string): Promise<ColunaCenario[]> {
+  // Tudo em paralelo: colunas, callouts e o conteúdo de cada um são pedidos ao
+  // mesmo tempo, e a ordem da página é mantida pela ordem dos arrays.
   const topo = await getBlockChildren(paginaId);
-  const callouts: NotionBlock[] = [];
-
-  for (const b of topo) {
-    if (b.type === 'callout') callouts.push(b);
-    if (b.type === 'column_list') {
-      for (const coluna of await getBlockChildren(b.id)) {
-        for (const dentro of await getBlockChildren(coluna.id)) {
-          if (dentro.type === 'callout') callouts.push(dentro);
-        }
-      }
-    }
-  }
+  const porBloco = await Promise.all(
+    topo.map(async (b): Promise<NotionBlock[]> => {
+      if (b.type === 'callout') return [b];
+      if (b.type !== 'column_list') return [];
+      const colunas = await getBlockChildren(b.id);
+      const dentro = await Promise.all(colunas.map((c) => getBlockChildren(c.id)));
+      return dentro.flat().filter((d) => d.type === 'callout');
+    }),
+  );
+  const callouts = porBloco.flat();
 
   return Promise.all(
     callouts.map(async (c) => ({
@@ -80,8 +80,16 @@ async function colunasDoCartao(paginaId: string): Promise<ColunaCenario[]> {
 }
 
 async function itens(blocoId: string): Promise<ItemCenario[]> {
+  const blocos = await getBlockChildren(blocoId);
+  // Os filhos aninhados de todos os blocos são buscados juntos, antes de montar a lista.
+  const aninhados = await Promise.all(
+    blocos.map((b) =>
+      b.has_children && b.type !== 'child_page' && b.type !== 'child_database' ? itens(b.id) : Promise.resolve([]),
+    ),
+  );
+
   const saida: ItemCenario[] = [];
-  for (const b of await getBlockChildren(blocoId)) {
+  for (const [i, b] of blocos.entries()) {
     const t = textoDoBloco(b);
     const cor = (b[b.type] as { color?: string } | undefined)?.color ?? 'default';
 
@@ -97,9 +105,7 @@ async function itens(blocoId: string): Promise<ItemCenario[]> {
     }
 
     // Conteúdo aninhado (dentro de toggle, lista…) entra logo abaixo.
-    if (b.has_children && b.type !== 'child_page' && b.type !== 'child_database') {
-      saida.push(...(await itens(b.id)));
-    }
+    saida.push(...aninhados[i]);
   }
   return saida;
 }
