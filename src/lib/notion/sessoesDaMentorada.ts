@@ -58,8 +58,19 @@ export async function sessoesDaMentorada(mentorada: Mentorada): Promise<SessaoDa
 
   return linhas
     .map((p) => paraSessao(p, nomes))
-    // Por data; sem data vai para o fim, na ordem do nome.
-    .sort((a, b) => (a.data ?? '9999').localeCompare(b.data ?? '9999') || a.sessao.localeCompare(b.sessao, 'pt-BR'));
+    // Como no Notion: primeiro as realizadas, depois as a realizar; dentro de
+    // cada grupo, pelo nome ("[1] Planejamento…", "Call SOS…", "Check-in…", "Tutoria 01…").
+    .sort((a, b) => ordemDoStatus(a.status) - ordemDoStatus(b.status) || compararNomes(a.sessao, b.sessao));
+}
+
+const ORDEM_STATUS = ['Realizada', 'A realizar'];
+function ordemDoStatus(status: string): number {
+  const i = ORDEM_STATUS.indexOf(status);
+  return i === -1 ? ORDEM_STATUS.length : i;
+}
+
+function compararNomes(a: string, b: string): number {
+  return a.localeCompare(b, 'pt-BR', { numeric: true, sensitivity: 'base' });
 }
 
 /**
