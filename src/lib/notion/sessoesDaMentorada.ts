@@ -27,7 +27,13 @@ export type SessaoDaLista = {
   data: string | null;
   realizada: boolean;
   tutoras: string[];
+  tutoraIds: string[];
   ciclo: string;
+  /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
+  tema: string;
+  mesPrevisto: string;
+  dataPrevista: string | null;
+  dataRealizada: string | null;
 };
 
 export type ConteudoDaSessao = {
@@ -143,6 +149,11 @@ function paraSessao(p: NotionPage, nomes: Map<string, string>): SessaoDaLista {
     tutoras: relationIds(p, TUTORIA.tutoras)
       .map((id) => nomes.get(id)?.trim())
       .filter((n): n is string => Boolean(n)),
+    tutoraIds: relationIds(p, TUTORIA.tutoras),
     ciclo: texto(p, TUTORIA.ciclo),
+    tema: texto(p, TUTORIA.tema),
+    mesPrevisto: texto(p, TUTORIA.mesPrevisto),
+    dataPrevista: data(p, TUTORIA.dataPrevista),
+    dataRealizada: realizada,
   };
 }

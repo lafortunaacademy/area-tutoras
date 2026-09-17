@@ -24,7 +24,7 @@ function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
   return busca;
 }
 
-const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
+export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
 
 const FILTROS = [
   { chave: 'todas', rotulo: 'Todas' },
@@ -114,7 +114,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
   );
 }
 
-function CartaoSessao({
+export function CartaoSessao({
   sessao,
   mentoradaId,
   aoFechar,

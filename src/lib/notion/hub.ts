@@ -32,6 +32,13 @@ export const tutorasDoHub = cache(async (): Promise<TutoraDoHub[]> => {
   return linhas.map(paraTutora).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 });
 
+/** Especialidades de todas as tutoras (ativas ou não), por ID normalizado. */
+export const especialidadesDasTutoras = cache(async (): Promise<Map<string, string[]>> => {
+  const dbId = await resolverDatabaseId('tutoras');
+  const linhas = await queryDatabase(dbId, { limite: 300 });
+  return new Map(linhas.map((p) => [normalizarId(p.id), multi(p, TUTORA.especialidades)]));
+});
+
 /**
  * Uma tutora com o conteúdo da página dela. `null` se o ID não for de uma
  * tutora (ele vem do navegador).

@@ -180,7 +180,32 @@ export const TUTORIA = {
   mesPrevisto: 'Mês previsto',
   /** Select "Ciclo 2026", "Ciclo 2027"… — um ciclo por ano. */
   ciclo: 'Ciclo',
+  /** Fórmula que tira o tema do nome da sessão ("Produto", "Conteúdo"…; "Fernanda" quando não é tutoria). */
+  tema: 'Tutoria',
 } as const;
+
+/**
+ * Qual sessão entra em qual tutoria da página Tutorias. O toggle é reconhecido
+ * por um pedaço do nome ("Tutorias terapêuticas" -> "terap"); a sessão entra
+ * quando o tema dela (fórmula "Tutoria") ou a especialidade de uma das tutoras
+ * dela está na lista. Comparação sem maiúsculas e acentos.
+ */
+export const TEMAS_DE_TUTORIA: { trecho: string; temas: string[]; especialidades: string[] }[] = [
+  { trecho: 'terap', temas: ['Terapêutica'], especialidades: ['Terapia'] },
+  { trecho: 'invest', temas: ['Investimentos'], especialidades: ['Investimentos', 'Organização financeira'] },
+  { trecho: 'produto', temas: ['Produto', 'Experiência do cliente'], especialidades: ['Produto Educacional', 'Experiência do cliente'] },
+  {
+    trecho: 'posicionamento',
+    temas: ['Posicionamento de Imagem', 'Posicionamento Digital', 'Conteúdo'],
+    especialidades: ['Posicionamento de marca', 'Posicionamento de imagem', 'Conteúdo', 'Narrativa', 'Identidade visual e designs'],
+  },
+  {
+    trecho: 'processo',
+    temas: ['Processos', 'Gestão de Agenda', 'Comercial', 'Ferramenta'],
+    especialidades: ['Processos', 'Gestão de agenda', 'Processos comerciais', 'Ferramentas'],
+  },
+  { trecho: 'pessoa', temas: ['Pessoas'], especialidades: ['Liderança', 'Gestão de Pessoas'] },
+];
 
 /** O ciclo que o progresso da mentoria mostra: o do ano corrente. */
 export function cicloAtual(hoje = new Date()): string {

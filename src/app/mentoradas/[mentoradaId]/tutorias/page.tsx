@@ -19,7 +19,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
 
   const [tutoras, pilares] = await Promise.all([
     tutorasDoHub().catch((e) => e as Error),
-    pilaresDaMentorada(mentorada.id).catch((e) => e as Error),
+    pilaresDaMentorada(mentorada).catch((e) => e as Error),
   ]);
 
   return (
@@ -47,7 +47,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
         {pilares instanceof Error ? (
           <AvisoNotion erro={pilares} detalhar={sessao.real.is_admin} />
         ) : pilares && pilares.length ? (
-          <PilaresDeTutoria pilares={pilares} />
+          <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} />
         ) : null}
       </div>
     </div>
