@@ -107,7 +107,7 @@ export default async function AreaDaMentoradaPage({
 
       <header className="mb-8">
         <h1 className="display text-3xl leading-tight sm:text-4xl">
-          La Fortuna Academy <span className="text-destaque">&amp;</span> {mentorada.nome}
+          {mentorada.nome}
         </h1>
         <p className="mt-3 text-lg text-marca">
           Seja bem-vinda, <em className="display text-xl font-semibold">bem-sucedida!</em>
