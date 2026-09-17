@@ -396,6 +396,8 @@ export const AREA_DE_MEMBROS = {
   callout: 'Área de membros',
   calloutCartoes: 'Área da mentorada',
   calloutTarefas: 'Tarefas da mentoria',
+  calloutPlanejamento: 'Planejamento estratégico',
+  baseCenarios: 'Cenários',
   cartaoGestao: 'Gestão de resultados',
 } as const;
 
@@ -406,6 +408,12 @@ export const TAREFAS = {
   observacoes: 'Observações',
   /** Caixa de seleção: marcada = feita. */
   feita: 'Status',
+} as const;
+
+/** Base "Cenários": um cartão por ano com o cenário atual × desejado. */
+export const CENARIOS = {
+  titulo: 'Planejamento',
+  ano: 'Ano',
 } as const;
 
 /** Ícone do modelo "Nova página" das tarefas no Notion: o lápis marrom nativo (não o emoji). */

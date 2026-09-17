@@ -17,6 +17,7 @@ import { planejamento } from '@/lib/notion/mentorada';
 import { progressoDaMentoria } from '@/lib/notion/jornada';
 import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao';
 import { tarefasDaMentorada } from '@/lib/notion/tarefas';
+import { cartoesDeCenario } from '@/lib/notion/cenarios';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
@@ -52,12 +53,13 @@ export default async function AreaDaMentoradaPage({
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [progresso, plano, gestao, tarefas] = await Promise.all([
+  const [progresso, plano, gestao, tarefas, cenarios] = await Promise.all([
     progressoDaMentoria(mentorada).catch(() => null),
     planejamento(mentorada).catch((e) => e as Error),
     // Falhar aqui só apaga os gráficos; o resto da página continua de pé.
     gestaoDeResultados(mentorada.id).catch(() => null),
     tarefasDaMentorada(mentorada.id).catch(() => null),
+    cartoesDeCenario(mentorada.id).catch(() => null),
   ]);
 
   const ano = String(new Date().getFullYear());
@@ -151,13 +153,29 @@ export default async function AreaDaMentoradaPage({
         </Bloco>
 
         <Bloco icone={Target} titulo="Planejamento estratégico">
-          <div className="mb-4 inline-flex items-center gap-3 rounded-xl border border-borda bg-fundo px-4 py-3">
-            <Target aria-hidden size={16} className="text-marca" />
-            <div>
-              <p className="text-sm font-medium">Cenário atual × Cenário desejado</p>
-              <p className="text-xs text-texto-suave">{ano} · em breve</p>
-            </div>
-          </div>
+          {/* Um cartão por ano, do Notion; o mais recente primeiro. */}
+          <ul className="mb-4 flex flex-wrap gap-3">
+            {cenarios && cenarios.length > 0 ? (
+              cenarios.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/mentoradas/${mentorada.id}/cenarios/${c.id}`}
+                    className="inline-flex items-center gap-3 rounded-xl border border-borda bg-fundo px-4 py-3 transition hover:border-marca hover:shadow-[var(--sombra)]"
+                  >
+                    <Target aria-hidden size={16} className="text-marca" />
+                    <span>
+                      <span className="block text-sm font-medium">{c.titulo}</span>
+                      <span className="block text-xs text-texto-suave tabular-nums">{c.ano || 'Sem ano'}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li className="rounded-xl border border-dashed border-borda px-4 py-3 text-sm text-texto-suave">
+                {cenarios ? 'Nenhum cenário cadastrado ainda.' : 'Não foi possível carregar os cenários agora.'}
+              </li>
+            )}
+          </ul>
 
           <div className="rounded-xl bg-marca-suave/60 p-3 sm:p-4">
             <p className="mb-3 flex items-center gap-2 px-1 text-sm font-medium text-marca">
