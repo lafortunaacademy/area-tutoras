@@ -131,7 +131,7 @@ function PorArea({
                     {...eventos(t)}
                     className="flex w-full flex-col overflow-hidden rounded-lg border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
                   >
-                    <Foto tutora={t} className="h-24 w-full" />
+                    <Foto tutora={t} className="h-32 w-full" />
                     <div className="flex min-w-0 flex-col gap-1.5 p-2">
                       <p className="text-[12px] font-medium leading-tight">{t.nome}</p>
                       {t.legendaEntregaveis ? <p className="text-[10px] font-medium text-destaque">{t.legendaEntregaveis}</p> : null}
@@ -150,9 +150,10 @@ function PorArea({
 
 function Foto({ tutora, className }: { tutora: TutoraDoHub; className: string }) {
   return tutora.foto ? (
-    // Recorte pelo centro da foto, como a galeria do Notion.
+    // Retratos: o rosto costuma estar um pouco acima do meio da foto, então o
+    // recorte mira ali — nem no topo (corta o queixo) nem no centro (corta a testa).
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={tutora.foto} alt="" className={`${className} object-cover object-center`} />
+    <img src={tutora.foto} alt="" className={`${className} object-cover object-[center_40%]`} />
   ) : (
     <span aria-hidden className={`${className} display flex items-center justify-center bg-marca-suave text-3xl text-marca`}>
       {iniciais(tutora.nome)}
