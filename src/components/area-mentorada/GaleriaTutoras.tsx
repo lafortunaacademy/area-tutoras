@@ -150,9 +150,9 @@ function PorArea({
 
 function Foto({ tutora, className }: { tutora: TutoraDoHub; className: string }) {
   return tutora.foto ? (
-    // Fotos de retrato: o recorte parte do alto, para o rosto não ser cortado.
+    // Recorte pelo centro da foto, como a galeria do Notion.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={tutora.foto} alt="" className={`${className} object-cover object-[center_15%]`} />
+    <img src={tutora.foto} alt="" className={`${className} object-cover object-center`} />
   ) : (
     <span aria-hidden className={`${className} display flex items-center justify-center bg-marca-suave text-3xl text-marca`}>
       {iniciais(tutora.nome)}
