@@ -92,14 +92,14 @@ function Conteudo({
           {anos.length === 0 ? (
             <p className="text-sm text-texto-suave">Nenhum ano cadastrado.</p>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="grid gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
               {anos.map((a) => (
                 <li key={a.id}>
                   <Link
                     href={link(a.ano)}
                     scroll={false}
                     aria-current={a.ano === selecionado ? 'true' : undefined}
-                    className={`block rounded-xl border px-4 py-3 transition hover:border-marca ${
+                    className={`block rounded-xl border px-3.5 py-3 transition hover:border-marca ${
                       a.ano === selecionado ? 'border-marca bg-fundo' : 'border-borda bg-fundo/60'
                     }`}
                   >
@@ -107,17 +107,18 @@ function Conteudo({
                     <CalendarDays aria-hidden size={14} className="text-marca" />
                     {a.ano}
                   </p>
-                  <dl className="mt-2.5 space-y-1 text-xs">
+                  {/* Cinco cartões por linha: sem "R$" em cada valor (o rótulo do lucro já diz a moeda) e sem quebrar linha. */}
+                  <dl className="mt-2.5 space-y-1 text-[11.5px] whitespace-nowrap">
                     {[
-                      { rotulo: 'Faturamento', texto: reais(a.faturamento), valor: a.faturamento },
-                      { rotulo: 'Despesas', texto: reais(a.despesas), valor: a.despesas },
-                      { rotulo: 'Investimentos', texto: reais(a.investimentos), valor: a.investimentos },
-                      { rotulo: 'Lucro (R$)', texto: reais(a.lucro), valor: a.lucro, forte: true },
+                      { rotulo: 'Faturamento', texto: semMoeda(a.faturamento), valor: a.faturamento },
+                      { rotulo: 'Despesas', texto: semMoeda(a.despesas), valor: a.despesas },
+                      { rotulo: 'Investimentos', texto: semMoeda(a.investimentos), valor: a.investimentos },
+                      { rotulo: 'Lucro (R$)', texto: semMoeda(a.lucro), valor: a.lucro, forte: true },
                       { rotulo: 'Lucro (%)', texto: percentual(a.percentualLucro), valor: a.percentualLucro, forte: true },
                     ].map((l) => (
                       <div
                         key={l.rotulo}
-                        className={`flex justify-between gap-3 ${l.rotulo === 'Lucro (R$)' ? 'mt-1.5 border-t border-borda/60 pt-1.5' : ''}`}
+                        className={`flex justify-between gap-2 ${l.rotulo === 'Lucro (R$)' ? 'mt-1.5 border-t border-borda/60 pt-1.5' : ''}`}
                       >
                         <dt className="text-texto-suave">{l.rotulo}</dt>
                         <dd
@@ -221,3 +222,6 @@ function gruposDoAno(meses: MesFinanceiro[], ano: string): GrupoMensal[] {
 }
 
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+const NUMERO = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const semMoeda = (n: number | null) => (n === null ? '—' : NUMERO.format(n));
