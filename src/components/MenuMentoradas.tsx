@@ -56,13 +56,9 @@ export function MenuMentoradas({
       <Link
         href={inicio.href}
         aria-current={noInicio ? 'page' : undefined}
-        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-          noInicio
-            ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
-            : 'text-texto-suave hover:bg-superficie hover:text-texto'
-        }`}
+        className={`${ITEM} ${noInicio ? ITEM_ATIVO : ITEM_INATIVO}`}
       >
-        <Home aria-hidden size={15} className="shrink-0" />
+        <Home aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
         {inicio.rotulo}
       </Link>
 
@@ -70,17 +66,13 @@ export function MenuMentoradas({
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
-        className={`mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-          aberto || naMentorada
-            ? 'text-texto'
-            : 'text-texto-suave hover:bg-superficie hover:text-texto'
-        }`}
+        className={`mt-1 w-full ${ITEM} ${naMentorada ? ITEM_ATIVO : aberto ? 'border-transparent text-texto hover:bg-superficie' : ITEM_INATIVO}`}
       >
-        <Users aria-hidden size={15} className="shrink-0" />
+        <Users aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
         <span className="flex-1 text-left">Mentoradas</span>
         <ChevronDown
           aria-hidden
-          size={14}
+          size={15}
           className={`shrink-0 text-texto-suave transition-transform ${aberto ? 'rotate-180' : ''}`}
         />
       </button>
@@ -103,7 +95,7 @@ export function MenuMentoradas({
             />
           </div>
 
-          <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+          <ul className="ml-5 min-h-0 flex-1 space-y-0.5 overflow-y-auto border-l border-borda pr-1">
             {visiveis.map((m) => {
               const atual = caminho.startsWith(`${base}/${m.id}`);
               return (
@@ -111,10 +103,8 @@ export function MenuMentoradas({
                   <Link
                     href={`${base}/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
-                    className={`flex items-center gap-2.5 rounded-lg py-1.5 pr-3 pl-2 text-[12.5px] leading-snug transition ${
-                      atual
-                        ? 'bg-marca font-medium text-marca-contraste shadow-[var(--sombra)]'
-                        : 'text-texto-suave hover:bg-superficie hover:text-texto'
+                    className={`-ml-px flex items-center gap-2.5 border-l-2 py-1.5 pr-3 pl-3.5 text-[13px] leading-snug transition ${
+                      atual ? SUB_ATIVO : SUB_INATIVO
                     }`}
                   >
                     <Retrato nome={m.nome} foto={m.foto} />
@@ -122,7 +112,7 @@ export function MenuMentoradas({
                   </Link>
 
                   {atual && secoes.length > 0 ? (
-                    <ul className="mt-1 mb-2 ml-4 space-y-px border-l border-borda pl-2">
+                    <ul className="mt-1 mb-3 ml-7 space-y-px border-l border-borda">
                       {secoes.map((s) => {
                         const href = `${base}/${m.id}${s.rota ? `/${s.rota}` : ''}${s.ancora ? `#${s.ancora}` : ''}`;
                         const naRota = s.rota ? caminho.startsWith(`${base}/${m.id}/${s.rota}`) : false;
@@ -131,12 +121,8 @@ export function MenuMentoradas({
                             <Link
                               href={href}
                               aria-current={naRota ? 'page' : undefined}
-                              className={`block rounded-md px-2 py-1 text-[12px] leading-snug transition ${
-                                s.rota
-                                  ? // Atalhos que abrem outra página: fundo marrom claro e letra bege
-                                    // (a aberta no momento, no marrom da marca).
-                                    `mt-1 font-medium text-[#f5f2e9] ${naRota ? 'bg-marca' : 'bg-[#7d6552] hover:bg-[#6d5645]'}`
-                                  : 'text-texto-suave hover:bg-superficie hover:text-texto'
+                              className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[12.5px] leading-snug transition ${
+                                naRota ? SUB_ATIVO : SUB_INATIVO
                               }`}
                             >
                               {s.rotulo}
@@ -159,6 +145,15 @@ export function MenuMentoradas({
     </nav>
   );
 }
+
+// Formato do menu: item de topo grande, com ícone; o ativo ganha fundo e uma
+// barra na borda esquerda. Os subitens ficam recuados sobre uma linha vertical,
+// e o ativo marca a linha com a mesma barra.
+const ITEM = 'flex items-center gap-3 rounded-r-xl border-l-2 px-3 py-2.5 text-[15px] transition';
+const ITEM_ATIVO = 'border-destaque bg-marca-suave font-medium text-texto';
+const ITEM_INATIVO = 'border-transparent text-texto-suave hover:bg-superficie hover:text-texto';
+const SUB_ATIVO = 'border-destaque font-semibold text-texto';
+const SUB_INATIVO = 'border-transparent text-texto-suave hover:border-borda hover:text-texto';
 
 /** Foto pequena ao lado do nome; sem foto, as iniciais seguram o alinhamento. */
 function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
