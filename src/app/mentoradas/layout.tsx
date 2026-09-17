@@ -29,13 +29,18 @@ export default async function MentoradasLayout({ children }: { children: React.R
               inicio={{ href: '/mentoradas', rotulo: 'Visão geral' }}
               secoes={[
                 { rotulo: 'Progresso da mentoria', ancora: 'progresso' },
-                { rotulo: 'Área da mentorada', ancora: 'area' },
+                {
+                  rotulo: 'Área da mentorada',
+                  ancora: 'area',
+                  filhos: [
+                    { rotulo: 'Sessões', rota: 'sessoes' },
+                    { rotulo: 'Tutorias', rota: 'tutorias' },
+                    { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
+                  ],
+                },
                 { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
                 { rotulo: 'Tarefas da mentoria', ancora: 'tarefas' },
                 { rotulo: 'Dashboard Bem-Sucedida', ancora: 'dashboard' },
-                { rotulo: 'Sessões', rota: 'sessoes' },
-                { rotulo: 'Tutorias', rota: 'tutorias' },
-                { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
               ]}
               mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
             />

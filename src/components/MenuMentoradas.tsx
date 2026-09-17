@@ -12,7 +12,7 @@ export type ItemMenu = { id: string; nome: string; foto: string | null };
  * Atalho para uma parte da página da mentorada. `ancora` é o id da seção na
  * página; `rota` leva a uma subpágina (ex.: "gestao-de-resultados").
  */
-export type SecaoMenu = { rotulo: string; ancora?: string; rota?: string };
+export type SecaoMenu = { rotulo: string; ancora?: string; rota?: string; filhos?: SecaoMenu[] };
 
 /**
  * Menu lateral com todas as mentoradas.
@@ -113,25 +113,12 @@ export function MenuMentoradas({
                   </Link>
 
                   {atual && secoes.length > 0 ? (
-                    <ul className="mt-1 mb-3 ml-7 space-y-px border-l border-borda">
-                      {secoes.map((s) => {
-                        const href = `${base}/${m.id}${s.rota ? `/${s.rota}` : ''}${s.ancora ? `#${s.ancora}` : ''}`;
-                        const naRota = s.rota ? caminho.startsWith(`${base}/${m.id}/${s.rota}`) : false;
-                        return (
-                          <li key={s.rotulo}>
-                            <Link
-                              href={href}
-                              aria-current={naRota ? 'page' : undefined}
-                              className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[12.5px] leading-snug transition ${
-                                naRota ? SUB_ATIVO : SUB_INATIVO
-                              }`}
-                            >
-                              {s.rotulo}
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <ListaDeSecoes
+                      secoes={secoes}
+                      prefixo={`${base}/${m.id}`}
+                      caminho={caminho}
+                      className="mt-1 mb-3 ml-7"
+                    />
                   ) : null}
                 </li>
               );
@@ -155,6 +142,44 @@ const ITEM_ATIVO = 'border-destaque bg-marca-suave font-medium text-texto';
 const ITEM_INATIVO = 'border-transparent text-texto-suave hover:bg-superficie hover:text-texto';
 const SUB_ATIVO = 'border-destaque font-semibold text-texto';
 const SUB_INATIVO = 'border-transparent text-texto-suave hover:border-borda hover:text-texto';
+
+/** As seções da mentorada aberta; uma seção com `filhos` mostra as subpáginas logo abaixo, mais recuadas. */
+function ListaDeSecoes({
+  secoes,
+  prefixo,
+  caminho,
+  className,
+}: {
+  secoes: SecaoMenu[];
+  prefixo: string;
+  caminho: string;
+  className: string;
+}) {
+  return (
+    <ul className={`space-y-px border-l border-borda ${className}`}>
+      {secoes.map((s) => {
+        const href = `${prefixo}${s.rota ? `/${s.rota}` : ''}${s.ancora ? `#${s.ancora}` : ''}`;
+        const naRota = s.rota ? caminho.startsWith(`${prefixo}/${s.rota}`) : false;
+        return (
+          <li key={s.rotulo}>
+            <Link
+              href={href}
+              aria-current={naRota ? 'page' : undefined}
+              className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[12.5px] leading-snug transition ${
+                naRota ? SUB_ATIVO : SUB_INATIVO
+              }`}
+            >
+              {s.rotulo}
+            </Link>
+            {s.filhos?.length ? (
+              <ListaDeSecoes secoes={s.filhos} prefixo={prefixo} caminho={caminho} className="my-0.5 ml-4" />
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 /** Foto pequena ao lado do nome; sem foto, as iniciais seguram o alinhamento. */
 function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
