@@ -35,6 +35,7 @@ export default async function MentoradasLayout({ children }: { children: React.R
                 { rotulo: 'Marcos & Conquistas', ancora: 'marcos' },
                 { rotulo: 'Faturamento', ancora: 'faturamento' },
                 { rotulo: 'Lucro', ancora: 'lucro' },
+                { rotulo: 'Sessões', rota: 'sessoes' },
                 { rotulo: 'Tutorias', rota: 'tutorias' },
                 { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
               ]}

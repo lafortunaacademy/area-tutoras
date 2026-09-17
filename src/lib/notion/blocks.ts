@@ -56,7 +56,7 @@ async function converter(bloco: NotionBlock, profundidade: number): Promise<Bloc
 
   if (bloco.type === 'to_do') simples.marcado = Boolean(conteudo?.checked);
 
-  if (bloco.type === 'image' || bloco.type === 'file' || bloco.type === 'pdf') {
+  if (bloco.type === 'image' || bloco.type === 'file' || bloco.type === 'pdf' || bloco.type === 'video') {
     const arquivo = conteudo as { type?: string; file?: { url: string }; external?: { url: string }; caption?: unknown };
     simples.url = arquivo?.file?.url ?? arquivo?.external?.url;
     simples.legenda = juntar(arquivo?.caption);
