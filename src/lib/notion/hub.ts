@@ -40,10 +40,14 @@ export async function tutoraDoHub(id: string): Promise<{ tutora: TutoraDoHub; bl
   const [pagina, dbId] = await Promise.all([getPage(id).catch(() => null), resolverDatabaseId('tutoras')]);
   const dona = pagina?.parent?.database_id;
   if (!pagina || !dona || normalizarId(dona) !== normalizarId(dbId)) return null;
-  // A imagem solta no fim da página é a marca da La Fortuna, decoração do Notion —
-  // no cartão ela não entra. Fotos dentro das seções (Quem é a tutora) continuam.
-  const blocos = (await lerBlocos(pagina.id, 3)).filter((b) => b.tipo !== 'image');
+  // Nenhuma imagem entra no cartão: a foto da tutora já está no topo dele, e a
+  // imagem do fim da página é só a marca da La Fortuna.
+  const blocos = semImagens(await lerBlocos(pagina.id, 3));
   return { tutora: paraTutora(pagina), blocos };
+}
+
+function semImagens(blocos: BlocoSimples[]): BlocoSimples[] {
+  return blocos.filter((b) => b.tipo !== 'image').map((b) => ({ ...b, filhos: semImagens(b.filhos) }));
 }
 
 function multi(p: NotionPage, nome: string): string[] {
