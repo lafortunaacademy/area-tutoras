@@ -404,6 +404,9 @@ export const AREA_DE_MEMBROS = {
   calloutPlanejamento: 'Planejamento estratégico',
   baseCenarios: 'Cenários',
   cartaoGestao: 'Gestão de resultados',
+  cartaoTutorias: 'Tutorias',
+  /** Callout da galeria das tutoras, que não é um pilar. */
+  calloutHub: 'Tutorias do HUB',
 } as const;
 
 /** Base "Tarefas" de cada mentorada, dentro do callout "Tarefas da mentoria". */
