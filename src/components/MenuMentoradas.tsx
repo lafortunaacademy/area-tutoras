@@ -132,12 +132,11 @@ export function MenuMentoradas({
                               href={href}
                               aria-current={naRota ? 'page' : undefined}
                               className={`block rounded-md px-2 py-1 text-[12px] leading-snug transition ${
-                                naRota
-                                  ? 'font-medium text-marca'
-                                  : s.rota
-                                    ? // Atalhos que abrem outra página ficam num marrom mais claro que as seções.
-                                      'text-destaque hover:bg-superficie hover:text-marca'
-                                    : 'text-texto-suave hover:bg-superficie hover:text-texto'
+                                s.rota
+                                  ? // Atalhos que abrem outra página: fundo marrom claro e letra bege
+                                    // (a aberta no momento, no marrom da marca).
+                                    `mt-1 font-medium text-[#f5f2e9] ${naRota ? 'bg-marca' : 'bg-[#af9b87] hover:bg-[#9b8672]'}`
+                                  : 'text-texto-suave hover:bg-superficie hover:text-texto'
                               }`}
                             >
                               {s.rotulo}
