@@ -1,0 +1,155 @@
+'use client';
+
+import { useState } from 'react';
+import { Check, ChevronRight, Link2, Loader2 } from 'lucide-react';
+import type { Material, Pergunta } from '@/lib/tutorias/modelo';
+import type { Valor } from '@/lib/tutorias/respostas';
+import { gerarLinkDePreenchimento } from '@/app/mentoradas/actions';
+import { FormularioDoApp } from './FormularioDoApp';
+import { IconeDoModelo } from './IconeDoModelo';
+
+type Carregado = { material: { perguntas: Pergunta[] }; respostas: Record<string, Valor>; podeEditar: boolean };
+
+const ehPreSessao = (t: string) =>
+  /^pre[-\s]?sessao/.test(t.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase());
+
+/**
+ * Os materiais de uma tutoria, cada um num toggle. Grupo abre outros toggles;
+ * formulário carrega perguntas e respostas quando abre; conteúdo e especiais
+ * ainda não foram trazidos para o app.
+ */
+export function ArvoreDeMateriais({
+  materiais,
+  mentoradaId,
+  progresso,
+  admin,
+}: {
+  materiais: Material[];
+  mentoradaId: string;
+  /** Respostas por material (quantas perguntas já têm resposta). */
+  progresso: Record<string, number>;
+  /** Só o administrativo vê o link de preenchimento. */
+  admin: boolean;
+}) {
+  if (materiais.length === 0) return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
+  return (
+    <ul className="space-y-2">
+      {materiais.map((m) => (
+        <li key={m.id}>
+          <ItemDaArvore material={m} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ItemDaArvore({
+  material,
+  mentoradaId,
+  progresso,
+  admin,
+}: {
+  material: Material;
+  mentoradaId: string;
+  progresso: Record<string, number>;
+  admin: boolean;
+}) {
+  const preSessao = material.tipo === 'formulario' && ehPreSessao(material.nome);
+  const [dados, setDados] = useState<Carregado | null>(null);
+  const [erro, setErro] = useState(false);
+
+  const carregar = () => {
+    if (material.tipo !== 'formulario' || dados) return;
+    setErro(false);
+    fetch(`/api/tutorias/materiais/${material.id}?mentorada=${encodeURIComponent(mentoradaId)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<Carregado>) : Promise.reject(new Error('falhou'))))
+      .then(setDados)
+      .catch(() => setErro(true));
+  };
+
+  const feitas = progresso[material.id] ?? 0;
+
+  return (
+    <details
+      className={`group rounded-lg border bg-superficie ${preSessao ? 'border-marca/40 bg-marca-suave/40' : 'border-borda'}`}
+      onToggle={(e) => {
+        if ((e.currentTarget as HTMLDetailsElement).open) carregar();
+      }}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
+        <IconeDoModelo icone={material.icone} tamanho={16} />
+        <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{material.nome}</span>
+        {material.tipo === 'formulario' && material.totalPerguntas > 0 ? (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10.5px] tabular-nums ${
+              feitas >= material.totalPerguntas ? 'bg-ok-suave text-ok' : 'bg-superficie-2 text-texto-suave'
+            }`}
+          >
+            {feitas}/{material.totalPerguntas}
+          </span>
+        ) : null}
+        {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={material.id} /> : null}
+      </summary>
+
+      <div className="border-t border-borda px-4 py-4">
+        {material.tipo === 'grupo' ? (
+          <ArvoreDeMateriais materiais={material.filhos} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
+        ) : material.tipo === 'formulario' ? (
+          <>
+            {!dados && !erro ? (
+              <p className="flex items-center gap-2 text-sm text-texto-suave">
+                <Loader2 aria-hidden size={14} className="animate-spin" />
+                Carregando…
+              </p>
+            ) : null}
+            {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
+            {dados ? (
+              <FormularioDoApp
+                perguntas={dados.material.perguntas}
+                respostas={dados.respostas}
+                mentoradaId={mentoradaId}
+                podeEditar={dados.podeEditar}
+              />
+            ) : null}
+          </>
+        ) : (
+          <p className="text-sm text-texto-suave">Este material ainda está sendo trazido para o app.</p>
+        )}
+      </div>
+    </details>
+  );
+}
+
+/** Copia o link de preenchimento da pré-sessão. Só aparece para o administrativo. */
+function CopiarLink({ mentoradaId, materialId }: { mentoradaId: string; materialId: string }) {
+  const [estado, setEstado] = useState<'parado' | 'copiando' | 'copiado' | 'erro'>('parado');
+
+  const copiar = async (e: React.MouseEvent) => {
+    // Dentro do <summary>: sem isto o clique abriria ou fecharia o toggle.
+    e.preventDefault();
+    e.stopPropagation();
+    setEstado('copiando');
+    try {
+      const link = await gerarLinkDePreenchimento(mentoradaId, materialId);
+      if (!link) throw new Error('sem link');
+      await navigator.clipboard.writeText(link);
+      setEstado('copiado');
+      setTimeout(() => setEstado('parado'), 2500);
+    } catch {
+      setEstado('erro');
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copiar}
+      title="Copiar link para a mentorada preencher, sem precisar entrar no sistema"
+      className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda bg-superficie px-2 py-1 text-[11px] font-medium text-texto-suave transition hover:border-marca hover:text-marca"
+    >
+      {estado === 'copiado' ? <Check aria-hidden size={12} /> : <Link2 aria-hidden size={12} />}
+      {estado === 'copiando' ? 'Gerando…' : estado === 'copiado' ? 'Link copiado' : estado === 'erro' ? 'Não deu' : 'Link de preenchimento'}
+    </button>
+  );
+}

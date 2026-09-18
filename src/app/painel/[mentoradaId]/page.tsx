@@ -8,6 +8,9 @@ import { Etiqueta } from '@/components/Etiqueta';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
+import { modeloDasTutorias } from '@/lib/tutorias/modelo';
+import { progressoDaMentorada } from '@/lib/tutorias/respostas';
+import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,11 +28,13 @@ export default async function MentoradaPage({
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.
-  const [mapa, plano, brief, hands] = await Promise.all([
+  const [mapa, plano, brief, hands, tutorias, progresso] = await Promise.all([
     mapaDaCliente(mentorada).catch(() => []),
     planejamento(mentorada).catch((e) => e as Error),
     briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
+    modeloDasTutorias().catch(() => null),
+    progressoDaMentorada(mentorada.id).catch(() => ({}) as Record<string, number>),
   ]);
 
   return (
@@ -129,6 +134,17 @@ export default async function MentoradaPage({
                 : undefined,
           }))}
         />
+      </Secao>
+
+      {/* Respostas da mentorada às tutorias (pré-sessões, 1:1…). A tutora só lê. */}
+      <Secao titulo="Tutorias">
+        {tutorias === null ? (
+          <Vazio>Não foi possível carregar as tutorias agora.</Vazio>
+        ) : tutorias.length === 0 ? (
+          <Vazio>Nenhuma tutoria cadastrada ainda.</Vazio>
+        ) : (
+          <PilaresDoApp pilares={tutorias} mentoradaId={mentorada.id} progresso={progresso} admin={false} />
+        )}
       </Secao>
     </div>
   );

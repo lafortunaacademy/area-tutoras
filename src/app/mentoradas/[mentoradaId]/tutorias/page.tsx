@@ -3,23 +3,28 @@ import { ArrowLeft, Users } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { tutorasDoHub } from '@/lib/notion/hub';
-import { pilaresDaMentorada } from '@/lib/notion/pilares';
+import { modeloDasTutorias } from '@/lib/tutorias/modelo';
+import { progressoDaMentorada } from '@/lib/tutorias/respostas';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
 import { GaleriaTutoras } from '@/components/area-mentorada/GaleriaTutoras';
-import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
+import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
 
 export const dynamic = 'force-dynamic';
 
-/** Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares da mentorada. */
+/**
+ * Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares, que
+ * moram no próprio app (as respostas também).
+ */
 export default async function TutoriasPage({ params }: { params: Promise<{ mentoradaId: string }> }) {
   const { mentoradaId } = await params;
   const visitante = await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [tutoras, pilares] = await Promise.all([
+  const [tutoras, pilares, progresso] = await Promise.all([
     tutorasDoHub().catch((e) => e as Error),
-    pilaresDaMentorada(mentorada).catch((e) => e as Error),
+    modeloDasTutorias().catch((e) => e as Error),
+    progressoDaMentorada(mentorada.id).catch(() => ({}) as Record<string, number>),
   ]);
 
   return (
@@ -45,9 +50,11 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
 
       <div className="mt-4">
         {pilares instanceof Error ? (
-          <AvisoNotion erro={pilares} detalhar={visitante.admin} />
-        ) : pilares && pilares.length ? (
-          <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} admin={visitante.admin} />
+          <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
+            Não foi possível carregar as tutorias agora.
+          </p>
+        ) : pilares.length ? (
+          <PilaresDoApp pilares={pilares} mentoradaId={mentorada.id} progresso={progresso} admin={visitante.admin} />
         ) : null}
       </div>
     </div>

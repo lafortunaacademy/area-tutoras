@@ -1,37 +1,38 @@
 import Image from 'next/image';
 import { lerLinkDePreenchimento } from '@/lib/linkDePreenchimento';
-import { ehPreSessao, materialDaMentorada } from '@/lib/notion/pilares';
-import { FormularioPreSessao } from '@/components/area-mentorada/FormularioPreSessao';
+import { formulario } from '@/lib/tutorias/modelo';
+import { respostasDoMaterial } from '@/lib/tutorias/respostas';
+import { FormularioDoApp } from '@/components/tutorias/FormularioDoApp';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Página de um link de preenchimento: só a pré-sessão daquele link, sem login.
- * O token diz de quem é e qual é — nada além disso abre por aqui.
+ * Página de um link de preenchimento: só aquele formulário, sem login. O
+ * token diz de quem é e qual é — nada além disso abre por aqui.
  */
 export default async function PreenchimentoPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const link = lerLinkDePreenchimento(token);
-  const material = link ? await materialDaMentorada(link.mentoradaId, link.materialId).catch(() => null) : null;
+  const material = link ? await formulario(link.materialId).catch(() => null) : null;
 
-  if (!link || !material || !ehPreSessao(material.titulo)) {
+  if (!link || !material || material.tipo !== 'formulario') {
     return (
       <Moldura>
-        <p className="text-sm text-texto-suave">
-          Este link não vale mais. Peça um novo para a sua tutora.
-        </p>
+        <p className="text-sm text-texto-suave">Este link não vale mais. Peça um novo para a sua tutora.</p>
       </Moldura>
     );
   }
 
+  const respostas = await respostasDoMaterial(link.mentoradaId, material.perguntas.map((p) => p.id));
+
   return (
-    <Moldura titulo={material.titulo}>
-      <FormularioPreSessao
-        blocos={material.blocos}
-        materialId={link.materialId}
+    <Moldura titulo={material.nome}>
+      <FormularioDoApp
+        perguntas={material.perguntas}
+        respostas={respostas}
         mentoradaId={link.mentoradaId}
+        podeEditar
         token={token}
-        aoSalvar={() => {}}
       />
     </Moldura>
   );
