@@ -5,7 +5,6 @@ import { Check, ChevronRight, Link2, Loader2 } from 'lucide-react';
 import type { ItemDeMaterial } from '@/lib/notion/pilares';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
-import { Icone } from './IconeNotion';
 import { FormularioPreSessao } from './FormularioPreSessao';
 import { gerarLinkDePreenchimento } from '@/app/mentoradas/actions';
 
@@ -77,7 +76,6 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
         className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden"
       >
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
-        <Icone icone={item.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{item.titulo}</span>
         {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={item.id} /> : null}
       </summary>

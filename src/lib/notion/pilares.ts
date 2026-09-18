@@ -102,13 +102,13 @@ export async function pilaresDaMentorada(mentorada: Mentorada): Promise<Pilar[] 
           .map((t) => ({ texto: t.plain_text ?? '', negrito: Boolean(t.annotations?.bold) }))
           .filter((t) => t.texto);
       } else if (b.type === 'toggle' || (b.type.startsWith('heading') && conteudo(b).is_toggleable)) {
-        if (texto) atual().fontes.push({ id: b.id, titulo: texto, icone: null });
+        if (texto) atual().fontes.push({ id: b.id, titulo: semTutoria(texto), icone: null });
       } else if (b.type === 'child_database') {
         // Jeito antigo: cada cartão da base é uma tutoria.
         const cartoes = await queryDatabase(b.id, { limite: 50 }).catch(() => []);
         for (const c of cartoes) {
           const nome = titulo(c).split('|')[0].trim();
-          if (nome) atual().fontes.push({ id: c.id, titulo: nome, icone: iconeDe(c.icon) });
+          if (nome) atual().fontes.push({ id: c.id, titulo: semTutoria(nome), icone: iconeDe(c.icon) });
         }
       }
     }
@@ -142,6 +142,12 @@ export async function materialDaMentorada(
 }
 
 /** Pré-sessões são os únicos materiais que a mentorada preenche. */
+export /** "Tutorias terapêuticas" -> "Terapêuticas"; "Tutoria Investimentos" -> "Investimentos". */
+function semTutoria(titulo: string): string {
+  const limpo = titulo.replace(/^tutorias?\s+(de\s+|do\s+|da\s+)?/i, '').trim() || titulo.trim();
+  return limpo.charAt(0).toUpperCase() + limpo.slice(1);
+}
+
 export const ehPreSessao = (t: string) => /^pre[-\s]?sessao/.test(normal(t));
 
 export type RespostaDaPreSessao =
