@@ -10,7 +10,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * do "ver como" (`PREVIEW_COOKIE_SECRET`).
  */
 
-const DIAS_PADRAO = 90;
+// Um ano e pouco: o mesmo link serve para as pré-sessões do ciclo inteiro.
+const DIAS_PADRAO = 400;
 
 function segredo(): string {
   const s = process.env.PREVIEW_COOKIE_SECRET;
