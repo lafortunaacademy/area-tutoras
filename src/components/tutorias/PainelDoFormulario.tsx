@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, History, Loader2, Send } from 'lucide-react';
+import { ChevronRight, Loader2, Plus, Send } from 'lucide-react';
 import type { Pergunta } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
@@ -32,7 +32,6 @@ export function PainelDoFormulario({
   const [novo, setNovo] = useState(false);
   const [mexeu, setMexeu] = useState(false);
   const [enviando, setEnviando] = useState<'parado' | 'enviando' | 'vazio' | 'erro'>('parado');
-  const [anterior, setAnterior] = useState<{ envio: Envio; respostas: Record<string, Valor> } | null>(null);
 
   const consulta = `mentorada=${encodeURIComponent(mentoradaId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
 
@@ -72,11 +71,6 @@ export function PainelDoFormulario({
       .catch(() => setErro(true));
   };
 
-  const abrirAnterior = async (e: Envio) => {
-    const r = await fetch(`/api/tutorias/envios/${e.id}?${consulta}`);
-    if (r.ok) setAnterior((await r.json()) as { envio: Envio; respostas: Record<string, Valor> });
-  };
-
   if (erro) return <p className="text-sm text-parado">Não foi possível carregar agora.</p>;
   if (!dados) {
     return (
@@ -89,97 +83,131 @@ export function PainelDoFormulario({
 
   const { material, estado, podeEditar } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
-
-  if (anterior) {
-    return (
-      <div className="space-y-4">
-        <button type="button" onClick={() => setAnterior(null)} className="inline-flex items-center gap-1.5 text-xs text-texto-suave hover:text-marca">
-          <ArrowLeft aria-hidden size={13} />
-          Voltar
-        </button>
-        <p className="text-xs text-texto-suave">Resposta enviada em {quando(anterior.envio.enviadoEm!)}</p>
-        <FormularioDoApp perguntas={material.perguntas} respostas={anterior.respostas} mentoradaId={mentoradaId} podeEditar={false} />
-      </div>
-    );
-  }
-
-  // O que aparece: quem edita vê o rascunho (ou um em branco); quem só lê, o último enviado.
-  const editando = podeEditar && (Boolean(estado.rascunho) || novo || !estado.ultimo);
-  const mostrado = editando ? (estado.rascunho?.respostas ?? {}) : (estado.ultimo?.respostas ?? estado.rascunho?.respostas ?? {});
+  // Quem edita preenche o rascunho (ou um novo em branco); depois de enviado, começa outro pelo botão.
+  const editando = podeEditar && (Boolean(estado.rascunho) || novo || enviados.length === 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-texto-suave">
-        {estado.ultimo ? (
-          <span>
-            Última resposta enviada em <strong className="font-medium text-texto">{quando(estado.ultimo.envio.enviadoEm!)}</strong>
-          </span>
+    <div className="space-y-5">
+      {podeEditar ? (
+        editando ? (
+          <div className="space-y-4">
+            {enviados.length ? (
+              <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
+                Resposta nova. As já enviadas continuam guardadas logo abaixo.
+              </p>
+            ) : null}
+            <FormularioDoApp
+              key={estado.rascunho?.envio.id ?? 'novo'}
+              perguntas={material.perguntas}
+              respostas={estado.rascunho?.respostas ?? {}}
+              mentoradaId={mentoradaId}
+              podeEditar
+              token={token}
+              aoSalvar={() => setMexeu(true)}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
+              {enviando === 'vazio' ? <p className="text-xs text-parado">Responda ao menos uma pergunta antes de enviar.</p> : null}
+              {enviando === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
+              <button
+                type="button"
+                onClick={enviar}
+                disabled={enviando === 'enviando' || (!estado.rascunho && !mexeu)}
+                className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
+              >
+                {enviando === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Send aria-hidden size={14} />}
+                Enviar respostas
+              </button>
+            </div>
+          </div>
         ) : (
-          <span>Ainda não foi enviada nenhuma resposta.</span>
-        )}
-        {enviados.length > (editando ? 0 : 1) ? (
-          <details className="relative">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-1 hover:text-marca [&::-webkit-details-marker]:hidden">
-              <History aria-hidden size={13} />
-              Respostas anteriores ({editando ? enviados.length : enviados.length - 1})
-            </summary>
-            <ul className="absolute z-10 mt-1 min-w-48 rounded-lg border border-borda bg-superficie p-1 shadow-[var(--sombra)]">
-              {(editando ? enviados : enviados.slice(1)).map((e) => (
-                <li key={e.id}>
-                  <button type="button" onClick={() => abrirAnterior(e)} className="w-full rounded-md px-2 py-1.5 text-left hover:bg-superficie-2">
-                    {quando(e.enviadoEm!)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
-      </div>
-
-      {editando && estado.ultimo ? (
+          <button
+            type="button"
+            onClick={() => setNovo(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-marca px-4 py-2 text-sm font-medium text-marca transition hover:bg-marca hover:text-marca-contraste"
+          >
+            <Plus aria-hidden size={14} />
+            Preencher de novo
+          </button>
+        )
+      ) : estado.rascunho ? (
         <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
-          Você está preenchendo uma resposta nova. A de {quando(estado.ultimo.envio.enviadoEm!)} continua guardada.
+          Há uma resposta em preenchimento, ainda não enviada.
         </p>
       ) : null}
-      {!podeEditar && !estado.ultimo && estado.rascunho ? (
-        <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">Em preenchimento, ainda não enviada.</p>
-      ) : null}
 
-      <FormularioDoApp
-        key={editando ? (estado.rascunho?.envio.id ?? 'novo') : (estado.ultimo?.envio.id ?? 'vazio')}
-        perguntas={material.perguntas}
-        respostas={mostrado}
-        mentoradaId={mentoradaId}
-        podeEditar={editando}
-        token={token}
-        aoSalvar={() => setMexeu(true)}
-      />
-
-      {podeEditar ? (
-        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
-          {enviando === 'vazio' ? <p className="text-xs text-parado">Responda ao menos uma pergunta antes de enviar.</p> : null}
-          {enviando === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
-          {editando ? (
-            <button
-              type="button"
-              onClick={enviar}
-              disabled={enviando === 'enviando' || (!estado.rascunho && !mexeu)}
-              className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
-            >
-              {enviando === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Send aria-hidden size={14} />}
-              Enviar respostas
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setNovo(true)}
-              className="rounded-lg border border-marca px-4 py-2 text-sm font-medium text-marca transition hover:bg-marca hover:text-marca-contraste"
-            >
-              Preencher de novo
-            </button>
-          )}
+      {enviados.length ? (
+        <div className="space-y-2">
+          <p className="text-[11px] font-medium tracking-[0.14em] text-texto-suave uppercase">
+            Respostas enviadas ({enviados.length})
+          </p>
+          <ul className="space-y-2">
+            {enviados.map((e, i) => (
+              <li key={e.id}>
+                <CaixaDeEnvio
+                  envio={e}
+                  maisRecente={i === 0}
+                  perguntas={material.perguntas}
+                  mentoradaId={mentoradaId}
+                  consulta={consulta}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
+      ) : !podeEditar ? (
+        <p className="text-sm text-texto-suave">Nenhuma resposta enviada ainda.</p>
       ) : null}
     </div>
+  );
+}
+
+/** Uma caixinha por formulário enviado; as respostas carregam quando ela abre. */
+function CaixaDeEnvio({
+  envio,
+  maisRecente,
+  perguntas,
+  mentoradaId,
+  consulta,
+}: {
+  envio: Envio;
+  maisRecente: boolean;
+  perguntas: Pergunta[];
+  mentoradaId: string;
+  consulta: string;
+}) {
+  const [respostas, setRespostas] = useState<Record<string, Valor> | null>(null);
+  const [erro, setErro] = useState(false);
+
+  const abrir = () => {
+    if (respostas) return;
+    fetch(`/api/tutorias/envios/${envio.id}?${consulta}`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ respostas: Record<string, Valor> }>) : Promise.reject(new Error('falhou'))))
+      .then((d) => setRespostas(d.respostas))
+      .catch(() => setErro(true));
+  };
+
+  return (
+    <details
+      className="group rounded-lg border border-borda bg-superficie"
+      onToggle={(ev) => {
+        if ((ev.currentTarget as HTMLDetailsElement).open) abrir();
+      }}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
+        <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
+        <span className="font-medium">Enviada em {quando(envio.enviadoEm!)}</span>
+        {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[10.5px] text-ok">mais recente</span> : null}
+      </summary>
+      <div className="border-t border-borda px-4 py-4">
+        {!respostas && !erro ? (
+          <p className="flex items-center gap-2 text-sm text-texto-suave">
+            <Loader2 aria-hidden size={14} className="animate-spin" />
+            Carregando…
+          </p>
+        ) : null}
+        {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
+        {respostas ? <FormularioDoApp perguntas={perguntas} respostas={respostas} mentoradaId={mentoradaId} podeEditar={false} /> : null}
+      </div>
+    </details>
   );
 }
