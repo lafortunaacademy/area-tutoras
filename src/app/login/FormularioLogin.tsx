@@ -5,7 +5,7 @@ import { enviarMagicLink, type EstadoLogin } from './actions';
 
 const inicial: EstadoLogin = {};
 
-export function FormularioLogin() {
+export function FormularioLogin({ proximo }: { proximo?: string | null }) {
   const [estado, acao, enviando] = useActionState(enviarMagicLink, inicial);
 
   if (estado.enviado) {
@@ -22,6 +22,7 @@ export function FormularioLogin() {
 
   return (
     <form action={acao} className="space-y-6">
+      {proximo ? <input type="hidden" name="proximo" value={proximo} /> : null}
       <p className="text-sm leading-relaxed text-texto-suave">
         Não tem senha aqui. Você recebe um link no e-mail, clica uma vez e entra. Neste navegador você continua
         conectada: nas próximas vezes o painel abre direto.

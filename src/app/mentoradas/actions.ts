@@ -2,9 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import { exigirAcessoAMentorada } from '@/lib/session';
-import { criarLinkDePreenchimento } from '@/lib/linkDePreenchimento';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { criarTarefa, marcarTarefa } from '@/lib/notion/tarefas';
 import { atualizarValorDoMes, CAMPOS_EDITAVEIS_DO_MES, type CampoEditavelDoMes } from '@/lib/notion/gestao';
@@ -82,23 +80,4 @@ export async function salvarValorDoMes(
   revalidatePath(`/mentoradas/${mentorada.id}/gestao-de-resultados`);
   revalidatePath(`/mentoradas/${mentorada.id}`);
   return { ok: true };
-}
-
-/**
- * Link de preenchimento de uma pré-sessão, para a tutora mandar para a
- * mentorada. Só o administrativo gera: na área da mentorada o botão nem
- * aparece, e aqui a porta confere de novo.
- */
-export async function gerarLinkDePreenchimento(mentoradaId: string, materialId: string): Promise<string | null> {
-  const visitante = await exigirAcessoAMentorada(mentoradaId);
-  if (!visitante.admin) return null;
-
-  // O endereço vem de onde a pessoa está agora; a variável de ambiente é só
-  // reserva, porque pode estar apontando para outro lugar (outra porta, por exemplo).
-  const cabecalhos = await headers();
-  const host = cabecalhos.get('host');
-  const origem = host
-    ? `${cabecalhos.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')}://${host}`
-    : (process.env.NEXT_PUBLIC_SITE_URL ?? '');
-  return `${origem}/p/${criarLinkDePreenchimento(mentoradaId, materialId)}`;
 }

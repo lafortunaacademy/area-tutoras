@@ -15,15 +15,12 @@ export function FormularioDoApp({
   respostas,
   mentoradaId,
   podeEditar,
-  token,
   aoSalvar,
 }: {
   perguntas: Pergunta[];
   respostas: Record<string, Valor>;
   mentoradaId: string;
   podeEditar: boolean;
-  /** Link de preenchimento, quando a pessoa entrou por ele. */
-  token?: string;
   /** Chamado a cada gravação que deu certo. */
   aoSalvar?: () => void;
 }) {
@@ -35,7 +32,7 @@ export function FormularioDoApp({
     else secoes.push({ titulo: p.secao, perguntas: [p] });
   }
 
-  const ctx: Ctx = { mentoradaId, token, podeEditar, aoSalvar };
+  const ctx: Ctx = { mentoradaId, podeEditar, aoSalvar };
 
   return (
     <div className="space-y-6 text-sm leading-relaxed">
@@ -72,13 +69,13 @@ export function FormularioDoApp({
   );
 }
 
-type Ctx = { mentoradaId: string; token?: string; podeEditar: boolean; aoSalvar?: () => void };
+type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void };
 
 async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[] }): Promise<boolean> {
   const r = await fetch('/api/tutorias/respostas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId, token: ctx.token, ...valor }),
+    body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId, ...valor }),
   });
   if (r.ok) ctx.aoSalvar?.();
   return r.ok;
@@ -182,7 +179,6 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
       form.append('mentorada', ctx.mentoradaId);
       form.append('pergunta', pergunta.id);
       form.append('arquivo', arquivo);
-      if (ctx.token) form.append('token', ctx.token);
       const r = await fetch('/api/tutorias/arquivos', { method: 'POST', body: form });
       if (!r.ok) {
         setEstado(r.status === 413 ? 'grande' : 'erro');
@@ -199,7 +195,7 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
     const r = await fetch('/api/tutorias/arquivos', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId: pergunta.id, caminho: a.caminho, token: ctx.token }),
+      body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId: pergunta.id, caminho: a.caminho }),
     });
     if (r.ok) {
       setAnexos((atual) => atual.filter((x) => x.caminho !== a.caminho));

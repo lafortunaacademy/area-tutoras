@@ -19,17 +19,14 @@ const quando = (iso: string) =>
 export function PainelDoFormulario({
   materialId,
   mentoradaId,
-  token,
   paraMentorada = false,
   mostrarEnviadas = true,
 }: {
   materialId: string;
   mentoradaId: string;
-  /** Link de preenchimento, quando a pessoa entrou por ele. */
-  token?: string;
   /** Quem preenche é a própria mentorada: sempre uma resposta nova, textos para ela. */
   paraMentorada?: boolean;
-  /** As caixinhas das respostas já enviadas (no link de preenchimento ficam de fora). */
+  /** As caixinhas das respostas já enviadas (no link do formulário ficam de fora). */
   mostrarEnviadas?: boolean;
 }) {
   const [dados, setDados] = useState<Dados | null>(null);
@@ -39,7 +36,7 @@ export function PainelDoFormulario({
   const [obrigado, setObrigado] = useState(false);
   const [enviando, setEnviando] = useState<'parado' | 'enviando' | 'vazio' | 'erro'>('parado');
 
-  const consulta = `mentorada=${encodeURIComponent(mentoradaId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+  const consulta = `mentorada=${encodeURIComponent(mentoradaId)}`;
 
   const buscar = useCallback(async (): Promise<Dados> => {
     const r = await fetch(`/api/tutorias/materiais/${materialId}?${consulta}`);
@@ -62,7 +59,7 @@ export function PainelDoFormulario({
     const r = await fetch('/api/tutorias/envios', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mentorada: mentoradaId, materialId, token }),
+      body: JSON.stringify({ mentorada: mentoradaId, materialId }),
     });
     if (!r.ok) {
       setEnviando(r.status === 400 ? 'vazio' : 'erro');
@@ -120,7 +117,6 @@ export function PainelDoFormulario({
               respostas={estado.rascunho?.respostas ?? {}}
               mentoradaId={mentoradaId}
               podeEditar
-              token={token}
               aoSalvar={() => setMexeu(true)}
             />
             <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">

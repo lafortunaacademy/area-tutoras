@@ -11,8 +11,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const e = await envio(mentoradaId, envioId);
     if (!e) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
-    const permissao = await permissaoNasTutorias(mentoradaId, { token: request.nextUrl.searchParams.get('token'), materialId: e.materialId });
-    if (!permissao || (permissao.soMaterial && permissao.soMaterial !== e.materialId)) {
+    const permissao = await permissaoNasTutorias(mentoradaId);
+    if (!permissao) {
       return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     }
     return NextResponse.json({ envio: e, respostas: await respostasDoEnvio(e.id) });

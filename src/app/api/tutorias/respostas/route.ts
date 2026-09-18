@@ -6,7 +6,7 @@ import { salvarResposta } from '@/lib/tutorias/respostas';
 /** Grava uma resposta (texto ou opções) de uma pergunta das tutorias. */
 export async function POST(request: NextRequest) {
   const corpo = (await request.json().catch(() => null)) as
-    | { mentorada?: string; perguntaId?: string; texto?: string; opcoes?: string[]; token?: string }
+    | { mentorada?: string; perguntaId?: string; texto?: string; opcoes?: string[]}
     | null;
   if (!corpo?.mentorada || !corpo.perguntaId) return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
 
@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
     const p = await pergunta(corpo.perguntaId);
     if (!p) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
 
-    const permissao = await permissaoNasTutorias(corpo.mentorada, { token: corpo.token, materialId: p.materialId });
-    if (!permissao?.podeEditar || (permissao.soMaterial && permissao.soMaterial !== p.materialId)) {
+    const permissao = await permissaoNasTutorias(corpo.mentorada);
+    if (!permissao?.podeEditar) {
       return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     }
 

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Check, ChevronRight, Link2 } from 'lucide-react';
 import type { Material } from '@/lib/tutorias/modelo';
 import type { Progresso } from '@/lib/tutorias/respostas';
-import { gerarLinkDePreenchimento } from '@/app/mentoradas/actions';
 import { PainelDoFormulario } from './PainelDoFormulario';
 import { IconeDoModelo } from './IconeDoModelo';
 
@@ -72,7 +71,7 @@ function ItemDaArvore({
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
         <IconeDoModelo icone={material.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{material.nome}</span>
-        {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={material.id} /> : null}
+        {admin && preSessao ? <CopiarLink materialId={material.id} /> : null}
       </summary>
 
       <div className="border-t border-borda px-4 py-4">
@@ -88,19 +87,19 @@ function ItemDaArvore({
   );
 }
 
-/** Copia o link de preenchimento da pré-sessão. Só aparece para o administrativo. */
-function CopiarLink({ mentoradaId, materialId }: { mentoradaId: string; materialId: string }) {
-  const [estado, setEstado] = useState<'parado' | 'copiando' | 'copiado' | 'erro'>('parado');
+/**
+ * Copia o link do formulário. É o mesmo para todas as mentoradas: quem abre
+ * entra com o próprio e-mail e responde o seu. Só aparece para o administrativo.
+ */
+function CopiarLink({ materialId }: { materialId: string }) {
+  const [estado, setEstado] = useState<'parado' | 'copiado' | 'erro'>('parado');
 
   const copiar = async (e: React.MouseEvent) => {
     // Dentro do <summary>: sem isto o clique abriria ou fecharia o toggle.
     e.preventDefault();
     e.stopPropagation();
-    setEstado('copiando');
     try {
-      const link = await gerarLinkDePreenchimento(mentoradaId, materialId);
-      if (!link) throw new Error('sem link');
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(`${window.location.origin}/formulario/${materialId}`);
       setEstado('copiado');
       setTimeout(() => setEstado('parado'), 2500);
     } catch {
@@ -112,11 +111,11 @@ function CopiarLink({ mentoradaId, materialId }: { mentoradaId: string; material
     <button
       type="button"
       onClick={copiar}
-      title="Copiar link para a mentorada preencher, sem precisar entrar no sistema"
+      title="Copiar o link do formulário (o mesmo para todas as mentoradas)"
       className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda bg-superficie px-2 py-1 text-[11px] font-medium text-texto-suave transition hover:border-marca hover:text-marca"
     >
       {estado === 'copiado' ? <Check aria-hidden size={12} /> : <Link2 aria-hidden size={12} />}
-      {estado === 'copiando' ? 'Gerando…' : estado === 'copiado' ? 'Link copiado' : estado === 'erro' ? 'Não deu' : 'Link de preenchimento'}
+      {estado === 'copiado' ? 'Link copiado' : estado === 'erro' ? 'Não deu' : 'Link do formulário'}
     </button>
   );
 }

@@ -6,6 +6,7 @@ import { destinoDepoisDoLogin, getAcessoMentorada, getSessao, supabaseConfigurad
 export const dynamic = 'force-dynamic';
 import { FormularioLogin } from './FormularioLogin';
 import { BotaoTema } from '@/components/BotaoTema';
+import { caminhoSeguro } from '@/lib/depoisDoLogin';
 
 const MENSAGENS: Record<string, string> = {
   link_invalido: 'Esse link não veio completo. Peça um novo abaixo.',
@@ -16,11 +17,12 @@ const MENSAGENS: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; proximo?: string }>;
 }) {
-  if ((await getSessao()) || (await getAcessoMentorada())) redirect(await destinoDepoisDoLogin());
+  const { erro, proximo } = await searchParams;
+  const voltarPara = caminhoSeguro(proximo);
+  if ((await getSessao()) || (await getAcessoMentorada())) redirect(voltarPara ?? (await destinoDepoisDoLogin()));
 
-  const { erro } = await searchParams;
   const aviso = erro ? (MENSAGENS[erro] ?? 'Não consegui te autenticar. Peça um novo link.') : null;
 
   return (
@@ -47,10 +49,22 @@ export default async function LoginPage({
             priority
             className="logo-marca mx-auto h-16 w-auto sm:h-20"
           />
-          <p className="mt-6 text-[11px] tracking-[0.35em] text-destaque uppercase">Painel interno</p>
-          <p className="mt-3 text-sm text-texto-suave sm:text-base">
-            Área da equipe. Entre pelo link que chega no seu e-mail.
-          </p>
+          {/* Quem chega por um formulário é mentorada: o texto é para ela. */}
+          {voltarPara?.startsWith('/formulario/') ? (
+            <>
+              <p className="mt-6 text-[11px] tracking-[0.35em] text-destaque uppercase">Formulário da tutoria</p>
+              <p className="mt-3 text-sm text-texto-suave sm:text-base">
+                Entre com o seu e-mail para responder. O link de acesso chega na sua caixa de entrada.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-6 text-[11px] tracking-[0.35em] text-destaque uppercase">Painel interno</p>
+              <p className="mt-3 text-sm text-texto-suave sm:text-base">
+                Área da equipe. Entre pelo link que chega no seu e-mail.
+              </p>
+            </>
+          )}
         </div>
 
         {aviso ? (
@@ -59,7 +73,7 @@ export default async function LoginPage({
 
         <div className="rounded-2xl border border-borda bg-superficie p-6 shadow-[var(--sombra)] sm:p-8">
           {supabaseConfigurado() ? (
-            <FormularioLogin />
+            <FormularioLogin proximo={voltarPara} />
           ) : (
             <p className="text-sm text-texto-suave">
               Faltam as credenciais do Supabase. Copie <code>.env.local.example</code> para{' '}
@@ -68,7 +82,11 @@ export default async function LoginPage({
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-texto-suave">Acesso restrito ao time da La Fortuna Academy.</p>
+        <p className="mt-6 text-center text-xs text-texto-suave">
+          {voltarPara?.startsWith('/formulario/')
+            ? 'Acesso das mentoradas da La Fortuna Academy.'
+            : 'Acesso restrito ao time da La Fortuna Academy.'}
+        </p>
       </div>
     </main>
   );

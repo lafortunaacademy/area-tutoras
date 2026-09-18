@@ -4,17 +4,20 @@ import { exigirAdmin, type Tutora } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Cabecalho } from '@/components/Cabecalho';
 import { verComo } from './actions';
+import { AcessoMentorada } from './AcessoMentorada';
+import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
+import { normalizarId } from '@/lib/notion/carteira';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const sessao = await exigirAdmin();
 
-  const { data: tutoras } = await supabaseAdmin()
-    .from('tutoras')
-    .select('*')
-    .order('nome')
-    .returns<Tutora[]>();
+  const [{ data: tutoras }, { data: acessos }, mentoradas] = await Promise.all([
+    supabaseAdmin().from('tutoras').select('*').order('nome').returns<Tutora[]>(),
+    supabaseAdmin().from('mentoradas_acesso').select('id, email, notion_page_id').order('email'),
+    mentoradasDoModeloNovo().catch(() => []),
+  ]);
 
   return (
     <div className="min-h-dvh">
@@ -40,6 +43,30 @@ export default async function AdminPage() {
             texto="A área de membros de cada mentorada: progresso, planejamento, tarefas e resultados."
           />
         </div>
+
+        <section className="mt-14">
+          <h2 className="rotulo text-[11px] text-texto-suave">Acesso das mentoradas</h2>
+          <p className="mt-1 mb-4 text-sm text-texto-suave">
+            O e-mail com que cada mentorada entra no app e nos formulários. Pode ser qualquer e-mail dela.
+          </p>
+
+          {mentoradas.length ? (
+            <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-superficie">
+              {mentoradas.map((m) => (
+                <AcessoMentorada
+                  key={m.id}
+                  mentoradaId={m.id}
+                  nome={m.nome}
+                  emails={(acessos ?? []).filter((a) => normalizarId(a.notion_page_id) === m.id).map((a) => ({ id: a.id, email: a.email }))}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
+              Nenhuma mentorada no modelo novo ainda.
+            </p>
+          )}
+        </section>
 
         <section className="mt-14">
           <h2 className="rotulo text-[11px] text-texto-suave">Ver como uma tutora</h2>

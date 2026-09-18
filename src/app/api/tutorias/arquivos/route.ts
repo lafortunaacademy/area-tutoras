@@ -6,11 +6,11 @@ import { anexarArquivo, removerArquivo } from '@/lib/tutorias/respostas';
 /** Na Vercel o corpo do pedido vai até ~4,5 MB. */
 const LIMITE_BYTES = 4 * 1024 * 1024;
 
-async function autorizar(mentorada: string, perguntaId: string, token: string | null) {
+async function autorizar(mentorada: string, perguntaId: string) {
   const p = await pergunta(perguntaId);
   if (!p) return null;
-  const permissao = await permissaoNasTutorias(mentorada, { token, materialId: p.materialId });
-  if (!permissao?.podeEditar || (permissao.soMaterial && permissao.soMaterial !== p.materialId)) return null;
+  const permissao = await permissaoNasTutorias(mentorada);
+  if (!permissao?.podeEditar) return null;
   return permissao;
 }
 
@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
   const form = await request.formData().catch(() => null);
   const mentorada = form?.get('mentorada');
   const perguntaId = form?.get('pergunta');
-  const token = form?.get('token');
   const arquivo = form?.get('arquivo');
   if (typeof mentorada !== 'string' || typeof perguntaId !== 'string' || !(arquivo instanceof File) || arquivo.size === 0) {
     return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
   if (arquivo.size > LIMITE_BYTES) return NextResponse.json({ erro: 'arquivo maior que 4 MB' }, { status: 413 });
 
   try {
-    const permissao = await autorizar(mentorada, perguntaId, typeof token === 'string' ? token : null);
+    const permissao = await autorizar(mentorada, perguntaId);
     if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     const anexo = await anexarArquivo(mentorada, perguntaId, arquivo, permissao.quem);
     if (!anexo) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
@@ -40,12 +39,12 @@ export async function POST(request: NextRequest) {
 /** Remove um anexo. */
 export async function DELETE(request: NextRequest) {
   const corpo = (await request.json().catch(() => null)) as
-    | { mentorada?: string; perguntaId?: string; caminho?: string; token?: string }
+    | { mentorada?: string; perguntaId?: string; caminho?: string}
     | null;
   if (!corpo?.mentorada || !corpo.perguntaId || !corpo.caminho) return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
 
   try {
-    const permissao = await autorizar(corpo.mentorada, corpo.perguntaId, corpo.token ?? null);
+    const permissao = await autorizar(corpo.mentorada, corpo.perguntaId);
     if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     const ok = await removerArquivo(corpo.mentorada, corpo.perguntaId, corpo.caminho, permissao.quem);
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ erro: 'não encontrado' }, { status: 404 });

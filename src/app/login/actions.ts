@@ -1,6 +1,7 @@
 'use server';
 
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { caminhoSeguro, COOKIE_DEPOIS_DO_LOGIN } from '@/lib/depoisDoLogin';
 import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
@@ -27,6 +28,12 @@ export async function enviarMagicLink(
   ]);
 
   if (!tutora && !mentorada) return { enviado: true };
+
+  // Veio de um formulário: guarda para onde voltar quando ela clicar no link do e-mail.
+  const proximo = caminhoSeguro(String(form.get('proximo') ?? ''));
+  if (proximo) {
+    (await cookies()).set(COOKIE_DEPOIS_DO_LOGIN, proximo, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 });
+  }
 
   const origem = (await headers()).get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL;
   const supabase = await supabaseServer();

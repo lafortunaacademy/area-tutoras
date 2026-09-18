@@ -9,8 +9,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const mentoradaId = request.nextUrl.searchParams.get('mentorada');
   if (!mentoradaId) return NextResponse.json({ erro: 'mentorada não informada' }, { status: 400 });
 
-  const permissao = await permissaoNasTutorias(mentoradaId, { token: request.nextUrl.searchParams.get('token'), materialId });
-  if (!permissao || (permissao.soMaterial && permissao.soMaterial !== materialId)) {
+  const permissao = await permissaoNasTutorias(mentoradaId);
+  if (!permissao) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
 
