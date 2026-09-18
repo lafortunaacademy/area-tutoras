@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronRight, Link2, Loader2 } from 'lucide-react';
-import type { Material, Pergunta } from '@/lib/tutorias/modelo';
-import type { Valor } from '@/lib/tutorias/respostas';
+import { Check, ChevronRight, Link2 } from 'lucide-react';
+import type { Material } from '@/lib/tutorias/modelo';
+import type { Progresso } from '@/lib/tutorias/respostas';
 import { gerarLinkDePreenchimento } from '@/app/mentoradas/actions';
-import { FormularioDoApp } from './FormularioDoApp';
+import { PainelDoFormulario } from './PainelDoFormulario';
 import { IconeDoModelo } from './IconeDoModelo';
-
-type Carregado = { material: { perguntas: Pergunta[] }; respostas: Record<string, Valor>; podeEditar: boolean };
 
 const ehPreSessao = (t: string) =>
   /^pre[-\s]?sessao/.test(t.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase());
@@ -26,8 +24,8 @@ export function ArvoreDeMateriais({
 }: {
   materiais: Material[];
   mentoradaId: string;
-  /** Respostas por material (quantas perguntas já têm resposta). */
-  progresso: Record<string, number>;
+  /** Por formulário: quantas perguntas estão respondidas e quando foi o último envio. */
+  progresso: Progresso;
   /** Só o administrativo vê o link de preenchimento. */
   admin: boolean;
 }) {
@@ -51,29 +49,20 @@ function ItemDaArvore({
 }: {
   material: Material;
   mentoradaId: string;
-  progresso: Record<string, number>;
+  progresso: Progresso;
   admin: boolean;
 }) {
   const preSessao = material.tipo === 'formulario' && ehPreSessao(material.nome);
-  const [dados, setDados] = useState<Carregado | null>(null);
-  const [erro, setErro] = useState(false);
-
-  const carregar = () => {
-    if (material.tipo !== 'formulario' || dados) return;
-    setErro(false);
-    fetch(`/api/tutorias/materiais/${material.id}?mentorada=${encodeURIComponent(mentoradaId)}`)
-      .then((r) => (r.ok ? (r.json() as Promise<Carregado>) : Promise.reject(new Error('falhou'))))
-      .then(setDados)
-      .catch(() => setErro(true));
-  };
-
-  const feitas = progresso[material.id] ?? 0;
+  // O formulário só carrega quando o toggle abre pela primeira vez.
+  const [aberto, setAberto] = useState(false);
+  const feitas = progresso[material.id]?.feitas ?? 0;
+  const ultimoEnvio = progresso[material.id]?.ultimoEnvio ?? null;
 
   return (
     <details
       className={`group rounded-lg border bg-superficie ${preSessao ? 'border-marca/40 bg-marca-suave/40' : 'border-borda'}`}
       onToggle={(e) => {
-        if ((e.currentTarget as HTMLDetailsElement).open) carregar();
+        if ((e.currentTarget as HTMLDetailsElement).open) setAberto(true);
       }}
     >
       <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
@@ -89,6 +78,11 @@ function ItemDaArvore({
             {feitas}/{material.totalPerguntas}
           </span>
         ) : null}
+        {ultimoEnvio ? (
+          <span className="hidden text-[11px] font-normal text-texto-suave sm:inline">
+            enviada em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(ultimoEnvio))}
+          </span>
+        ) : null}
         {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={material.id} /> : null}
       </summary>
 
@@ -96,23 +90,7 @@ function ItemDaArvore({
         {material.tipo === 'grupo' ? (
           <ArvoreDeMateriais materiais={material.filhos} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
         ) : material.tipo === 'formulario' ? (
-          <>
-            {!dados && !erro ? (
-              <p className="flex items-center gap-2 text-sm text-texto-suave">
-                <Loader2 aria-hidden size={14} className="animate-spin" />
-                Carregando…
-              </p>
-            ) : null}
-            {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
-            {dados ? (
-              <FormularioDoApp
-                perguntas={dados.material.perguntas}
-                respostas={dados.respostas}
-                mentoradaId={mentoradaId}
-                podeEditar={dados.podeEditar}
-              />
-            ) : null}
-          </>
+          aberto ? <PainelDoFormulario materialId={material.id} mentoradaId={mentoradaId} /> : null
         ) : (
           <p className="text-sm text-texto-suave">Este material ainda está sendo trazido para o app.</p>
         )}

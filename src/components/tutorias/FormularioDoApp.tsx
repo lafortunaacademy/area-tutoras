@@ -16,6 +16,7 @@ export function FormularioDoApp({
   mentoradaId,
   podeEditar,
   token,
+  aoSalvar,
 }: {
   perguntas: Pergunta[];
   respostas: Record<string, Valor>;
@@ -23,6 +24,8 @@ export function FormularioDoApp({
   podeEditar: boolean;
   /** Link de preenchimento, quando a pessoa entrou por ele. */
   token?: string;
+  /** Chamado a cada gravação que deu certo. */
+  aoSalvar?: () => void;
 }) {
   // Agrupa por seção, na ordem em que aparecem.
   const secoes: { titulo: string | null; perguntas: Pergunta[] }[] = [];
@@ -32,7 +35,7 @@ export function FormularioDoApp({
     else secoes.push({ titulo: p.secao, perguntas: [p] });
   }
 
-  const ctx = { mentoradaId, token, podeEditar };
+  const ctx: Ctx = { mentoradaId, token, podeEditar, aoSalvar };
 
   return (
     <div className="space-y-6 text-sm leading-relaxed">
@@ -69,7 +72,7 @@ export function FormularioDoApp({
   );
 }
 
-type Ctx = { mentoradaId: string; token?: string; podeEditar: boolean };
+type Ctx = { mentoradaId: string; token?: string; podeEditar: boolean; aoSalvar?: () => void };
 
 async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[] }): Promise<boolean> {
   const r = await fetch('/api/tutorias/respostas', {
@@ -77,6 +80,7 @@ async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opc
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId, token: ctx.token, ...valor }),
   });
+  if (r.ok) ctx.aoSalvar?.();
   return r.ok;
 }
 
@@ -186,6 +190,7 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
       }
       const { anexo } = (await r.json()) as { anexo: Anexo };
       setAnexos((atual) => [...atual, anexo]);
+      ctx.aoSalvar?.();
     }
     setEstado('parado');
   };
@@ -196,7 +201,10 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId: pergunta.id, caminho: a.caminho, token: ctx.token }),
     });
-    if (r.ok) setAnexos((atual) => atual.filter((x) => x.caminho !== a.caminho));
+    if (r.ok) {
+      setAnexos((atual) => atual.filter((x) => x.caminho !== a.caminho));
+      ctx.aoSalvar?.();
+    }
   };
 
   return (

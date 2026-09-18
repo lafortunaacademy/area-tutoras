@@ -9,7 +9,7 @@ import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
-import { progressoDaMentorada } from '@/lib/tutorias/respostas';
+import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +34,7 @@ export default async function MentoradaPage({
     briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
     modeloDasTutorias().catch(() => null),
-    progressoDaMentorada(mentorada.id).catch(() => ({}) as Record<string, number>),
+    progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
 
   return (

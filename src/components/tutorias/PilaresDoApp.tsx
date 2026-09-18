@@ -1,5 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import type { Pilar } from '@/lib/tutorias/modelo';
+import type { Progresso } from '@/lib/tutorias/respostas';
 import { ArvoreDeMateriais } from './ArvoreDeMateriais';
 import { IconeDoModelo } from './IconeDoModelo';
 
@@ -12,7 +13,7 @@ export function PilaresDoApp({
 }: {
   pilares: Pilar[];
   mentoradaId: string;
-  progresso: Record<string, number>;
+  progresso: Progresso;
   admin: boolean;
 }) {
   return (

@@ -4,7 +4,7 @@ import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { tutorasDoHub } from '@/lib/notion/hub';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
-import { progressoDaMentorada } from '@/lib/tutorias/respostas';
+import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
 import { GaleriaTutoras } from '@/components/area-mentorada/GaleriaTutoras';
@@ -24,7 +24,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
   const [tutoras, pilares, progresso] = await Promise.all([
     tutorasDoHub().catch((e) => e as Error),
     modeloDasTutorias().catch((e) => e as Error),
-    progressoDaMentorada(mentorada.id).catch(() => ({}) as Record<string, number>),
+    progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
 
   return (

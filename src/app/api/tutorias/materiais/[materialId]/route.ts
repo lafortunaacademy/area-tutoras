@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 import { formulario } from '@/lib/tutorias/modelo';
-import { respostasDoMaterial } from '@/lib/tutorias/respostas';
+import { estadoDoFormulario } from '@/lib/tutorias/respostas';
 
-/** Um formulário das tutorias com as respostas da mentorada, sob demanda. */
+/** Um formulário das tutorias com o rascunho, o último envio e o histórico da mentorada. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ materialId: string }> }) {
   const { materialId } = await params;
   const mentoradaId = request.nextUrl.searchParams.get('mentorada');
@@ -17,8 +17,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const material = await formulario(materialId);
     if (!material) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
-    const respostas = await respostasDoMaterial(mentoradaId, material.perguntas.map((p) => p.id));
-    return NextResponse.json({ material, respostas, podeEditar: permissao.podeEditar });
+    const estado = await estadoDoFormulario(mentoradaId, materialId);
+    return NextResponse.json({ material, estado, podeEditar: permissao.podeEditar });
   } catch {
     return NextResponse.json({ erro: 'falhou' }, { status: 502 });
   }

@@ -1,8 +1,7 @@
 import Image from 'next/image';
 import { lerLinkDePreenchimento } from '@/lib/linkDePreenchimento';
 import { formulario } from '@/lib/tutorias/modelo';
-import { respostasDoMaterial } from '@/lib/tutorias/respostas';
-import { FormularioDoApp } from '@/components/tutorias/FormularioDoApp';
+import { PainelDoFormulario } from '@/components/tutorias/PainelDoFormulario';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,17 +22,9 @@ export default async function PreenchimentoPage({ params }: { params: Promise<{ 
     );
   }
 
-  const respostas = await respostasDoMaterial(link.mentoradaId, material.perguntas.map((p) => p.id));
-
   return (
     <Moldura titulo={material.nome}>
-      <FormularioDoApp
-        perguntas={material.perguntas}
-        respostas={respostas}
-        mentoradaId={link.mentoradaId}
-        podeEditar
-        token={token}
-      />
+      <PainelDoFormulario materialId={link.materialId} mentoradaId={link.mentoradaId} token={token} />
     </Moldura>
   );
 }
