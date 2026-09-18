@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ChevronRight, Loader2, Send } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronRight, FileText, Loader2, Send, X } from 'lucide-react';
 import type { Pergunta } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
@@ -170,7 +170,7 @@ export function PainelDoFormulario({
   );
 }
 
-/** Uma caixinha por formulário enviado; as respostas carregam quando ela abre. */
+/** Uma caixinha por formulário enviado; ao clicar, as respostas abrem numa tela por cima. */
 function CaixaDeEnvio({
   envio,
   maisRecente,
@@ -184,10 +184,12 @@ function CaixaDeEnvio({
   mentoradaId: string;
   consulta: string;
 }) {
+  const [aberta, setAberta] = useState(false);
   const [respostas, setRespostas] = useState<Record<string, Valor> | null>(null);
   const [erro, setErro] = useState(false);
 
   const abrir = () => {
+    setAberta(true);
     if (respostas) return;
     fetch(`/api/tutorias/envios/${envio.id}?${consulta}`)
       .then((r) => (r.ok ? (r.json() as Promise<{ respostas: Record<string, Valor> }>) : Promise.reject(new Error('falhou'))))
@@ -196,27 +198,73 @@ function CaixaDeEnvio({
   };
 
   return (
-    <details
-      className="group rounded-lg border border-borda bg-superficie"
-      onToggle={(ev) => {
-        if ((ev.currentTarget as HTMLDetailsElement).open) abrir();
-      }}
-    >
-      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
-        <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
+    <>
+      <button
+        type="button"
+        onClick={abrir}
+        className="flex w-full items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2.5 text-left text-sm transition hover:border-marca hover:shadow-[var(--sombra)]"
+      >
+        <FileText aria-hidden size={15} className="shrink-0 text-texto-suave" />
         <span className="font-medium">Enviada em {quando(envio.enviadoEm!)}</span>
         {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[10.5px] text-ok">mais recente</span> : null}
-      </summary>
-      <div className="border-t border-borda px-4 py-4">
-        {!respostas && !erro ? (
-          <p className="flex items-center gap-2 text-sm text-texto-suave">
-            <Loader2 aria-hidden size={14} className="animate-spin" />
-            Carregando…
-          </p>
-        ) : null}
-        {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
-        {respostas ? <FormularioDoApp perguntas={perguntas} respostas={respostas} mentoradaId={mentoradaId} podeEditar={false} /> : null}
+        <ChevronRight aria-hidden size={14} className="ml-auto shrink-0 text-texto-suave" />
+      </button>
+
+      {aberta ? (
+        <TelaDasRespostas titulo={`Enviada em ${quando(envio.enviadoEm!)}`} aoFechar={() => setAberta(false)}>
+          {!respostas && !erro ? (
+            <p className="flex items-center gap-2 text-sm text-texto-suave">
+              <Loader2 aria-hidden size={14} className="animate-spin" />
+              Carregando…
+            </p>
+          ) : null}
+          {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
+          {respostas ? <FormularioDoApp perguntas={perguntas} respostas={respostas} mentoradaId={mentoradaId} podeEditar={false} /> : null}
+        </TelaDasRespostas>
+      ) : null}
+    </>
+  );
+}
+
+/** Tela por cima da página, com as respostas de um envio. Fecha no X, no fundo ou no Esc. */
+function TelaDasRespostas({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => void; children: React.ReactNode }) {
+  const caixa = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') aoFechar();
+    };
+    document.addEventListener('keydown', aoTeclar);
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    caixa.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', aoTeclar);
+      document.body.style.overflow = antes;
+    };
+  }, [aoFechar]);
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={titulo} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
+      <button type="button" aria-label="Fechar" onClick={aoFechar} className="absolute inset-0 cursor-default bg-texto/35 backdrop-blur-[2px]" />
+      <div
+        ref={caixa}
+        tabIndex={-1}
+        className="relative flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-borda bg-superficie shadow-[var(--sombra)] outline-none"
+      >
+        <div className="flex items-center gap-4 border-b border-borda px-6 py-4">
+          <p className="display min-w-0 flex-1 text-xl leading-tight">{titulo}</p>
+          <button
+            type="button"
+            onClick={aoFechar}
+            aria-label="Fechar"
+            className="-mr-1 shrink-0 rounded-lg p-1.5 text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+          >
+            <X aria-hidden size={16} />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
       </div>
-    </details>
+    </div>
   );
 }
