@@ -64,8 +64,6 @@ export function PilaresDeTutoria({
 function Parte({ parte, mentoradaId, admin }: { parte: ParteDaTutoria; mentoradaId: string; admin: boolean }) {
   return (
     <div className="rounded-xl border border-borda bg-superficie p-4">
-      <h4 className="mb-3 text-sm font-medium">{parte.titulo}</h4>
-
       {parte.tipo === 'sessoes' ? (
         <SessoesDaTutoria mentoradaId={mentoradaId} sessoes={parte.sessoes} />
       ) : (
