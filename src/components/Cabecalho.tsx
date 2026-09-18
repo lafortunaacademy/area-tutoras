@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Sessao, Visitante } from '@/lib/session';
+import { BotaoTema } from '@/components/BotaoTema';
 
 export type Area = 'admin' | 'tutoras' | 'mentoradas';
 
@@ -73,6 +74,7 @@ export function Cabecalho({
             </nav>
           ) : null}
 
+          <BotaoTema />
           <span className="hidden truncate text-texto-suave lg:inline">{nome}</span>
           <form action="/logout" method="post">
             <button type="submit" className="text-texto-suave transition hover:text-marca">

@@ -98,6 +98,41 @@
   }
 }
 
+/* Escuro escolhido no botão de tema, mesmo com o sistema no claro. */
+:root[data-tema="escuro"] {
+    --fundo: #211913;
+    --superficie: #2e231c;
+    --superficie-2: #3a2d23;
+    --borda: #4b3424;
+    --texto: #f5f2e9;
+    --texto-suave: #af9b87;
+    /* O marrom principal some no escuro; quem carrega a marca aqui é o bege. */
+    --marca: #d8cfc0;
+    --marca-suave: #3a2d23;
+    --marca-contraste: #2e231c;
+    --destaque: #af9b87;
+    --ok: #8fb195;
+    --ok-suave: #1f2a21;
+    --andamento: #d3ab63;
+    --andamento-suave: #2f2718;
+    --parado: #d99a91;
+    --parado-suave: #2f1e1b;
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.7);
+    /* Pastel já se destaca sobre o marrom escuro: os mesmos tons do claro. */
+    --serie-1: #df9f8f;
+    --serie-2: #ace0b6;
+    --serie-3: #cf9fc9;
+    --serie-4: #e5cf94;
+    --serie-5: #82b8df;
+    --serie-6: #f9c59c;
+    --serie-7: #abaae3;
+    --serie-8: #90e2e1;
+    --serie-9: #de9caa;
+    --serie-sem: #5c4c3d;
+    --grafico-verde: #8fc79b;
+    --grafico-azul: #86b3dc;
+  }
+
 @theme inline {
   --color-fundo: var(--fundo);
   --color-superficie: var(--superficie);
@@ -171,6 +206,10 @@ body {
   :root:not([data-tema="claro"]) .logo-marca {
     filter: invert(1);
   }
+}
+
+:root[data-tema="escuro"] .logo-marca {
+  filter: invert(1);
 }
 
 ::selection {

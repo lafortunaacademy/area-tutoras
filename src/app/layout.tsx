@@ -22,7 +22,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    // suppressHydrationWarning: o script abaixo põe `data-tema` antes do React chegar.
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          // Aplica o tema escolhido antes de pintar, para a página não piscar.
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('tema');if(t==='claro'||t==='escuro')document.documentElement.dataset.tema=t}catch(e){}`,
+          }}
+        />
+      </head>
       <body className={`${geist.variable} ${cormorant.variable} ${belleza.variable} antialiased`}>{children}</body>
     </html>
   );

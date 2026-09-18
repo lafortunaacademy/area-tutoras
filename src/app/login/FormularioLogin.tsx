@@ -10,20 +10,25 @@ export function FormularioLogin() {
 
   if (estado.enviado) {
     return (
-      <div className="rounded-xl border border-borda bg-superficie p-6 text-center shadow-[var(--sombra)]">
-        <p className="text-sm font-medium">Link enviado</p>
-        <p className="mt-2 text-sm text-texto-suave">
-          Se esse e-mail estiver cadastrado como tutora, o link de acesso chegou na caixa de
-          entrada. Ele vale por uma hora.
+      <div className="text-center">
+        <p className="display text-2xl">Link enviado</p>
+        <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+          Se esse e-mail estiver cadastrado, o link de acesso chegou na caixa de entrada. Ele vale por uma
+          hora. Não achou? Olhe também no spam.
         </p>
       </div>
     );
   }
 
   return (
-    <form action={acao} className="space-y-4">
+    <form action={acao} className="space-y-6">
+      <p className="text-sm leading-relaxed text-texto-suave">
+        Não tem senha aqui. Você recebe um link no e-mail, clica uma vez e entra. Neste navegador você continua
+        conectada: nas próximas vezes o painel abre direto.
+      </p>
+
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
+        <label htmlFor="email" className="mb-2 block text-[11px] font-medium tracking-[0.18em] text-texto-suave uppercase">
           E-mail
         </label>
         <input
@@ -32,8 +37,8 @@ export function FormularioLogin() {
           type="email"
           autoComplete="email"
           required
-          placeholder="voce@exemplo.com"
-          className="w-full rounded-lg border border-borda bg-superficie px-3.5 py-2.5 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
+          placeholder="o e-mail cadastrado na La Fortuna"
+          className="w-full rounded-lg border border-borda bg-superficie-2 px-4 py-3 text-sm outline-none transition placeholder:text-texto-suave focus:border-marca focus:bg-superficie focus:ring-2 focus:ring-marca/20"
         />
       </div>
 
@@ -44,9 +49,9 @@ export function FormularioLogin() {
       <button
         type="submit"
         disabled={enviando}
-        className="w-full rounded-lg bg-marca px-4 py-2.5 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
+        className="w-full rounded-lg bg-marca px-4 py-3 text-sm font-medium tracking-wide text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
       >
-        {enviando ? 'Enviando…' : 'Receber link de acesso'}
+        {enviando ? 'Enviando…' : 'Receber o meu link de acesso'}
       </button>
     </form>
   );
