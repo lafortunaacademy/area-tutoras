@@ -19,11 +19,14 @@ export function FormularioPreSessao({
   blocos,
   materialId,
   mentoradaId,
+  token,
   aoSalvar,
 }: {
   blocos: BlocoSimples[];
   materialId: string;
   mentoradaId: string;
+  /** Token do link de preenchimento, quando a pessoa entrou por ele em vez de fazer login. */
+  token?: string;
   /** Chamado depois de cada gravação, para quem guardou o conteúdo em cache. */
   aoSalvar: () => void;
 }) {
@@ -31,7 +34,7 @@ export function FormularioPreSessao({
     const r = await fetch(`/api/materiais/${materialId}/respostas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mentorada: mentoradaId, ...corpo }),
+      body: JSON.stringify({ mentorada: mentoradaId, token, ...corpo }),
     });
     if (!r.ok) return null;
     aoSalvar();
@@ -42,6 +45,7 @@ export function FormularioPreSessao({
     const form = new FormData();
     form.append('mentorada', mentoradaId);
     form.append('bloco', calloutId);
+    if (token) form.append('token', token);
     form.append('arquivo', arquivo);
     const r = await fetch(`/api/materiais/${materialId}/arquivos`, { method: 'POST', body: form });
     if (!r.ok) return r.status === 413 ? 'grande' : null;

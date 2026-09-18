@@ -47,7 +47,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
         {pilares instanceof Error ? (
           <AvisoNotion erro={pilares} detalhar={visitante.admin} />
         ) : pilares && pilares.length ? (
-          <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} />
+          <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} admin={visitante.admin} />
         ) : null}
       </div>
     </div>

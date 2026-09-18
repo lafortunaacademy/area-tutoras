@@ -8,7 +8,15 @@ import { SessoesDaTutoria } from './SessoesDaTutoria';
  * Os pilares da página Tutorias, como no Notion: título, frase e um toggle por
  * tutoria, com os materiais e as sessões dela.
  */
-export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; mentoradaId: string }) {
+export function PilaresDeTutoria({
+  pilares,
+  mentoradaId,
+  admin,
+}: {
+  pilares: Pilar[];
+  mentoradaId: string;
+  admin: boolean;
+}) {
   // As sessões de cada tutoria não entram aqui: elas já aparecem na página Sessões.
   pilares = pilares.map((p) => ({
     ...p,
@@ -41,7 +49,7 @@ export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; m
                   </summary>
                   <div className="space-y-3 px-4 pb-4">
                     {t.partes.length ? (
-                      t.partes.map((parte) => <Parte key={parte.id} parte={parte} mentoradaId={mentoradaId} />)
+                      t.partes.map((parte) => <Parte key={parte.id} parte={parte} mentoradaId={mentoradaId} admin={admin} />)
                     ) : (
                       <p className="text-sm text-texto-suave">Nada preenchido nesta tutoria ainda.</p>
                     )}
@@ -58,7 +66,7 @@ export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; m
   );
 }
 
-function Parte({ parte, mentoradaId }: { parte: ParteDaTutoria; mentoradaId: string }) {
+function Parte({ parte, mentoradaId, admin }: { parte: ParteDaTutoria; mentoradaId: string; admin: boolean }) {
   return (
     <div className="rounded-xl border border-borda bg-superficie p-4">
       <h4 className="mb-3 flex items-center gap-2 text-sm font-medium">
@@ -69,7 +77,7 @@ function Parte({ parte, mentoradaId }: { parte: ParteDaTutoria; mentoradaId: str
       {parte.tipo === 'sessoes' ? (
         <SessoesDaTutoria mentoradaId={mentoradaId} sessoes={parte.sessoes} />
       ) : (
-        <MateriaisDaTutoria mentoradaId={mentoradaId} itens={parte.itens} />
+        <MateriaisDaTutoria mentoradaId={mentoradaId} itens={parte.itens} admin={admin} />
       )}
     </div>
   );

@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getVisitante } from '@/lib/session';
-import { podeVer } from '@/lib/acesso';
+import { temAcesso } from '@/lib/acesso';
 import { normalizarId } from '@/lib/notion/carteira';
 import { responderPreSessao, type RespostaDaPreSessao } from '@/lib/notion/pilares';
 
@@ -9,23 +8,19 @@ import { responderPreSessao, type RespostaDaPreSessao } from '@/lib/notion/pilar
  * Entram o administrativo e a própria mentorada.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ materialId: string }> }) {
-  const visitante = await getVisitante();
-  if (!visitante) {
-    return NextResponse.json({ erro: 'não autorizada' }, { status: 401 });
-  }
 
+  const { materialId } = await params;
   const corpo = (await request.json().catch(() => null)) as
-    | ({ mentorada?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string }>)
+    | ({ mentorada?: string; token?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string }>)
     | null;
   const resposta = validar(corpo);
   if (!corpo?.mentorada || !resposta) {
     return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
   }
-  if (!podeVer(visitante, corpo.mentorada)) {
+  if (!(await temAcesso(corpo.token, corpo.mentorada, materialId))) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
 
-  const { materialId } = await params;
   try {
     const id = await responderPreSessao(normalizarId(corpo.mentorada), normalizarId(materialId), resposta);
     if (!id) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
