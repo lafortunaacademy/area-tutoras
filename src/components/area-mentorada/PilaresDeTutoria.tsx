@@ -9,6 +9,12 @@ import { SessoesDaTutoria } from './SessoesDaTutoria';
  * tutoria, com os materiais e as sessões dela.
  */
 export function PilaresDeTutoria({ pilares, mentoradaId }: { pilares: Pilar[]; mentoradaId: string }) {
+  // As sessões de cada tutoria não entram aqui: elas já aparecem na página Sessões.
+  pilares = pilares.map((p) => ({
+    ...p,
+    tutorias: p.tutorias.map((t) => ({ ...t, partes: t.partes.filter((parte) => parte.tipo !== 'sessoes') })),
+  }));
+
   return (
     <div className="space-y-4">
       {pilares.map((p) => (
