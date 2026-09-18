@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronRight, Loader2, Plus, Send } from 'lucide-react';
+import { ChevronRight, Loader2, Send } from 'lucide-react';
 import type { Pergunta } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
@@ -13,8 +13,8 @@ const quando = (iso: string) =>
 
 /**
  * Um formulário que pode ser respondido várias vezes (a pré-sessão de cada
- * sessão). Mostra a última resposta enviada, com a data; quem pode editar
- * preenche de novo e envia, e as anteriores ficam no histórico.
+ * sessão). A mentorada preenche e envia; cada envio vira uma caixinha com a
+ * data, que é o que a equipe vê.
  */
 export function PainelDoFormulario({
   materialId,
@@ -34,8 +34,6 @@ export function PainelDoFormulario({
 }) {
   const [dados, setDados] = useState<Dados | null>(null);
   const [erro, setErro] = useState(false);
-  // "novo": preenchendo uma resposta nova, depois de já ter enviado alguma.
-  const [novo, setNovo] = useState(false);
   const [mexeu, setMexeu] = useState(false);
   // Acabou de enviar: a mentorada vê o agradecimento em vez de um formulário novo.
   const [obrigado, setObrigado] = useState(false);
@@ -71,7 +69,6 @@ export function PainelDoFormulario({
       return;
     }
     setEnviando('parado');
-    setNovo(false);
     if (paraMentorada) setObrigado(true);
     setMexeu(false);
     setDados(null);
@@ -92,15 +89,15 @@ export function PainelDoFormulario({
 
   const { material, estado, podeEditar } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
-  // Quem edita preenche o rascunho (ou um novo em branco); depois de enviado, começa outro pelo botão.
-  const editando = podeEditar && (Boolean(estado.rascunho) || novo || enviados.length === 0 || (paraMentorada && !obrigado));
+  // Quem preenche é a mentorada (no link ou logada); a equipe só vê as respostas enviadas.
+  const editando = podeEditar && paraMentorada && !obrigado;
 
   if (obrigado && paraMentorada) {
     return (
       <div className="space-y-3 py-6 text-center">
         <p className="display text-2xl text-marca">Obrigada!</p>
         <p className="text-sm text-texto-suave">Suas respostas foram enviadas para a sua tutora.</p>
-        <button type="button" onClick={() => { setObrigado(false); setNovo(true); }} className="text-xs text-texto-suave underline underline-offset-2 hover:text-marca">
+        <button type="button" onClick={() => setObrigado(false)} className="text-xs text-texto-suave underline underline-offset-2 hover:text-marca">
           Responder de novo
         </button>
       </div>
@@ -140,16 +137,7 @@ export function PainelDoFormulario({
               </button>
             </div>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setNovo(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-marca px-4 py-2 text-sm font-medium text-marca transition hover:bg-marca hover:text-marca-contraste"
-          >
-            <Plus aria-hidden size={14} />
-            Preencher de novo
-          </button>
-        )
+        ) : null
       ) : estado.rascunho ? (
         <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
           Há uma resposta em preenchimento, ainda não enviada.

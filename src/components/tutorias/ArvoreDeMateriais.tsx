@@ -60,7 +60,6 @@ function ItemDaArvore({
   const preSessao = material.tipo === 'formulario' && ehPreSessao(material.nome);
   // O formulário só carrega quando o toggle abre pela primeira vez.
   const [aberto, setAberto] = useState(false);
-  const ultimoEnvio = progresso[material.id]?.ultimoEnvio ?? null;
 
   return (
     <details
@@ -73,11 +72,6 @@ function ItemDaArvore({
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
         <IconeDoModelo icone={material.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{material.nome}</span>
-        {ultimoEnvio ? (
-          <span className="text-[11px] font-normal text-texto-suave">
-            enviada em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(ultimoEnvio))}
-          </span>
-        ) : null}
         {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={material.id} /> : null}
       </summary>
 
