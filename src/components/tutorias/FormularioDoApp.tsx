@@ -16,6 +16,7 @@ export function FormularioDoApp({
   mentoradaId,
   podeEditar,
   aoSalvar,
+  previa = false,
 }: {
   perguntas: Pergunta[];
   respostas: Record<string, Valor>;
@@ -23,6 +24,8 @@ export function FormularioDoApp({
   podeEditar: boolean;
   /** Chamado a cada gravação que deu certo. */
   aoSalvar?: () => void;
+  /** Prévia para a equipe: dá para mexer, mas nada é salvo. */
+  previa?: boolean;
 }) {
   // Agrupa por seção, na ordem em que aparecem.
   const secoes: { titulo: string | null; perguntas: Pergunta[] }[] = [];
@@ -32,11 +35,11 @@ export function FormularioDoApp({
     else secoes.push({ titulo: p.secao, perguntas: [p] });
   }
 
-  const ctx: Ctx = { mentoradaId, podeEditar, aoSalvar };
+  const ctx: Ctx = { mentoradaId, podeEditar, aoSalvar, previa };
 
   return (
     <div className="space-y-6 text-sm leading-relaxed">
-      {podeEditar ? (
+      {podeEditar && !previa ? (
         <p className="rounded-lg bg-superficie-2 px-3 py-2 text-xs text-texto-suave">
           As respostas são salvas sozinhas: as opções na hora, os textos quando você sai do campo.
         </p>
@@ -69,9 +72,10 @@ export function FormularioDoApp({
   );
 }
 
-type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void };
+type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; previa?: boolean };
 
 async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[] }): Promise<boolean> {
+  if (ctx.previa) return true;
   const r = await fetch('/api/tutorias/respostas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -168,7 +172,7 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
   const [estado, setEstado] = useState<'parado' | 'enviando' | 'erro' | 'grande'>('parado');
 
   const enviar = async (lista: FileList | null) => {
-    if (!lista?.length) return;
+    if (!lista?.length || ctx.previa) return;
     setEstado('enviando');
     for (const arquivo of Array.from(lista)) {
       if (arquivo.size > 4 * 1024 * 1024) {

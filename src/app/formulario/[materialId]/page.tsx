@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getAcessoMentorada, getSessao } from '@/lib/session';
 import { caminhoDoMaterial, formulario } from '@/lib/tutorias/modelo';
 import { PainelDoFormulario } from '@/components/tutorias/PainelDoFormulario';
+import { FormularioDoApp } from '@/components/tutorias/FormularioDoApp';
 import { BotaoTema } from '@/components/BotaoTema';
 
 export const dynamic = 'force-dynamic';
@@ -38,15 +39,15 @@ export default async function FormularioPage({ params }: { params: Promise<{ mat
     if (await getSessao()) {
       return (
         <Moldura acima={acima} titulo={titulo}>
-          <p className="text-center text-sm leading-relaxed text-texto-suave">
-            Este é o link que as mentoradas usam para responder este formulário. Cada uma entra com o próprio e-mail.
-            As respostas aparecem na página de Tutorias de cada mentorada.
-          </p>
-          <p className="mt-4 text-center">
-            <Link href="/mentoradas" className="text-sm font-medium text-marca underline underline-offset-2">
-              Ir para a área das mentoradas
+          <div className="mb-6 rounded-lg bg-andamento-suave px-4 py-3 text-sm leading-relaxed text-andamento">
+            <strong className="font-medium">Prévia da equipe.</strong> É assim que a mentorada vê este formulário. Pode
+            clicar e escrever: nada é salvo. As respostas delas aparecem na página de{' '}
+            <Link href="/mentoradas" className="underline underline-offset-2">
+              Tutorias de cada mentorada
             </Link>
-          </p>
+            .
+          </div>
+          <FormularioDoApp perguntas={material.perguntas} respostas={{}} mentoradaId="" podeEditar previa />
         </Moldura>
       );
     }
