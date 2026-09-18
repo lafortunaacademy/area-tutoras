@@ -27,7 +27,8 @@ export async function permissaoNasTutorias(
 
   const sessao = await getSessao();
   if (sessao) {
-    if (sessao.real.is_admin) return { podeEditar: true, quem: sessao.real.email, soMaterial: null };
+    // No "ver como" o admin enxerga como a tutora: só leitura.
+    if (sessao.real.is_admin && !sessao.verComo) return { podeEditar: true, quem: sessao.real.email, soMaterial: null };
     const carteira = await carteiraDaTutora();
     return carteira.some((m) => m.id === alvo) ? { podeEditar: false, quem: sessao.real.email, soMaterial: null } : null;
   }
