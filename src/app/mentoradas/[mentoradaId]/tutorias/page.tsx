@@ -54,7 +54,13 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
             Não foi possível carregar as tutorias agora.
           </p>
         ) : pilares.length ? (
-          <PilaresDoApp pilares={pilares} mentoradaId={mentorada.id} progresso={progresso} admin={visitante.admin} />
+          <PilaresDoApp
+            pilares={pilares}
+            mentoradaId={mentorada.id}
+            progresso={progresso}
+            admin={visitante.admin}
+            paraMentorada={!visitante.admin}
+          />
         ) : null}
       </div>
     </div>

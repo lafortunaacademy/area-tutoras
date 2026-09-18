@@ -130,3 +130,30 @@ export async function pergunta(perguntaId: string): Promise<Pergunta | null> {
     opcoes: (data.opcoes ?? []) as string[],
   };
 }
+
+/**
+ * De onde é um material: pilar, tutoria e os grupos no meio
+ * ("Negócio › Posicionamento › Design"). Serve para dizer à mentorada de qual
+ * tutoria é a pré-sessão que ela está preenchendo.
+ */
+export async function caminhoDoMaterial(materialId: string): Promise<{ pilar: string; tutoria: string; grupos: string[] } | null> {
+  const db = supabaseAdmin();
+  const grupos: string[] = [];
+  const inicio = (await db.from('tutoria_materiais').select('tutoria_id, pai_id').eq('id', materialId).maybeSingle()).data;
+  if (!inicio) return null;
+  const tutoriaId = inicio.tutoria_id as string;
+
+  // Sobe pelos grupos até o material de cima (poucos níveis).
+  let paiId = inicio.pai_id as string | null;
+  for (let i = 0; paiId && i < 6; i++) {
+    const { data: pai } = await db.from('tutoria_materiais').select('nome, pai_id').eq('id', paiId).maybeSingle();
+    if (!pai) break;
+    grupos.unshift(pai.nome as string);
+    paiId = pai.pai_id as string | null;
+  }
+
+  const tutoria = (await db.from('tutoria_tutorias').select('nome, pilar_id').eq('id', tutoriaId).maybeSingle()).data;
+  if (!tutoria) return null;
+  const pilar = (await db.from('tutoria_pilares').select('nome').eq('id', tutoria.pilar_id).maybeSingle()).data;
+  return { pilar: (pilar?.nome as string) ?? '', tutoria: tutoria.nome as string, grupos };
+}

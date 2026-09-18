@@ -10,11 +10,14 @@ export function PilaresDoApp({
   mentoradaId,
   progresso,
   admin,
+  paraMentorada = false,
 }: {
   pilares: Pilar[];
   mentoradaId: string;
   progresso: Progresso;
   admin: boolean;
+  /** Quem está vendo é a própria mentorada. */
+  paraMentorada?: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -41,7 +44,7 @@ export function PilaresDoApp({
                 </summary>
                 <div className="px-4 pb-4">
                   <div className="rounded-xl border border-borda bg-superficie p-4">
-                    <ArvoreDeMateriais materiais={t.materiais} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
+                    <ArvoreDeMateriais materiais={t.materiais} mentoradaId={mentoradaId} progresso={progresso} admin={admin} paraMentorada={paraMentorada} />
                   </div>
                 </div>
               </details>

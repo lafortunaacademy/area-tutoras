@@ -21,6 +21,7 @@ export function ArvoreDeMateriais({
   mentoradaId,
   progresso,
   admin,
+  paraMentorada = false,
 }: {
   materiais: Material[];
   mentoradaId: string;
@@ -28,13 +29,15 @@ export function ArvoreDeMateriais({
   progresso: Progresso;
   /** Só o administrativo vê o link de preenchimento. */
   admin: boolean;
+  /** Quem está vendo é a própria mentorada. */
+  paraMentorada?: boolean;
 }) {
   if (materiais.length === 0) return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
   return (
     <ul className="space-y-2">
       {materiais.map((m) => (
         <li key={m.id}>
-          <ItemDaArvore material={m} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
+          <ItemDaArvore material={m} mentoradaId={mentoradaId} progresso={progresso} admin={admin} paraMentorada={paraMentorada} />
         </li>
       ))}
     </ul>
@@ -46,16 +49,17 @@ function ItemDaArvore({
   mentoradaId,
   progresso,
   admin,
+  paraMentorada,
 }: {
   material: Material;
   mentoradaId: string;
   progresso: Progresso;
   admin: boolean;
+  paraMentorada: boolean;
 }) {
   const preSessao = material.tipo === 'formulario' && ehPreSessao(material.nome);
   // O formulário só carrega quando o toggle abre pela primeira vez.
   const [aberto, setAberto] = useState(false);
-  const feitas = progresso[material.id]?.feitas ?? 0;
   const ultimoEnvio = progresso[material.id]?.ultimoEnvio ?? null;
 
   return (
@@ -69,17 +73,8 @@ function ItemDaArvore({
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
         <IconeDoModelo icone={material.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{material.nome}</span>
-        {material.tipo === 'formulario' && material.totalPerguntas > 0 ? (
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10.5px] tabular-nums ${
-              feitas >= material.totalPerguntas ? 'bg-ok-suave text-ok' : 'bg-superficie-2 text-texto-suave'
-            }`}
-          >
-            {feitas}/{material.totalPerguntas}
-          </span>
-        ) : null}
         {ultimoEnvio ? (
-          <span className="hidden text-[11px] font-normal text-texto-suave sm:inline">
+          <span className="text-[11px] font-normal text-texto-suave">
             enviada em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(ultimoEnvio))}
           </span>
         ) : null}
@@ -88,9 +83,9 @@ function ItemDaArvore({
 
       <div className="border-t border-borda px-4 py-4">
         {material.tipo === 'grupo' ? (
-          <ArvoreDeMateriais materiais={material.filhos} mentoradaId={mentoradaId} progresso={progresso} admin={admin} />
+          <ArvoreDeMateriais materiais={material.filhos} mentoradaId={mentoradaId} progresso={progresso} admin={admin} paraMentorada={paraMentorada} />
         ) : material.tipo === 'formulario' ? (
-          aberto ? <PainelDoFormulario materialId={material.id} mentoradaId={mentoradaId} /> : null
+          aberto ? <PainelDoFormulario materialId={material.id} mentoradaId={mentoradaId} paraMentorada={paraMentorada} /> : null
         ) : (
           <p className="text-sm text-texto-suave">Este material ainda está sendo trazido para o app.</p>
         )}

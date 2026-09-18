@@ -20,17 +20,25 @@ export function PainelDoFormulario({
   materialId,
   mentoradaId,
   token,
+  paraMentorada = false,
+  mostrarEnviadas = true,
 }: {
   materialId: string;
   mentoradaId: string;
   /** Link de preenchimento, quando a pessoa entrou por ele. */
   token?: string;
+  /** Quem preenche é a própria mentorada: sempre uma resposta nova, textos para ela. */
+  paraMentorada?: boolean;
+  /** As caixinhas das respostas já enviadas (no link de preenchimento ficam de fora). */
+  mostrarEnviadas?: boolean;
 }) {
   const [dados, setDados] = useState<Dados | null>(null);
   const [erro, setErro] = useState(false);
   // "novo": preenchendo uma resposta nova, depois de já ter enviado alguma.
   const [novo, setNovo] = useState(false);
   const [mexeu, setMexeu] = useState(false);
+  // Acabou de enviar: a mentorada vê o agradecimento em vez de um formulário novo.
+  const [obrigado, setObrigado] = useState(false);
   const [enviando, setEnviando] = useState<'parado' | 'enviando' | 'vazio' | 'erro'>('parado');
 
   const consulta = `mentorada=${encodeURIComponent(mentoradaId)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
@@ -64,6 +72,7 @@ export function PainelDoFormulario({
     }
     setEnviando('parado');
     setNovo(false);
+    if (paraMentorada) setObrigado(true);
     setMexeu(false);
     setDados(null);
     await buscar()
@@ -84,14 +93,26 @@ export function PainelDoFormulario({
   const { material, estado, podeEditar } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
   // Quem edita preenche o rascunho (ou um novo em branco); depois de enviado, começa outro pelo botão.
-  const editando = podeEditar && (Boolean(estado.rascunho) || novo || enviados.length === 0);
+  const editando = podeEditar && (Boolean(estado.rascunho) || novo || enviados.length === 0 || (paraMentorada && !obrigado));
+
+  if (obrigado && paraMentorada) {
+    return (
+      <div className="space-y-3 py-6 text-center">
+        <p className="display text-2xl text-marca">Obrigada!</p>
+        <p className="text-sm text-texto-suave">Suas respostas foram enviadas para a sua tutora.</p>
+        <button type="button" onClick={() => { setObrigado(false); setNovo(true); }} className="text-xs text-texto-suave underline underline-offset-2 hover:text-marca">
+          Responder de novo
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
       {podeEditar ? (
         editando ? (
           <div className="space-y-4">
-            {enviados.length ? (
+            {enviados.length && !paraMentorada ? (
               <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
                 Resposta nova. As já enviadas continuam guardadas logo abaixo.
               </p>
@@ -135,10 +156,10 @@ export function PainelDoFormulario({
         </p>
       ) : null}
 
-      {enviados.length ? (
+      {enviados.length && mostrarEnviadas ? (
         <div className="space-y-2">
           <p className="text-[11px] font-medium tracking-[0.14em] text-texto-suave uppercase">
-            Respostas enviadas ({enviados.length})
+            {paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas'} ({enviados.length})
           </p>
           <ul className="space-y-2">
             {enviados.map((e, i) => (
