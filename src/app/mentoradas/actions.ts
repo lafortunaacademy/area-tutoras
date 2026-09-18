@@ -93,9 +93,12 @@ export async function gerarLinkDePreenchimento(mentoradaId: string, materialId: 
   const visitante = await exigirAcessoAMentorada(mentoradaId);
   if (!visitante.admin) return null;
 
+  // O endereço vem de onde a pessoa está agora; a variável de ambiente é só
+  // reserva, porque pode estar apontando para outro lugar (outra porta, por exemplo).
   const cabecalhos = await headers();
-  const origem =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `${cabecalhos.get('x-forwarded-proto') ?? 'https'}://${cabecalhos.get('host')}`;
+  const host = cabecalhos.get('host');
+  const origem = host
+    ? `${cabecalhos.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https')}://${host}`
+    : (process.env.NEXT_PUBLIC_SITE_URL ?? '');
   return `${origem}/p/${criarLinkDePreenchimento(mentoradaId, materialId)}`;
 }
