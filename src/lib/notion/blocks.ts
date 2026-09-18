@@ -8,6 +8,11 @@ import { getBlockChildren, type NotionBlock } from './client';
  * específico. É essa a regra que mantém a listagem leve.
  */
 
+export type IconeNotion = { tipo: 'url'; url: string } | { tipo: 'emoji'; emoji: string } | null;
+
+/** Uma página de uma base do Notion (um material de tutoria, por exemplo). */
+export type ItemDeMaterial = { id: string; titulo: string; icone: IconeNotion };
+
 export type BlocoSimples = {
   id: string;
   tipo: string;
@@ -19,6 +24,8 @@ export type BlocoSimples = {
   celulas?: string[];
   /** Tabela: a primeira linha é cabeçalho. */
   cabecalho?: boolean;
+  /** Base dentro da página: as páginas dela, para abrir uma a uma. */
+  itens?: ItemDeMaterial[];
   filhos: BlocoSimples[];
 };
 

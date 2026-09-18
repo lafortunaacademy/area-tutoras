@@ -3,7 +3,14 @@
 import type { BlocoSimples } from '@/lib/notion/blocks';
 
 /** Renderiza os blocos que a Route Handler devolveu. */
-export function BlocosNotion({ blocos }: { blocos: BlocoSimples[] }) {
+export function BlocosNotion({
+  blocos,
+  base,
+}: {
+  blocos: BlocoSimples[];
+  /** Como desenhar uma base que está dentro da página (as páginas dela). */
+  base?: (bloco: BlocoSimples) => React.ReactNode;
+}) {
   if (blocos.length === 0) {
     return <p className="text-sm text-texto-suave">Sem conteúdo nesta página.</p>;
   }
@@ -11,17 +18,17 @@ export function BlocosNotion({ blocos }: { blocos: BlocoSimples[] }) {
   return (
     <div className="space-y-2 text-sm leading-relaxed">
       {blocos.map((b) => (
-        <Bloco key={b.id} bloco={b} />
+        <Bloco key={b.id} bloco={b} base={base} />
       ))}
     </div>
   );
 }
 
-function Bloco({ bloco }: { bloco: BlocoSimples }) {
+function Bloco({ bloco, base }: { bloco: BlocoSimples; base?: (bloco: BlocoSimples) => React.ReactNode }) {
   const filhos = bloco.filhos.length ? (
     <div className="mt-2 space-y-2 border-l border-borda pl-4">
       {bloco.filhos.map((f) => (
-        <Bloco key={f.id} bloco={f} />
+        <Bloco key={f.id} bloco={f} base={base} />
       ))}
     </div>
   ) : null;
@@ -100,7 +107,7 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
           {bloco.filhos.length ? (
             <div className={`space-y-2 ${bloco.texto ? 'mt-2' : ''}`}>
               {bloco.filhos.map((f) => (
-                <Bloco key={f.id} bloco={f} />
+                <Bloco key={f.id} bloco={f} base={base} />
               ))}
             </div>
           ) : null}
@@ -132,7 +139,7 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
           style={{ ['--colunas' as string]: String(Math.max(cheias.length, 1)) }}
         >
           {cheias.map((f) => (
-            <Bloco key={f.id} bloco={f} />
+            <Bloco key={f.id} bloco={f} base={base} />
           ))}
         </div>
       );
@@ -142,7 +149,7 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
       return (
         <div className="min-w-0 space-y-2">
           {bloco.filhos.map((f) => (
-            <Bloco key={f.id} bloco={f} />
+            <Bloco key={f.id} bloco={f} base={base} />
           ))}
         </div>
       );
@@ -194,9 +201,9 @@ function Bloco({ bloco }: { bloco: BlocoSimples }) {
       return <hr className="border-borda" />;
 
     case 'child_database':
-      // Visualização vinculada: a API não devolve as linhas. Em vez de mostrar
-      // um bloco vazio, não mostra nada.
-      return null;
+      // Base de dentro da página: quem desenha é quem chamou (a lista de
+      // materiais). Visualização vinculada não devolve linhas e não aparece.
+      return bloco.itens?.length && base ? <>{base(bloco)}</> : null;
 
     default:
       return bloco.texto ? (

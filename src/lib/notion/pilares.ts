@@ -13,7 +13,7 @@ import {
   type NotionBlock,
   type Pai,
 } from './client';
-import { lerBlocos, type BlocoSimples } from './blocks';
+import { lerBlocos, type BlocoSimples, type IconeNotion, type ItemDeMaterial } from './blocks';
 import { AREA_DE_MEMBROS, TEMAS_DE_TUTORIA } from './config';
 import { normalizarId, type Mentorada } from './carteira';
 import { acharFilho, ehCallout, paginaDaAreaDeMembros } from './gestao';
@@ -35,9 +35,7 @@ import { sessoesPorCiclo, type SessaoDaLista } from './sessoesDaMentorada';
  * da mentorada naquele tema.
  */
 
-export type IconeNotion = { tipo: 'url'; url: string } | { tipo: 'emoji'; emoji: string } | null;
-
-export type ItemDeMaterial = { id: string; titulo: string; icone: IconeNotion };
+export type { IconeNotion, ItemDeMaterial } from './blocks';
 
 export type ParteDaTutoria =
   | { tipo: 'materiais'; id: string; titulo: string; icone: IconeNotion; itens: ItemDeMaterial[] }
@@ -138,7 +136,8 @@ export async function materialDaMentorada(
   const [tutorias, pagina] = await Promise.all([paginaDeTutorias(mentoradaId), getPage(paginaId).catch(() => null)]);
   if (!tutorias || !pagina || !(await desceDe(pagina.parent, tutorias))) return null;
 
-  return { titulo: titulo(pagina).split('|')[0].trim(), blocos: await lerBlocos(pagina.id, 3) };
+  const blocos = await comAsBasesDeDentro(await lerBlocos(pagina.id, 3));
+  return { titulo: titulo(pagina).split('|')[0].trim(), blocos };
 }
 
 /** Pré-sessões são os únicos materiais que a mentorada preenche. */
@@ -239,9 +238,36 @@ async function blocoDaPagina(pai: Pai | undefined, paginaId: string): Promise<bo
   return false;
 }
 
+/**
+ * Dentro de um material o Notion costuma pendurar outras bases ("Tutorias de
+ * conteúdo", "Imagem e estilo"…). A API não devolve as linhas junto com o
+ * bloco, então cada uma é consultada aqui — visualização vinculada não abre e
+ * fica de fora.
+ */
+async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[]> {
+  const lidos = await Promise.all(
+    blocos.map(async (b) => {
+      const filhos = await comAsBasesDeDentro(b.filhos);
+      if (b.tipo !== 'child_database') return { ...b, filhos };
+
+      const linhas = await queryDatabase(b.id, { limite: 100 }).catch(() => null);
+      const itens: ItemDeMaterial[] = (linhas ?? [])
+        .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon) }))
+        .filter((i) => i.titulo)
+        .sort((a, b2) => Number(!ehPreSessao(a.titulo)) - Number(!ehPreSessao(b2.titulo)) || a.titulo.localeCompare(b2.titulo, 'pt-BR'));
+      return { ...b, filhos, itens };
+    }),
+  );
+  // Callout que só guarda uma visualização vinculada (as "Sessões" de cada
+  // tutoria, que já estão na página Sessões) ficaria vazio: sai.
+  const vazio = (b: BlocoSimples) =>
+    b.tipo === 'unsupported' || (b.tipo === 'child_database' && !b.itens?.length);
+  return lidos.filter((b) => !(b.tipo === 'callout' && b.filhos.length > 0 && b.filhos.every(vazio)));
+}
+
 async function desceDe(pai: Pai | undefined, raiz: string): Promise<boolean> {
   // Material -> base -> callout -> toggle -> callout -> página Tutorias: poucos saltos.
-  for (let salto = 0; pai && salto < 10; salto++) {
+  for (let salto = 0; pai && salto < 16; salto++) {
     if (pai.type === 'page_id' && pai.page_id) {
       if (normalizarId(pai.page_id) === normalizarId(raiz)) return true;
       pai = (await getPage(pai.page_id).catch(() => null))?.parent;

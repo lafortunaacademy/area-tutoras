@@ -1,4 +1,4 @@
-import type { IconeNotion } from '@/lib/notion/pilares';
+import type { IconeNotion } from '@/lib/notion/blocks';
 
 /** Ícone de página ou callout do Notion: emoji ou a imagem do ícone nativo. */
 export function Icone({ icone, tamanho }: { icone: IconeNotion; tamanho: number }) {

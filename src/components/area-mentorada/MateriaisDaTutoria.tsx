@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Check, ChevronRight, Link2, Loader2 } from 'lucide-react';
-import type { ItemDeMaterial } from '@/lib/notion/pilares';
+import type { ItemDeMaterial } from '@/lib/notion/blocks';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { FormularioPreSessao } from './FormularioPreSessao';
+import { Icone } from './IconeNotion';
 import { gerarLinkDePreenchimento } from '@/app/mentoradas/actions';
 
 type Material = { titulo: string; blocos: BlocoSimples[] };
@@ -76,6 +77,7 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
         className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden"
       >
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
+        <Icone icone={item.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{item.titulo}</span>
         {admin && preSessao ? <CopiarLink mentoradaId={mentoradaId} materialId={item.id} /> : null}
       </summary>
@@ -97,7 +99,11 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
               aoSalvar={() => buscas.delete(`${mentoradaId}:${item.id}`)}
             />
           ) : (
-            <BlocosNotion blocos={material.blocos} />
+            <BlocosNotion
+              blocos={material.blocos}
+              // Base dentro do material: as páginas dela viram toggles, do mesmo jeito.
+              base={(b) => <MateriaisDaTutoria mentoradaId={mentoradaId} itens={b.itens ?? []} admin={admin} />}
+            />
           )
         ) : null}
       </div>
