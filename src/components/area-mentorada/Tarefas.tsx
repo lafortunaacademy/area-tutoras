@@ -155,13 +155,13 @@ export function Tarefas({
                     )}
                   </td>
                   <td
-                    className={`truncate px-4 py-2.5 ${t.feita ? 'text-texto-suave line-through' : ''}`}
+                    className={`px-4 py-2.5 [overflow-wrap:anywhere] whitespace-pre-line ${t.feita ? 'text-texto-suave line-through' : ''}`}
                     title={t.tarefa}
                   >
                     {t.tarefa}
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">{t.prazo}</td>
-                  <td className="truncate px-4 py-2.5 text-texto-suave" title={t.observacoes}>
+                  <td className="px-4 py-2.5 [overflow-wrap:anywhere] whitespace-pre-line text-texto-suave" title={t.observacoes}>
                     {t.observacoes}
                   </td>
                 </tr>
@@ -257,11 +257,11 @@ function LinhaNova({
           <td className="px-4 py-2">
             <Loader2 aria-label="Salvando" size={14} className="animate-spin text-texto-suave" />
           </td>
-          <td className="truncate px-4 py-2.5">{g.tarefa}</td>
+          <td className="px-4 py-2.5 [overflow-wrap:anywhere] whitespace-pre-line">{g.tarefa}</td>
           <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
             {g.prazo ? g.prazo.split('-').reverse().join('/') : ''}
           </td>
-          <td className="truncate px-4 py-2.5 text-texto-suave">{g.observacoes}</td>
+          <td className="px-4 py-2.5 [overflow-wrap:anywhere] whitespace-pre-line text-texto-suave">{g.observacoes}</td>
         </tr>
       ))}
       {aberta ? (
