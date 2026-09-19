@@ -59,7 +59,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
         })}
       </div>
 
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
         {visiveis.map((t) => (
           <li key={t.id}>
             <button
@@ -69,7 +69,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
               onFocus={() => void buscarTutora(t.id).catch(() => {})}
               className="group flex h-full w-full flex-col overflow-hidden rounded-xl border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
             >
-              <Foto tutora={t} className="h-28 w-full transition group-hover:brightness-105" />
+              <Foto tutora={t} className="h-28 w-full transition group-hover:brightness-105" carregar="lazy" />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-2.5">
                 <p className="text-[13px] font-medium leading-tight">{t.nome}</p>
                 <Etiquetas itens={t.especialidades} />
@@ -84,12 +84,12 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
   );
 }
 
-function Foto({ tutora, className }: { tutora: TutoraDoHub; className: string }) {
+function Foto({ tutora, className, carregar }: { tutora: TutoraDoHub; className: string; carregar?: 'lazy' | 'eager' }) {
   return tutora.foto ? (
     // Retratos: o rosto costuma estar um pouco acima do meio da foto, então o
     // recorte mira ali — nem no topo (corta o queixo) nem no centro (corta a testa).
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={tutora.foto} alt="" className={`${className} object-cover object-[center_40%]`} />
+    <img src={tutora.foto} alt="" loading={carregar} decoding="async" className={`${className} object-cover object-[center_40%]`} />
   ) : (
     <span aria-hidden className={`${className} display flex items-center justify-center bg-marca-suave text-3xl text-marca`}>
       {iniciais(tutora.nome)}

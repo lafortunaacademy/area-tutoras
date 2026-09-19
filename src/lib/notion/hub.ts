@@ -16,7 +16,10 @@ import { lerBlocos, type BlocoSimples } from './blocks';
 export type TutoraDoHub = {
   id: string;
   nome: string;
-  /** A capa do cartão: a Foto da tutora; sem ela, a capa da página. URL assinada, expira. */
+  /**
+   * A foto, já reduzida pelo próprio app (`/api/fotos/tutoras/…`): a original
+   * do Notion tem vários MB. `null` se a tutora não tem foto.
+   */
   foto: string | null;
   especialidades: string[];
   legendaEntregaveis: string;
@@ -63,11 +66,29 @@ function multi(p: NotionPage, nome: string): string[] {
   return ((prop.multi_select as { name: string }[]) ?? []).map((o) => o.name);
 }
 
+/** A Foto da tutora; sem ela, a capa da página. URL assinada do Notion, expira. */
+function fotoOriginal(p: NotionPage): string | null {
+  return arquivoUrl(p, TUTORA.foto) ?? capaUrl(p);
+}
+
+/**
+ * A foto original de uma tutora, para a rota que a reduz. `null` se o ID não
+ * for de uma tutora (ele vem do navegador) ou se ela não tiver foto.
+ */
+export async function fotoDaTutora(id: string): Promise<string | null> {
+  const [pagina, dbId] = await Promise.all([getPage(id).catch(() => null), resolverDatabaseId('tutoras')]);
+  const dona = pagina?.parent?.database_id;
+  if (!pagina || !dona || normalizarId(dona) !== normalizarId(dbId)) return null;
+  return fotoOriginal(pagina);
+}
+
 function paraTutora(p: NotionPage): TutoraDoHub {
   return {
     id: p.id,
     nome: texto(p, TUTORA.nome) || titulo(p),
-    foto: arquivoUrl(p, TUTORA.foto) ?? capaUrl(p),
+    foto: fotoOriginal(p)
+      ? `/api/fotos/tutoras/${p.id}?v=${encodeURIComponent(p.last_edited_time)}`
+      : null,
     especialidades: multi(p, TUTORA.especialidades),
     legendaEntregaveis: texto(p, TUTORA.legendaEntregaveis),
     topicos: multi(p, TUTORA.topicos),
