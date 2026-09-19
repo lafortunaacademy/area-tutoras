@@ -412,7 +412,7 @@ function nomeDoLink(url: string): string {
 }
 
 /** Próximos passos: as Tarefas da mentoria, da mesma base da página da mentorada. */
-function ProximosPassos({ mentoradaId, previa, lendo }: { mentoradaId: string; previa: boolean; lendo: boolean }) {
+export function ProximosPassos({ mentoradaId, previa, lendo }: { mentoradaId: string; previa: boolean; lendo: boolean }) {
   const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean } | null>(null);
   const [erro, setErro] = useState(false);
 

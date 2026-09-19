@@ -1,5 +1,5 @@
 import 'server-only';
-import { getDatabase, getPage, queryDatabase, updatePage, type NotionPage } from './client';
+import { appendChildren, deleteBlock, enviarArquivo, getDatabase, getPage, queryDatabase, updatePage, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
 import { TEMAS_DE_TUTORIA, TUTORIA, cicloAtual } from './config';
@@ -42,7 +42,21 @@ export type ConteudoDaSessao = {
   anotacoes: BlocoSimples[];
   transcricao: BlocoSimples[];
   gravacao: string | null;
+  /**
+   * Partes que dá para editar no app: as que existem na página e só têm texto
+   * simples (uma imagem ou tabela lá dentro se perderia ao regravar).
+   */
+  editaveis: ParteDaSessao[];
 };
+
+export type ParteDaSessao = 'resumo' | 'anotacoes' | 'transcricao' | 'gravacao';
+
+/**
+ * Maior vídeo que dá para enviar pelo app: o pedido passa pelo servidor, que
+ * na hospedagem aceita até 4,5 MB. Gravação de sessão inteira fica no Drive ou
+ * no YouTube, com o link aqui.
+ */
+export const LIMITE_DO_VIDEO = 4 * 1024 * 1024;
 
 /**
  * Todas as sessões da mentorada, de todos os ciclos, com os anos em que ela
@@ -215,21 +229,156 @@ export async function editarSessao(mentoradaId: string, sessaoId: string, e: Edi
 
 /** Distribui os blocos da página nas partes do modelo, pelo título de cada callout. */
 function separar(blocos: BlocoSimples[]): ConteudoDaSessao {
-  const conteudo: ConteudoDaSessao = { resumo: [], anotacoes: [], transcricao: [], gravacao: null };
+  const { conteudo } = separarComAlvos(blocos);
+  return conteudo;
+}
+
+/** Além do conteúdo, o bloco onde mora cada parte (o callout, ou o toggle da transcrição). */
+function separarComAlvos(blocos: BlocoSimples[]): {
+  conteudo: ConteudoDaSessao;
+  alvos: Partial<Record<ParteDaSessao, BlocoSimples>>;
+} {
+  const conteudo: ConteudoDaSessao = { resumo: [], anotacoes: [], transcricao: [], gravacao: null, editaveis: [] };
+  const alvos: Partial<Record<ParteDaSessao, BlocoSimples>> = {};
   const normal = (t: string) => t.trim().toLowerCase();
 
   for (const b of blocos) {
     const titulo = normal(b.texto);
     const toggle = b.filhos.find((f) => f.tipo === 'toggle' && normal(f.texto).startsWith('transcrição'));
 
-    if (titulo.startsWith('resumo')) conteudo.resumo = b.filhos;
-    else if (titulo.startsWith('anotações') || titulo.startsWith('anotacoes')) conteudo.anotacoes = b.filhos;
-    else if (toggle || titulo.startsWith('transcrição')) conteudo.transcricao = (toggle ?? b).filhos;
-    else if (titulo.startsWith('gravação') || titulo.startsWith('gravacao')) {
+    if (titulo.startsWith('resumo')) {
+      conteudo.resumo = b.filhos;
+      alvos.resumo = b;
+    } else if (titulo.startsWith('anotações') || titulo.startsWith('anotacoes')) {
+      conteudo.anotacoes = b.filhos;
+      alvos.anotacoes = b;
+    } else if (toggle || titulo.startsWith('transcrição')) {
+      conteudo.transcricao = (toggle ?? b).filhos;
+      alvos.transcricao = toggle ?? b;
+    } else if (titulo.startsWith('gravação') || titulo.startsWith('gravacao')) {
       conteudo.gravacao = acharVideo(b.filhos);
+      alvos.gravacao = b;
     }
   }
-  return conteudo;
+
+  // Parte que falta na página (sessão anterior ao modelo) é criada ao salvar.
+  conteudo.editaveis = PARTES.filter((parte) => {
+    const alvo = alvos[parte];
+    return !alvo || parte === 'gravacao' || alvo.filhos.every(textoSimples);
+  });
+  return { conteudo, alvos };
+}
+
+const PARTES: ParteDaSessao[] = ['resumo', 'anotacoes', 'transcricao', 'gravacao'];
+
+/** Os callouts do modelo da sessão, como estão no Notion (a transcrição é um toggle dentro do callout). */
+const MODELO: Record<ParteDaSessao, { titulo: string; icone: string }> = {
+  resumo: { titulo: 'Resumo da sessão', icone: 'reorder' },
+  anotacoes: { titulo: 'Anotações', icone: 'drafts' },
+  transcricao: { titulo: 'Transcrição da sessão', icone: 'font' },
+  gravacao: { titulo: 'Gravação', icone: 'video-camera' },
+};
+
+function tituloDoModelo(texto: string) {
+  return [{ type: 'text', text: { content: texto }, annotations: { bold: true, color: 'brown' } }];
+}
+
+function calloutDoModelo(parte: ParteDaSessao): unknown {
+  const { titulo, icone } = MODELO[parte];
+  const transcricao = parte === 'transcricao';
+  return {
+    object: 'block',
+    type: 'callout',
+    callout: {
+      rich_text: transcricao ? [] : tituloDoModelo(titulo),
+      icon: { type: 'external', external: { url: `https://www.notion.so/icons/${icone}_brown.svg` } },
+      color: 'default_background',
+      children: transcricao ? [{ object: 'block', type: 'toggle', toggle: { rich_text: tituloDoModelo(titulo) } }] : [],
+    },
+  };
+}
+
+/** Sessão anterior ao modelo: cria de uma vez, na ordem do modelo, as partes que faltam. */
+async function completarModelo(paginaId: string, blocos: BlocoSimples[]): Promise<BlocoSimples[]> {
+  const { alvos } = separarComAlvos(blocos);
+  const faltam = PARTES.filter((p) => !alvos[p]);
+  if (!faltam.length) return blocos;
+  await appendChildren(paginaId, faltam.map(calloutDoModelo));
+  return lerBlocos(paginaId, 3);
+}
+
+/** Blocos que viram linhas de texto e voltam sem perder nada além da formatação. */
+const TIPOS_DE_TEXTO = new Set(['paragraph', 'bulleted_list_item', 'numbered_list_item', 'heading_1', 'heading_2', 'heading_3', 'quote', 'to_do']);
+function textoSimples(b: BlocoSimples): boolean {
+  return TIPOS_DE_TEXTO.has(b.tipo) && b.filhos.length === 0;
+}
+
+function paraBlocos(texto: string): unknown[] {
+  return texto
+    .split('\n')
+    .map((l) => l.trimEnd())
+    .filter((l, i, todas) => l || (i > 0 && todas[i - 1]))
+    .map((linha) => {
+      const topico = /^[-•]\s+/.test(linha);
+      const conteudo = topico ? linha.replace(/^[-•]\s+/, '') : linha;
+      // O Notion aceita até 2.000 caracteres por pedaço de texto.
+      const partes = conteudo.match(/[\s\S]{1,1900}/g) ?? [];
+      const tipo = topico ? 'bulleted_list_item' : 'paragraph';
+      return { object: 'block', type: tipo, [tipo]: { rich_text: partes.map((c) => ({ type: 'text', text: { content: c } })) } };
+    });
+}
+
+function blocoDeVideo(url: string): unknown {
+  const video = /(youtube\.com|youtu\.be|vimeo\.com)|\.(mp4|mov|webm|m4v)(\?|$)/i.test(url);
+  return video
+    ? { object: 'block', type: 'video', video: { type: 'external', external: { url } } }
+    : { object: 'block', type: 'embed', embed: { url } };
+}
+
+/**
+ * Regrava uma parte da sessão na página dela. Texto: troca os blocos de dentro
+ * do callout (ou do toggle da transcrição). Gravação: troca o vídeo pelo link novo
+ * (vazio tira o vídeo). `null` se a sessão não for desta mentorada.
+ */
+export async function salvarParteDaSessao(
+  mentoradaId: string,
+  sessaoId: string,
+  parte: ParteDaSessao,
+  valor: string | File,
+): Promise<ConteudoDaSessao | null> {
+  const pagina = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!pagina) return null;
+
+  const { conteudo, alvos } = separarComAlvos(await completarModelo(pagina.id, await lerBlocos(pagina.id, 3)));
+  const alvo = alvos[parte];
+  if (!alvo || !conteudo.editaveis.includes(parte)) throw new SessaoInvalida('Esta parte não pode ser editada por aqui.');
+  if (typeof valor !== 'string' && parte !== 'gravacao') throw new SessaoInvalida('Só a gravação aceita arquivo.');
+  if (typeof valor === 'string' && valor.length > 100_000) throw new SessaoInvalida('O texto está longo demais.');
+
+  let novos: unknown[];
+  let saem: BlocoSimples[];
+  if (typeof valor !== 'string') {
+    if (!valor.type.startsWith('video/')) throw new SessaoInvalida('Envie um arquivo de vídeo.');
+    if (valor.size > LIMITE_DO_VIDEO) throw new SessaoInvalida('O vídeo passa de 4 MB. Coloque no Drive ou no YouTube e cole o link.');
+    const id = await enviarArquivo(valor, valor.name || 'gravacao.mp4');
+    saem = alvo.filhos.filter((b) => ['video', 'embed', 'bookmark', 'file', 'link_preview'].includes(b.tipo));
+    novos = [{ object: 'block', type: 'video', video: { type: 'file_upload', file_upload: { id } } }];
+  } else if (parte === 'gravacao') {
+    const url = valor.trim();
+    if (url && !/^https:\/\/\S+$/.test(url)) throw new SessaoInvalida('Cole um link que comece com https://');
+    saem = alvo.filhos.filter((b) => ['video', 'embed', 'bookmark', 'file', 'link_preview'].includes(b.tipo));
+    novos = url ? [blocoDeVideo(url)] : [];
+  } else {
+    saem = alvo.filhos;
+    novos = paraBlocos(valor);
+  }
+
+  // Primeiro grava o novo, depois apaga o antigo: se algo falhar no meio, sobra
+  // conteúdo repetido, nunca conteúdo perdido.
+  for (let i = 0; i < novos.length; i += 100) await appendChildren(alvo.id, novos.slice(i, i + 100));
+  for (const b of saem) await deleteBlock(b.id);
+
+  return separar(await lerBlocos(pagina.id, 3));
 }
 
 function acharVideo(blocos: BlocoSimples[]): string | null {

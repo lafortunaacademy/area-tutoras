@@ -221,6 +221,28 @@ export async function appendChildren(blockId: string, children: unknown[]): Prom
   return res.results;
 }
 
+/**
+ * Sobe um arquivo para o Notion (upload de parte única, até 20 MB do lado do
+ * Notion) e devolve o id para usar num bloco `file_upload`. O id vale por uma
+ * hora e só pode ser usado uma vez.
+ */
+export async function enviarArquivo(arquivo: Blob, nome: string): Promise<string> {
+  const criado = await call<{ id: string }>('/file_uploads', {
+    method: 'POST',
+    body: { mode: 'single_part', filename: nome, content_type: arquivo.type || 'application/octet-stream' },
+  });
+  const form = new FormData();
+  form.append('file', arquivo, nome);
+  const res = await fetch(`${BASE}/file_uploads/${criado.id}/send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token()}`, 'Notion-Version': NOTION_VERSION },
+    body: form,
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new NotionError(res.status, 'upload_falhou', await res.text());
+  return criado.id;
+}
+
 export async function updatePage(
   pageId: string,
   properties: Record<string, unknown>,

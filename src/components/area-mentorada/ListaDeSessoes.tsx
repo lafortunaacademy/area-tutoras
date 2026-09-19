@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Loader2, X } from 'lucide-react';
-import type { ConteudoDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
+import { ChevronRight, Info, Loader2, Pencil, Upload, X } from 'lucide-react';
+import type { ConteudoDaSessao, ParteDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { TarefaDaMentoria } from '@/lib/notion/tarefas';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
+import { ProximosPassos } from '@/components/tutorias/FormularioDoApp';
 
-type Detalhe = { conteudo: ConteudoDaSessao; tarefas: TarefaDaMentoria[] | null };
+type Detalhe = { conteudo: ConteudoDaSessao; tarefas: TarefaDaMentoria[] | null; podeEditar?: boolean };
 
 const buscas = new Map<string, Promise<Detalhe>>();
 function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
@@ -137,6 +138,37 @@ export function CartaoSessao({
     };
   }, [sessao.id, mentoradaId]);
 
+  const podeMexer = (parte: ParteDaSessao) => Boolean(detalhe?.podeEditar && detalhe.conteudo.editaveis?.includes(parte));
+
+  /** Grava a parte e guarda o conteúdo novo, inclusive na memória das sessões já abertas. */
+  async function salvarParte(parte: ParteDaSessao, valor: string | File): Promise<string | null> {
+    let body: BodyInit;
+    let headers: HeadersInit | undefined;
+    if (typeof valor === 'string') {
+      body = JSON.stringify({ parte, valor });
+      headers = { 'Content-Type': 'application/json' };
+    } else {
+      const form = new FormData();
+      form.append('parte', parte);
+      form.append('arquivo', valor);
+      body = form;
+    }
+    const r = await fetch(`/api/sessoes/${sessao.id}?mentorada=${encodeURIComponent(mentoradaId)}`, {
+      method: 'PATCH',
+      headers,
+      body,
+    }).catch(() => null);
+    const j = await r?.json().catch(() => ({}));
+    if (!r?.ok) return j?.erro ?? 'Não foi possível salvar agora.';
+    setDetalhe((d) => {
+      if (!d) return d;
+      const novo = { ...d, conteudo: j.conteudo as ConteudoDaSessao };
+      buscas.set(`${mentoradaId}:${sessao.id}`, Promise.resolve(novo));
+      return novo;
+    });
+    return null;
+  }
+
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') aoFechar();
@@ -190,8 +222,19 @@ export function CartaoSessao({
 
           {detalhe ? (
             <>
-              <Parte titulo="Resumo da sessão" blocos={detalhe.conteudo.resumo} />
-              <Parte titulo="Anotações" blocos={detalhe.conteudo.anotacoes} />
+              {(
+                [
+                  ['resumo', 'Resumo da sessão'],
+                  ['anotacoes', 'Anotações'],
+                ] as const
+              ).map(([parte, titulo]) => (
+                <Parte
+                  key={parte}
+                  titulo={titulo}
+                  blocos={detalhe.conteudo[parte]}
+                  aoSalvar={podeMexer(parte) ? (v) => salvarParte(parte, v) : undefined}
+                />
+              ))}
 
               <details className="group rounded-xl border border-borda">
                 <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium">
@@ -199,41 +242,32 @@ export function CartaoSessao({
                   Transcrição da sessão
                 </summary>
                 <div className="border-t border-borda px-4 py-3">
-                  {temTexto(detalhe.conteudo.transcricao) ? (
-                    <BlocosNotion blocos={detalhe.conteudo.transcricao} />
-                  ) : (
-                    <p className="text-sm text-texto-suave">Sem transcrição.</p>
-                  )}
+                  <Editavel
+                    inicial={paraTexto(detalhe.conteudo.transcricao)}
+                    aoSalvar={podeMexer('transcricao') ? (v) => salvarParte('transcricao', v) : undefined}
+                  >
+                    {temTexto(detalhe.conteudo.transcricao) ? (
+                      <BlocosNotion blocos={detalhe.conteudo.transcricao} />
+                    ) : (
+                      <p className="text-sm text-texto-suave">Sem transcrição.</p>
+                    )}
+                  </Editavel>
                 </div>
               </details>
 
               <section className="rounded-xl border border-borda px-4 py-3">
                 <h3 className="mb-2 text-sm font-medium">Tarefas</h3>
-                {detalhe.tarefas && detalhe.tarefas.length > 0 ? (
-                  <ul className="space-y-1.5 text-sm">
-                    {detalhe.tarefas.map((t) => (
-                      <li key={t.id} className="flex items-start gap-2">
-                        <span
-                          aria-hidden
-                          className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border text-[10px] ${
-                            t.feita ? 'border-marca bg-marca text-marca-contraste' : 'border-borda'
-                          }`}
-                        >
-                          {t.feita ? '✓' : ''}
-                        </span>
-                        <span className={t.feita ? 'text-texto-suave line-through' : ''}>{t.tarefa}</span>
-                        {t.prazo ? <span className="ml-auto shrink-0 text-xs text-texto-suave tabular-nums">{dataCurta(t.prazo)}</span> : null}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-texto-suave">Nenhuma tarefa.</p>
-                )}
+                <div className="text-sm">
+                  <ProximosPassos mentoradaId={mentoradaId} previa={false} lendo={!detalhe.podeEditar} />
+                </div>
               </section>
 
               <section className="rounded-xl border border-borda px-4 py-3">
                 <h3 className="mb-2 text-sm font-medium">Gravação</h3>
                 <Gravacao url={detalhe.conteudo.gravacao} />
+                {podeMexer('gravacao') ? (
+                  <EditarGravacao temVideo={Boolean(detalhe.conteudo.gravacao)} aoSalvar={(v) => salvarParte('gravacao', v)} />
+                ) : null}
               </section>
             </>
           ) : null}
@@ -247,12 +281,224 @@ function temTexto(blocos: BlocoSimples[]): boolean {
   return blocos.some((b) => Boolean(b.texto.trim() || b.url) || temTexto(b.filhos));
 }
 
-function Parte({ titulo, blocos }: { titulo: string; blocos: BlocoSimples[] }) {
+/** Texto de uma parte para editar: uma linha por bloco, tópicos com "- ". */
+function paraTexto(blocos: BlocoSimples[]): string {
+  return blocos.map((b) => (b.tipo === 'bulleted_list_item' ? `- ${b.texto}` : b.texto)).join('\n');
+}
+
+function Parte({
+  titulo,
+  blocos,
+  aoSalvar,
+}: {
+  titulo: string;
+  blocos: BlocoSimples[];
+  aoSalvar?: (valor: string) => Promise<string | null>;
+}) {
   return (
     <section className="rounded-xl border border-borda px-4 py-3">
       <h3 className="mb-2 text-sm font-medium">{titulo}</h3>
-      {temTexto(blocos) ? <BlocosNotion blocos={blocos} /> : <p className="text-sm text-texto-suave">Ainda não preenchido.</p>}
+      <Editavel inicial={paraTexto(blocos)} aoSalvar={aoSalvar}>
+        {temTexto(blocos) ? <BlocosNotion blocos={blocos} /> : <p className="text-sm text-texto-suave">Ainda não preenchido.</p>}
+      </Editavel>
     </section>
+  );
+}
+
+/**
+ * Mostra o conteúdo; quem pode editar clica em "Editar" e troca por um campo
+ * (texto ou, na gravação, o link do vídeo). Sem `aoSalvar`, só mostra.
+ */
+function Editavel({
+  inicial,
+  aoSalvar,
+  children,
+}: {
+  inicial: string;
+  aoSalvar?: (valor: string) => Promise<string | null>;
+  children: React.ReactNode;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState(inicial);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  if (!aoSalvar) return <>{children}</>;
+
+  if (!editando) {
+    return (
+      <div className="group/editar relative">
+        {children}
+        <button
+          type="button"
+          onClick={() => {
+            setValor(inicial);
+            setErro(null);
+            setEditando(true);
+          }}
+          className="mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+        >
+          <Pencil aria-hidden size={11} />
+          Editar
+        </button>
+      </div>
+    );
+  }
+
+  async function salvar() {
+    setSalvando(true);
+    setErro(null);
+    const falha = await aoSalvar!(valor);
+    setSalvando(false);
+    if (falha) setErro(falha);
+    else setEditando(false);
+  }
+
+  return (
+    <div>
+      <textarea
+          autoFocus
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          rows={Math.min(Math.max(valor.split('\n').length + 1, 4), 16)}
+          placeholder="Edite aqui. Uma linha por parágrafo; comece com - para tópico."
+          className="w-full resize-y rounded-lg border border-borda bg-fundo px-3 py-2 text-sm leading-relaxed outline-none focus:border-marca"
+        />
+      {erro ? <p className="mt-1 text-xs text-parado">{erro}</p> : null}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void salvar()}
+          disabled={salvando}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-60"
+        >
+          {salvando ? <Loader2 aria-hidden size={12} className="animate-spin" /> : null}
+          Salvar
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditando(false)}
+          disabled={salvando}
+          className="rounded-lg px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Até onde o app consegue enviar um vídeo (o mesmo limite do servidor). */
+const LIMITE_DO_VIDEO_MB = 4;
+
+/** Link (Drive, YouTube…) ou, para vídeos curtos, o arquivo. Grava no lugar do vídeo que houver. */
+function EditarGravacao({ temVideo, aoSalvar }: { temVideo: boolean; aoSalvar: (v: string | File) => Promise<string | null> }) {
+  const [aberto, setAberto] = useState(false);
+  const [link, setLink] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const arquivo = useRef<HTMLInputElement>(null);
+
+  async function enviar(valor: string | File) {
+    if (valor instanceof File && valor.size > LIMITE_DO_VIDEO_MB * 1024 * 1024) {
+      setErro(`Esse vídeo passa de ${LIMITE_DO_VIDEO_MB} MB. Coloque no Drive ou no YouTube e cole o link.`);
+      return;
+    }
+    setSalvando(true);
+    setErro(null);
+    const falha = await aoSalvar(valor);
+    setSalvando(false);
+    if (falha) setErro(falha);
+    else {
+      setLink('');
+      setAberto(false);
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+      >
+        <Pencil aria-hidden size={11} />
+        {temVideo ? 'Trocar gravação' : 'Adicionar gravação'}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="flex gap-2 rounded-lg bg-marca-suave/60 px-3 py-2 text-xs leading-relaxed text-texto-suave">
+        <Info aria-hidden size={14} className="mt-0.5 shrink-0" />
+        <span>
+          O ideal é que o vídeo esteja numa pasta do Google Drive ou salvo no YouTube (pode ser como não listado): é só
+          colar o link abaixo. Arquivo enviado por aqui tem limite de {LIMITE_DO_VIDEO_MB} MB.
+        </span>
+      </p>
+      <input
+        autoFocus
+        type="url"
+        value={link}
+        onChange={(e) => setLink(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && link.trim()) void enviar(link);
+        }}
+        placeholder="Cole aqui o link da gravação"
+        className="w-full rounded-lg border border-borda bg-fundo px-3 py-2 text-sm outline-none focus:border-marca"
+      />
+      {erro ? <p className="text-xs text-parado">{erro}</p> : null}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void enviar(link)}
+          disabled={salvando || !link.trim()}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-60"
+        >
+          {salvando ? <Loader2 aria-hidden size={12} className="animate-spin" /> : null}
+          Salvar link
+        </button>
+        <button
+          type="button"
+          onClick={() => arquivo.current?.click()}
+          disabled={salvando}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto disabled:opacity-60"
+        >
+          <Upload aria-hidden size={12} />
+          Enviar arquivo (até {LIMITE_DO_VIDEO_MB} MB)
+        </button>
+        <input
+          ref={arquivo}
+          type="file"
+          accept="video/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (f) void enviar(f);
+          }}
+        />
+        {temVideo ? (
+          <button
+            type="button"
+            onClick={() => void enviar('')}
+            disabled={salvando}
+            className="rounded-lg px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-parado"
+          >
+            Tirar gravação
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setAberto(false)}
+          disabled={salvando}
+          className="rounded-lg px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -263,13 +509,16 @@ function Gravacao({ url }: { url: string | null }) {
   const youtube = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
   const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   const loom = url.match(/loom\.com\/(?:share|embed)\/([\w-]+)/);
+  const drive = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([\w-]+)/);
   const embed = youtube
     ? `https://www.youtube.com/embed/${youtube[1]}`
     : vimeo
       ? `https://player.vimeo.com/video/${vimeo[1]}`
       : loom
         ? `https://www.loom.com/embed/${loom[1]}`
-        : null;
+        : drive
+          ? `https://drive.google.com/file/d/${drive[1]}/preview`
+          : null;
 
   if (embed) {
     return (
