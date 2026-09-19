@@ -2,10 +2,11 @@ import 'server-only';
 import { getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
-import { TUTORIA, cicloAtual } from './config';
+import { TEMAS_DE_TUTORIA, TUTORIA, cicloAtual } from './config';
 import { corDaOpcao, data, relationIds, texto, titulo } from './props';
 import { nomesDasTutoras } from './tutora';
 import { lerBlocos, type BlocoSimples } from './blocks';
+import { especialidadesDasTutoras } from './hub';
 
 /**
  * As sessões da mentorada, da base "Acompanhamento de clientes" — a mesma do
@@ -63,6 +64,41 @@ export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: str
   const sessoes = ordenar(linhas.map((p) => paraSessao(p, nomes)));
   const anos = [...new Set(sessoes.map(anoDaSessao))].sort((a, b) => b.localeCompare(a));
   return { anos, sessoes };
+}
+
+/**
+ * As sessões do ciclo atual (as mesmas do progresso da mentoria) separadas por
+ * pilar, pelas tutorias de cada um. A sessão entra pelo tema (fórmula
+ * "Tutoria"); sem tema reconhecido, pela especialidade das tutoras dela.
+ */
+export async function sessoesDosPilares(
+  mentorada: Mentorada,
+  pilares: { id: string; tutorias: { nome: string }[] }[],
+): Promise<Record<string, SessaoDaLista[]>> {
+  const [{ sessoes }, especialidades] = await Promise.all([sessoesPorCiclo(mentorada), especialidadesDasTutoras()]);
+  const ano = cicloAtual().match(/\d{4}/)?.[0];
+  const doCiclo = sessoes.filter((s) => anoDaSessao(s) === ano);
+
+  const temasDoPilar = (p: (typeof pilares)[number]) =>
+    TEMAS_DE_TUTORIA.filter((t) => p.tutorias.some((tu) => semAcento(tu.nome).includes(t.trecho)));
+  const todosOsTemas = new Set(TEMAS_DE_TUTORIA.flatMap((t) => t.temas.map(semAcento)));
+
+  const resultado: Record<string, SessaoDaLista[]> = {};
+  for (const p of pilares) {
+    const temas = temasDoPilar(p);
+    const nomes = new Set(temas.flatMap((t) => t.temas.map(semAcento)));
+    const areas = new Set(temas.flatMap((t) => t.especialidades.map(semAcento)));
+    resultado[p.id] = doCiclo.filter((s) =>
+      todosOsTemas.has(semAcento(s.tema))
+        ? nomes.has(semAcento(s.tema))
+        : s.tutoraIds.some((id) => (especialidades.get(normalizarId(id)) ?? []).some((e) => areas.has(semAcento(e)))),
+    );
+  }
+  return resultado;
+}
+
+function semAcento(t: string): string {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 }
 
 /** "2026", tirado de "Ciclo 2026"; sem ciclo, o ano do ciclo atual. */

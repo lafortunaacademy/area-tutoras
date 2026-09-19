@@ -1,20 +1,25 @@
 import { ChevronRight } from 'lucide-react';
 import type { Pilar } from '@/lib/tutorias/modelo';
 import type { Progresso } from '@/lib/tutorias/respostas';
+import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import { ArvoreDeMateriais } from './ArvoreDeMateriais';
 import { IconeDoModelo } from './IconeDoModelo';
+import { SessoesDoPilar } from './SessoesDoPilar';
 
 /** Os pilares das tutorias, com a frase e um toggle por tutoria. Tudo do próprio app. */
 export function PilaresDoApp({
   pilares,
   mentoradaId,
   progresso,
+  sessoes = null,
   admin,
   paraMentorada = false,
 }: {
   pilares: Pilar[];
   mentoradaId: string;
   progresso: Progresso;
+  /** Sessões do ciclo atual por pilar; `null` quando o Notion não respondeu. */
+  sessoes?: Record<string, SessaoDaLista[]> | null;
   admin: boolean;
   /** Quem está vendo é a própria mentorada. */
   paraMentorada?: boolean;
@@ -50,6 +55,12 @@ export function PilaresDoApp({
               </details>
             ))}
           </div>
+
+          {sessoes ? (
+            <div className="mt-4">
+              <SessoesDoPilar mentoradaId={mentoradaId} sessoes={sessoes[p.id] ?? []} />
+            </div>
+          ) : null}
         </section>
       ))}
     </div>

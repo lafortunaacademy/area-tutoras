@@ -5,6 +5,7 @@ import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { tutorasDoHub } from '@/lib/notion/hub';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
 import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
+import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
 import { GaleriaTutoras } from '@/components/area-mentorada/GaleriaTutoras';
@@ -26,6 +27,8 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
     modeloDasTutorias().catch((e) => e as Error),
     progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
+  // Sem Notion, os pilares aparecem do mesmo jeito, só sem a lista de sessões.
+  const sessoes = pilares instanceof Error ? null : await sessoesDosPilares(mentorada, pilares).catch(() => null);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -58,6 +61,7 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
             pilares={pilares}
             mentoradaId={mentorada.id}
             progresso={progresso}
+            sessoes={sessoes}
             admin={visitante.admin}
             paraMentorada={!visitante.admin}
           />
