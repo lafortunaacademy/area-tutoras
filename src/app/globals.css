@@ -133,6 +133,26 @@
     --grafico-azul: #86b3dc;
   }
 
+/*
+ * Espaçamento simples em todo o sistema: texto que quebra linha ocupa só a
+ * altura da letra (1,15, o "simples" dos editores de texto), em qualquer
+ * tamanho e também nas classes leading-* usadas pelos componentes.
+ */
+@theme {
+  --text-xs--line-height: 1.15;
+  --text-sm--line-height: 1.15;
+  --text-base--line-height: 1.15;
+  --text-lg--line-height: 1.15;
+  --text-xl--line-height: 1.15;
+  --text-2xl--line-height: 1.15;
+  --text-3xl--line-height: 1.15;
+  --text-4xl--line-height: 1.15;
+  --leading-tight: 1.15;
+  --leading-snug: 1.15;
+  --leading-normal: 1.15;
+  --leading-relaxed: 1.15;
+}
+
 @theme inline {
   --color-fundo: var(--fundo);
   --color-superficie: var(--superficie);
@@ -164,6 +184,7 @@
 }
 
 body {
+  line-height: 1.15;
   background: var(--fundo);
   color: var(--texto);
   font-family: var(--font-sans);
