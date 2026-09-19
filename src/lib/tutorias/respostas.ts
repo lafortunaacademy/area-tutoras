@@ -22,12 +22,16 @@ export const BUCKET = 'tutorias';
 const VALIDADE_DO_LINK_S = 60 * 60;
 
 export type Anexo = { caminho: string; nome: string; tipo: string; url?: string };
-export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[]; links?: string[]; linhas?: string[][] };
+/** `sessao`: a sessão (base de Sessões do Notion) a que um registro se refere — só o ID, o nome e a data. */
+export type SessaoCitada = { id: string; titulo: string; data: string | null };
+export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[]; links?: string[]; linhas?: string[][]; sessao?: SessaoCitada };
 export type Envio = { id: string; criadoEm: string; atualizadoEm: string; enviadoEm: string | null };
 
 export type EstadoDoFormulario = {
   /** Todos os envios, do mais novo para o mais antigo. */
   envios: Envio[];
+  /** A sessão citada em cada envio (registros da equipe), para o nome da caixinha. */
+  sessoesDosEnvios: Record<string, SessaoCitada>;
   rascunho: { envio: Envio; respostas: Record<string, Valor> } | null;
   ultimo: { envio: Envio; respostas: Record<string, Valor> } | null;
 };
@@ -81,6 +85,18 @@ export async function respostasDoEnvio(envioId: string): Promise<Record<string, 
 /** O rascunho em aberto e o último envio, cada um com as respostas. */
 export async function estadoDoFormulario(mentoradaId: string, materialId: string): Promise<EstadoDoFormulario> {
   const envios = await enviosDe(mentoradaId, materialId);
+  const sessoesDosEnvios: Record<string, SessaoCitada> = {};
+  if (envios.length) {
+    const { data } = await supabaseAdmin()
+      .from('tutoria_respostas')
+      .select('envio_id, valor')
+      .in('envio_id', envios.map((e) => e.id))
+      .not('valor->sessao', 'is', null);
+    for (const r of data ?? []) {
+      const s = (r.valor as Valor).sessao;
+      if (s) sessoesDosEnvios[r.envio_id] = s;
+    }
+  }
   const aberto = envios.find((e) => !e.enviadoEm) ?? null;
   const enviado = envios.find((e) => e.enviadoEm) ?? null;
   const [respostasAberto, respostasEnviado] = await Promise.all([
@@ -89,11 +105,13 @@ export async function estadoDoFormulario(mentoradaId: string, materialId: string
   ]);
   return {
     envios,
+    sessoesDosEnvios,
     rascunho: aberto && respostasAberto ? { envio: aberto, respostas: respostasAberto } : null,
     ultimo: enviado && respostasEnviado ? { envio: enviado, respostas: respostasEnviado } : null,
   };
 }
 
+// A sessão sozinha não conta: é só a data do registro, não conteúdo.
 const temConteudo = (v: Valor) =>
   Boolean(v.texto?.trim() || v.opcoes?.length || v.arquivos?.length || v.links?.length || v.linhas?.length);
 
@@ -180,7 +198,7 @@ async function rascunho(mentoradaId: string, materialId: string, quem: string): 
 export async function salvarResposta(
   mentoradaId: string,
   perguntaId: string,
-  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][] },
+  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][]; sessaoId?: string | null },
   quem: string,
 ): Promise<Pergunta | null> {
   const p = await lerPergunta(perguntaId);
@@ -198,6 +216,15 @@ export async function salvarResposta(
       const atual = await valorNoRascunho(envioId, p.id);
       await gravarComMentorada(envioId, mentoradaId, p.id, { ...atual, links: novo.links }, quem);
       return p;
+    }
+  } else if (p.tipo === 'sessao' && valor.sessaoId !== undefined) {
+    if (!valor.sessaoId) novo = {};
+    else {
+      // O ID vem do navegador: vale só se for uma sessão desta mentorada, e o nome e a data vêm daqui.
+      const { sessoesParaRegistro } = await import('./sessoes');
+      const s = (await sessoesParaRegistro(mentoradaId, p.materialId)).find((x) => x.id === valor.sessaoId);
+      if (!s) return null;
+      novo = { sessao: { id: s.id, titulo: s.titulo, data: s.data } };
     }
   } else if (p.tipo === 'tabela' && Array.isArray(valor.linhas)) {
     // Uma célula por coluna do modelo; linha toda vazia não conta.

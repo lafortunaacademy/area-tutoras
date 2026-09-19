@@ -6,7 +6,13 @@ import type { Pergunta, QuemPreenche } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
 
-type Dados = { material: { nome: string; perguntas: Pergunta[]; quemPreenche: QuemPreenche }; estado: EstadoDoFormulario; podeEditar: boolean };
+type Dados = {
+  material: { nome: string; perguntas: Pergunta[]; quemPreenche: QuemPreenche };
+  /** A área do material no pilar ("Produto", "Investimentos"…), para o nome das caixinhas. */
+  area: string | null;
+  estado: EstadoDoFormulario;
+  podeEditar: boolean;
+};
 
 /**
  * Busca já começada (ao passar o mouse no nome do material), para o toggle
@@ -25,6 +31,8 @@ export function prebuscarFormulario(materialId: string, mentoradaId: string): Pr
   }
   return busca;
 }
+
+const dataDaSessao = (iso: string) => iso.slice(0, 10).split('-').reverse().join('/');
 
 const quando = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
@@ -103,8 +111,11 @@ export function PainelDoFormulario({
     );
   }
 
-  const { material, estado, podeEditar } = dados;
+  const { material, estado, podeEditar, area } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
+  // Registros da equipe em ordem de sessão (a mais recente primeiro); pré-sessões, em ordem de envio.
+  const dataDoEnvio = (e: Envio) => estado.sessoesDosEnvios[e.id]?.data ?? e.enviadoEm ?? '';
+  const ordenados = material.quemPreenche === 'equipe' ? [...enviados].sort((a, b) => dataDoEnvio(b).localeCompare(dataDoEnvio(a))) : enviados;
   // Quem escreve depende do material: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria).
   const daEquipe = material.quemPreenche === 'equipe';
   const editando = podeEditar && !obrigado && (daEquipe ? !paraMentorada : paraMentorada);
@@ -114,7 +125,7 @@ export function PainelDoFormulario({
   const rotulo = daEquipe
     ? {
         enviar: `Salvar ${coisa}`,
-        caixa: `${Coisa} de`,
+        caixa: `${Coisa} de ${area ?? material.nome}`,
         lista: `${Coisa}s registradas`,
         vazio: `Nenhuma ${coisa} registrada ainda.`,
         faltou: 'Preencha ao menos um campo antes de salvar.',
@@ -199,12 +210,17 @@ export function PainelDoFormulario({
             {rotulo.lista} ({enviados.length})
           </p>
           <ul className="space-y-2">
-            {enviados.map((e, i) => (
+            {ordenados.map((e, i) => (
               <li key={e.id}>
                 <CaixaDeEnvio
                   envio={e}
                   maisRecente={i === 0}
-                  prefixo={rotulo.caixa}
+                  titulo={
+                    daEquipe
+                      ? // Registro da equipe: a data é a da sessão escolhida, não a do dia em que foi salvo.
+                        `${rotulo.caixa}${estado.sessoesDosEnvios[e.id]?.data ? ` · ${dataDaSessao(estado.sessoesDosEnvios[e.id].data!)}` : ''}`
+                      : `${rotulo.caixa} ${quando(e.enviadoEm!)}`
+                  }
                   perguntas={material.perguntas}
                   mentoradaId={mentoradaId}
                   consulta={consulta}
@@ -230,15 +246,15 @@ export function PainelDoFormulario({
 function CaixaDeEnvio({
   envio,
   maisRecente,
-  prefixo,
+  titulo,
   perguntas,
   mentoradaId,
   consulta,
 }: {
   envio: Envio;
   maisRecente: boolean;
-  /** "Enviada em" (pré-sessão) ou "Tutoria de" (registro da equipe). */
-  prefixo: string;
+  /** "Enviada em 18/09/2026, 16:05" (pré-sessão) ou "Tutoria de Produto · 12/09/2026" (registro da equipe). */
+  titulo: string;
   perguntas: Pergunta[];
   mentoradaId: string;
   consulta: string;
@@ -263,15 +279,13 @@ function CaixaDeEnvio({
         onClick={abrir}
         className="flex w-full items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2.5 text-left text-sm transition hover:border-marca hover:shadow-[var(--sombra)]"
       >
-        <span className="font-medium">
-          {prefixo} {quando(envio.enviadoEm!)}
-        </span>
+        <span className="font-medium">{titulo}</span>
         {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[10.5px] text-ok">mais recente</span> : null}
         <ChevronRight aria-hidden size={14} className="ml-auto shrink-0 text-texto-suave" />
       </button>
 
       {aberta ? (
-        <TelaDasRespostas titulo={`${prefixo} ${quando(envio.enviadoEm!)}`} aoFechar={() => setAberta(false)}>
+        <TelaDasRespostas titulo={titulo} aoFechar={() => setAberta(false)}>
           {!respostas && !erro ? (
             <p className="flex items-center gap-2 text-sm text-texto-suave">
               <Loader2 aria-hidden size={14} className="animate-spin" />
