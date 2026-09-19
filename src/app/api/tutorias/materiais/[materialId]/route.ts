@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const material = await formulario(materialId);
     if (!material) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
-    const permissao = await permissaoNasTutorias(mentoradaId, material.quemPreenche);
+    const permissao = await permissaoNasTutorias(mentoradaId, material.quemPreenche, materialId);
     if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     const [estado, area] = await Promise.all([estadoDoFormulario(mentoradaId, materialId), areaDoMaterial(materialId)]);
     return NextResponse.json({ material, area, estado, podeEditar: permissao.podeEditar });

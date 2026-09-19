@@ -9,7 +9,7 @@ const LIMITE_BYTES = 4 * 1024 * 1024;
 async function autorizar(mentorada: string, perguntaId: string) {
   const p = await pergunta(perguntaId);
   if (!p) return null;
-  const permissao = await permissaoNasTutorias(mentorada, (await quemPreencheO(p.materialId)) ?? 'mentorada');
+  const permissao = await permissaoNasTutorias(mentorada, (await quemPreencheO(p.materialId)) ?? 'mentorada', p.materialId);
   if (!permissao?.podeEditar) return null;
   return permissao;
 }

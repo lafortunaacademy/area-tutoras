@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const p = await pergunta(corpo.perguntaId);
     if (!p) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
 
-    const permissao = await permissaoNasTutorias(corpo.mentorada, (await quemPreencheO(p.materialId)) ?? 'mentorada');
+    const permissao = await permissaoNasTutorias(corpo.mentorada, (await quemPreencheO(p.materialId)) ?? 'mentorada', p.materialId);
     if (!permissao?.podeEditar) {
       return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     }

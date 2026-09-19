@@ -12,6 +12,7 @@ import { modeloDasTutorias } from '@/lib/tutorias/modelo';
 import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
 import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
+import { tutoriasDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,16 @@ export default async function MentoradaPage({
     planejamento(mentorada).catch((e) => e as Error),
     briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
-    modeloDasTutorias().catch(() => null),
+    // Só as tutorias da área desta tutora (o administrativo vê todas).
+    Promise.all([modeloDasTutorias(), tutoriasDaTutora()])
+      .then(([pilares, liberadas]) =>
+        liberadas
+          ? pilares
+              .map((p) => ({ ...p, tutorias: p.tutorias.filter((t) => liberadas.has(t.id)) }))
+              .filter((p) => p.tutorias.length)
+          : pilares,
+      )
+      .catch(() => null),
     progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
   const sessoesPorPilar = await (tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null);
@@ -143,7 +153,7 @@ export default async function MentoradaPage({
         {tutorias === null ? (
           <Vazio>Não foi possível carregar as tutorias agora.</Vazio>
         ) : tutorias.length === 0 ? (
-          <Vazio>Nenhuma tutoria cadastrada ainda.</Vazio>
+          <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
         ) : (
           <PilaresDoApp
             pilares={tutorias}

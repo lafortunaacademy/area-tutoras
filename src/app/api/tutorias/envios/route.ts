@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   const quem = await quemPreencheO(corpo.materialId);
   if (!quem) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
-  const permissao = await permissaoNasTutorias(corpo.mentorada, quem);
+  const permissao = await permissaoNasTutorias(corpo.mentorada, quem, corpo.materialId);
   if (!permissao?.podeEditar) {
     return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
   }
