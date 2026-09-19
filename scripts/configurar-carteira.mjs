@@ -3,7 +3,7 @@
  * Transforma o material "Carteira de investimentos" (Pilar Dinheiro ›
  * Investimentos) no registro que a equipe preenche, uma carteira por vez:
  *   Anotações  (texto)
- *   Carteira   (tabela: Plataforma, Categoria, Produto, CNPJ, % do patrimônio, Liquidez, Status)
+ *   Carteira   (tabela: Plataforma, Categoria, Produto, CNPJ, % Patrimônio, Liquidez, Status)
  *
  *   node scripts/configurar-carteira.mjs
  *
@@ -35,7 +35,7 @@ ok(
       ordem: 1,
       tipo: 'tabela',
       texto: 'Carteira',
-      opcoes: ['Plataforma', 'Categoria', 'Produto', 'CNPJ', '% do patrimônio', 'Liquidez', 'Status'],
+      opcoes: ['Plataforma', 'Categoria', 'Produto', 'CNPJ', '% Patrimônio', 'Liquidez', 'Status'],
     },
   ]),
   'perguntas',
