@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Transforma o material "Tutoria terapêutica" (Pilar Líder › Terapêuticas) no
+ * Transforma o material "Tutorias Terapêuticas" (Pilar Líder › Terapêuticas) no
  * registro que a equipe preenche a cada sessão:
  *   Pontos importantes abordados na sessão  (texto, um por linha)
  *   Cuidados necessários e pontos de atenção (texto, um por linha)
@@ -24,8 +24,8 @@ const ok = (r, onde) => { if (r.error) throw new Error(`${onde}: ${r.error.messa
 
 const [tutoria] = ok(await db.from('tutoria_tutorias').select('id').eq('nome', 'Terapêuticas'), 'tutoria');
 if (!tutoria) throw new Error('Tutoria "Terapêuticas" não encontrada.');
-const [material] = ok(await db.from('tutoria_materiais').select('id').eq('tutoria_id', tutoria.id).eq('nome', 'Tutoria terapêutica'), 'material');
-if (!material) throw new Error('Material "Tutoria terapêutica" não encontrado.');
+const [material] = ok(await db.from('tutoria_materiais').select('id').eq('tutoria_id', tutoria.id).eq('nome', 'Tutorias Terapêuticas'), 'material');
+if (!material) throw new Error('Material "Tutorias Terapêuticas" não encontrado.');
 
 ok(await db.from('tutoria_materiais').update({ tipo: 'formulario', quem_preenche: 'equipe' }).eq('id', material.id), 'atualizar material');
 ok(await db.from('tutoria_perguntas').delete().eq('material_id', material.id), 'limpar perguntas');

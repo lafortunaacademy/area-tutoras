@@ -116,7 +116,8 @@ export function PainelDoFormulario({
   // Registros (tutoria, carteira…): a equipe e a mentorada escrevem. Pré-sessões: só a mentorada.
   const editando = podeEditar && !obrigado && (daEquipe || paraMentorada);
   // O registro leva o nome do material: "Tutoria terapêutica" → tutoria, "Carteira de investimentos" → carteira.
-  const coisa = material.nome.split(/\s+/)[0].toLowerCase();
+  // No singular: "Tutorias Terapêuticas" → tutoria.
+  const coisa = material.nome.split(/\s+/)[0].toLowerCase().replace(/(?<=\w{3})s$/, '');
   const Coisa = coisa.charAt(0).toUpperCase() + coisa.slice(1);
   const rotulo = daEquipe
     ? {
