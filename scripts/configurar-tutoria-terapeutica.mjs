@@ -33,7 +33,7 @@ ok(
   await db.from('tutoria_perguntas').insert([
     { material_id: material.id, ordem: 0, tipo: 'texto', texto: 'Pontos importantes abordados na sessão', ajuda: 'Um por linha.' },
     { material_id: material.id, ordem: 1, tipo: 'texto', texto: 'Cuidados necessários e pontos de atenção', ajuda: 'Um por linha.' },
-    { material_id: material.id, ordem: 2, tipo: 'tarefas', texto: 'Próximos passos', ajuda: 'As Tarefas da mentoria: o que entra aqui aparece também na página da mentorada.' },
+    { material_id: material.id, ordem: 2, tipo: 'tarefas', texto: 'Próximos passos', ajuda: 'O que entra aqui aparece também na página da mentorada.' },
     { material_id: material.id, ordem: 3, tipo: 'arquivo', texto: 'Material complementar', ajuda: 'PDFs, imagens ou documentos, até 4 MB cada.' },
   ]),
   'perguntas',
