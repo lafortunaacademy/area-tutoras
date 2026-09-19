@@ -1,5 +1,5 @@
 import 'server-only';
-import { appendChildren, deleteBlock, enviarArquivo, getDatabase, getPage, queryDatabase, updatePage, type NotionPage } from './client';
+import { appendChildren, deleteBlock, enviarArquivo, getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
 import { TEMAS_DE_TUTORIA, TUTORIA, cicloAtual } from './config';
@@ -161,71 +161,8 @@ async function sessaoDaMentorada(mentoradaId: string, sessaoId: string): Promise
   return pagina;
 }
 
-export type OpcoesDasSessoes = {
-  status: { nome: string; cor: string }[];
-  tutoras: { id: string; nome: string }[];
-};
-
-/** O que dá para escolher ao editar uma sessão: as opções de Status e as tutoras. */
-export async function opcoesDasSessoes(): Promise<OpcoesDasSessoes> {
-  const [schema, nomes] = await Promise.all([resolverDatabaseId('tutorias').then(getDatabase), nomesDasTutoras()]);
-  const prop = Object.values(schema.properties).find((p) => p.name === TUTORIA.status) as
-    | { status?: { options: { name: string; color: string }[] } }
-    | undefined;
-  return {
-    status: (prop?.status?.options ?? []).map((o) => ({ nome: o.name, cor: o.color })),
-    tutoras: [...nomes]
-      .map(([id, nome]) => ({ id, nome: nome.trim() }))
-      .filter((t) => t.nome)
-      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
-  };
-}
-
 /** Valor recusado na edição; a mensagem vai direto para a tela. */
 export class SessaoInvalida extends Error {}
-
-export type EdicaoDaSessao = {
-  sessao?: string;
-  status?: string;
-  dataRealizada?: string | null;
-  tutoraIds?: string[];
-};
-
-/**
- * Grava no Notion o que foi editado na sessão. `null` se a sessão não for desta
- * mentorada; lança `SessaoInvalida` com a mensagem para a tela se o valor for inválido.
- */
-export async function editarSessao(mentoradaId: string, sessaoId: string, e: EdicaoDaSessao): Promise<SessaoDaLista | null> {
-  const pagina = await sessaoDaMentorada(mentoradaId, sessaoId);
-  if (!pagina) return null;
-
-  const props: Record<string, unknown> = {};
-  if (e.sessao !== undefined) {
-    const nome = e.sessao.trim();
-    if (!nome) throw new SessaoInvalida('Escreva o nome da sessão.');
-    if (nome.length > 1900) throw new SessaoInvalida('O nome está longo demais.');
-    props[TUTORIA.sessao] = { title: [{ text: { content: nome } }] };
-  }
-  if (e.status !== undefined) {
-    const { status } = await opcoesDasSessoes();
-    if (!status.some((o) => o.nome === e.status)) throw new SessaoInvalida('Status inválido.');
-    props[TUTORIA.status] = { status: { name: e.status } };
-  }
-  if (e.dataRealizada !== undefined) {
-    if (e.dataRealizada && !/^\d{4}-\d{2}-\d{2}$/.test(e.dataRealizada)) throw new SessaoInvalida('Data inválida.');
-    props[TUTORIA.dataRealizada] = { date: e.dataRealizada ? { start: e.dataRealizada } : null };
-  }
-  if (e.tutoraIds !== undefined) {
-    const nomes = await nomesDasTutoras();
-    const validas = new Set([...nomes.keys()].map(normalizarId));
-    if (!e.tutoraIds.every((id) => validas.has(normalizarId(id)))) throw new SessaoInvalida('Tutora inválida.');
-    props[TUTORIA.tutoras] = { relation: e.tutoraIds.map((id) => ({ id })) };
-  }
-  if (!Object.keys(props).length) return paraSessao(pagina, await nomesDasTutoras());
-
-  const [atualizada, nomes] = await Promise.all([updatePage(pagina.id, props), nomesDasTutoras()]);
-  return paraSessao(atualizada, nomes);
-}
 
 /** Distribui os blocos da página nas partes do modelo, pelo título de cada callout. */
 function separar(blocos: BlocoSimples[]): ConteudoDaSessao {

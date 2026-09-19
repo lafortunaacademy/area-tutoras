@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 import type { Pilar } from '@/lib/tutorias/modelo';
 import type { Progresso } from '@/lib/tutorias/respostas';
-import type { OpcoesDasSessoes, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
+import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import { ArvoreDeMateriais } from './ArvoreDeMateriais';
 import { IconeDoModelo } from './IconeDoModelo';
 import { SessoesDoPilar } from './SessoesDoPilar';
@@ -12,8 +12,6 @@ export function PilaresDoApp({
   mentoradaId,
   progresso,
   sessoes = null,
-  opcoesDasSessoes = null,
-  podeEditarSessoes = false,
   admin,
   paraMentorada = false,
 }: {
@@ -22,9 +20,6 @@ export function PilaresDoApp({
   progresso: Progresso;
   /** Sessões do ciclo atual por pilar; `null` quando o Notion não respondeu. */
   sessoes?: Record<string, SessaoDaLista[]> | null;
-  opcoesDasSessoes?: OpcoesDasSessoes | null;
-  /** Status, nome, tutoras e data das sessões editáveis na tabela (grava na base de sessões). */
-  podeEditarSessoes?: boolean;
   admin: boolean;
   /** Quem está vendo é a própria mentorada. */
   paraMentorada?: boolean;
@@ -63,12 +58,7 @@ export function PilaresDoApp({
 
           {sessoes ? (
             <div className="mt-4">
-              <SessoesDoPilar
-                mentoradaId={mentoradaId}
-                sessoes={sessoes[p.id] ?? []}
-                opcoes={opcoesDasSessoes}
-                podeEditar={podeEditarSessoes}
-              />
+              <SessoesDoPilar mentoradaId={mentoradaId} sessoes={sessoes[p.id] ?? []} />
             </div>
           ) : null}
         </section>

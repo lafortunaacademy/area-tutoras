@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Info, Loader2, Pencil, Upload, X } from 'lucide-react';
+import { ChevronRight, Info, Loader2, Upload, X } from 'lucide-react';
 import type { ConteudoDaSessao, ParteDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { TarefaDaMentoria } from '@/lib/notion/tarefas';
 import type { BlocoSimples } from '@/lib/notion/blocks';
@@ -306,8 +306,8 @@ function Parte({
 }
 
 /**
- * Mostra o conteúdo; quem pode editar clica em "Editar" e troca por um campo
- * (texto ou, na gravação, o link do vídeo). Sem `aoSalvar`, só mostra.
+ * Quem pode editar vê a caixa já aberta, com o texto; grava sozinho ao sair do
+ * campo. Sem `aoSalvar`, só mostra o conteúdo.
  */
 function Editavel({
   inicial,
@@ -318,72 +318,51 @@ function Editavel({
   aoSalvar?: (valor: string) => Promise<string | null>;
   children: React.ReactNode;
 }) {
-  const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState(inicial);
-  const [salvando, setSalvando] = useState(false);
+  const [salvo, setSalvo] = useState(inicial);
+  const [estado, setEstado] = useState<'parado' | 'salvando' | 'salvo'>('parado');
   const [erro, setErro] = useState<string | null>(null);
 
   if (!aoSalvar) return <>{children}</>;
 
-  if (!editando) {
-    return (
-      <div className="group/editar relative">
-        {children}
-        <button
-          type="button"
-          onClick={() => {
-            setValor(inicial);
-            setErro(null);
-            setEditando(true);
-          }}
-          className="mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
-        >
-          <Pencil aria-hidden size={11} />
-          Editar
-        </button>
-      </div>
-    );
-  }
-
   async function salvar() {
-    setSalvando(true);
+    if (valor === salvo) return;
+    setEstado('salvando');
     setErro(null);
     const falha = await aoSalvar!(valor);
-    setSalvando(false);
-    if (falha) setErro(falha);
-    else setEditando(false);
+    if (falha) {
+      setErro(falha);
+      setEstado('parado');
+    } else {
+      setSalvo(valor);
+      setEstado('salvo');
+    }
   }
 
   return (
     <div>
       <textarea
-          autoFocus
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          rows={Math.min(Math.max(valor.split('\n').length + 1, 4), 16)}
-          placeholder="Edite aqui. Uma linha por parágrafo; comece com - para tópico."
-          className="w-full resize-y rounded-lg border border-borda bg-fundo px-3 py-2 text-sm leading-relaxed outline-none focus:border-marca"
-        />
-      {erro ? <p className="mt-1 text-xs text-parado">{erro}</p> : null}
-      <div className="mt-2 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => void salvar()}
-          disabled={salvando}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-60"
-        >
-          {salvando ? <Loader2 aria-hidden size={12} className="animate-spin" /> : null}
-          Salvar
-        </button>
-        <button
-          type="button"
-          onClick={() => setEditando(false)}
-          disabled={salvando}
-          className="rounded-lg px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
-        >
-          Cancelar
-        </button>
-      </div>
+        value={valor}
+        onChange={(e) => {
+          setValor(e.target.value);
+          setEstado('parado');
+        }}
+        onBlur={() => void salvar()}
+        rows={Math.min(Math.max(valor.split('\n').length + 1, 3), 16)}
+        placeholder="Edite aqui"
+        className="w-full resize-y rounded-lg border border-borda bg-fundo px-3 py-2 text-sm leading-relaxed outline-none focus:border-marca"
+      />
+      <p className="mt-1 h-4 text-[11px] text-texto-suave">
+        {erro ? (
+          <span className="text-parado">{erro}</span>
+        ) : estado === 'salvando' ? (
+          'Salvando…'
+        ) : estado === 'salvo' ? (
+          'Salvo'
+        ) : valor !== salvo ? (
+          'Salva ao sair do campo. Comece a linha com - para tópico.'
+        ) : null}
+      </p>
     </div>
   );
 }
@@ -391,9 +370,8 @@ function Editavel({
 /** Até onde o app consegue enviar um vídeo (o mesmo limite do servidor). */
 const LIMITE_DO_VIDEO_MB = 4;
 
-/** Link (Drive, YouTube…) ou, para vídeos curtos, o arquivo. Grava no lugar do vídeo que houver. */
+/** Sempre aberto: link (Drive, YouTube…) ou, para vídeos curtos, o arquivo. Grava no lugar do vídeo que houver. */
 function EditarGravacao({ temVideo, aoSalvar }: { temVideo: boolean; aoSalvar: (v: string | File) => Promise<string | null> }) {
-  const [aberto, setAberto] = useState(false);
   const [link, setLink] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -409,23 +387,7 @@ function EditarGravacao({ temVideo, aoSalvar }: { temVideo: boolean; aoSalvar: (
     const falha = await aoSalvar(valor);
     setSalvando(false);
     if (falha) setErro(falha);
-    else {
-      setLink('');
-      setAberto(false);
-    }
-  }
-
-  if (!aberto) {
-    return (
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="mt-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
-      >
-        <Pencil aria-hidden size={11} />
-        {temVideo ? 'Trocar gravação' : 'Adicionar gravação'}
-      </button>
-    );
+    else setLink('');
   }
 
   return (
@@ -438,14 +400,13 @@ function EditarGravacao({ temVideo, aoSalvar }: { temVideo: boolean; aoSalvar: (
         </span>
       </p>
       <input
-        autoFocus
         type="url"
         value={link}
         onChange={(e) => setLink(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && link.trim()) void enviar(link);
         }}
-        placeholder="Cole aqui o link da gravação"
+        placeholder={temVideo ? 'Cole aqui um link novo para trocar a gravação' : 'Cole aqui o link da gravação'}
         className="w-full rounded-lg border border-borda bg-fundo px-3 py-2 text-sm outline-none focus:border-marca"
       />
       {erro ? <p className="text-xs text-parado">{erro}</p> : null}
@@ -489,14 +450,6 @@ function EditarGravacao({ temVideo, aoSalvar }: { temVideo: boolean; aoSalvar: (
             Tirar gravação
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={() => setAberto(false)}
-          disabled={salvando}
-          className="rounded-lg px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
-        >
-          Cancelar
-        </button>
       </div>
     </div>
   );

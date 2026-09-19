@@ -11,8 +11,7 @@ import { TabelaNotion } from '@/components/TabelaNotion';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
 import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
-import { opcoesDasSessoes, sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
-import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
+import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,11 +37,7 @@ export default async function MentoradaPage({
     modeloDasTutorias().catch(() => null),
     progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
-  const [sessoesPorPilar, opcoes, permissao] = await Promise.all([
-    tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null,
-    opcoesDasSessoes().catch(() => null),
-    permissaoNasTutorias(mentorada.id, 'equipe'),
-  ]);
+  const sessoesPorPilar = await (tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null);
 
   return (
     <div>
@@ -156,8 +151,6 @@ export default async function MentoradaPage({
             progresso={progresso}
             admin={false}
             sessoes={sessoesPorPilar}
-            opcoesDasSessoes={opcoes}
-            podeEditarSessoes={Boolean(permissao?.podeEditar)}
           />
         )}
       </Secao>
