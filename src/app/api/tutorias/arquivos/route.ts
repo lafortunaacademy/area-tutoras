@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
   const mentorada = form?.get('mentorada');
   const perguntaId = form?.get('pergunta');
   const arquivo = form?.get('arquivo');
+  const envio = form?.get('envio');
   if (typeof mentorada !== 'string' || typeof perguntaId !== 'string' || !(arquivo instanceof File) || arquivo.size === 0) {
     return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
   }
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     const permissao = await autorizar(mentorada, perguntaId);
     if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
-    const anexo = await anexarArquivo(mentorada, perguntaId, arquivo, permissao.quem);
+    const anexo = await anexarArquivo(mentorada, perguntaId, arquivo, permissao.quem, typeof envio === 'string' ? envio : null);
     if (!anexo) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
     return NextResponse.json({ anexo });
   } catch {
@@ -39,14 +40,14 @@ export async function POST(request: NextRequest) {
 /** Remove um anexo. */
 export async function DELETE(request: NextRequest) {
   const corpo = (await request.json().catch(() => null)) as
-    | { mentorada?: string; perguntaId?: string; caminho?: string}
+    | { mentorada?: string; perguntaId?: string; caminho?: string; envioId?: string }
     | null;
   if (!corpo?.mentorada || !corpo.perguntaId || !corpo.caminho) return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
 
   try {
     const permissao = await autorizar(corpo.mentorada, corpo.perguntaId);
     if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
-    const ok = await removerArquivo(corpo.mentorada, corpo.perguntaId, corpo.caminho, permissao.quem);
+    const ok = await removerArquivo(corpo.mentorada, corpo.perguntaId, corpo.caminho, permissao.quem, corpo.envioId);
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
   } catch {
     return NextResponse.json({ erro: 'falhou' }, { status: 502 });

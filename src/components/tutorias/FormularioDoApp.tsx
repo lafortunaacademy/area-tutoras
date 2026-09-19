@@ -19,6 +19,7 @@ export function FormularioDoApp({
   aoSalvar,
   previa = false,
   semAviso = false,
+  envioId,
 }: {
   perguntas: Pergunta[];
   respostas: Record<string, Valor>;
@@ -26,6 +27,8 @@ export function FormularioDoApp({
   podeEditar: boolean;
   /** Chamado a cada gravação que deu certo. */
   aoSalvar?: () => void;
+  /** Editar um registro já salvo (tutoria, carteira…) em vez do rascunho. */
+  envioId?: string;
   /** Prévia para a equipe: dá para mexer, mas nada é salvo. */
   previa?: boolean;
   /**
@@ -42,7 +45,7 @@ export function FormularioDoApp({
     else secoes.push({ titulo: p.secao, perguntas: [p] });
   }
 
-  const ctx: Ctx = { mentoradaId, podeEditar, aoSalvar, previa };
+  const ctx: Ctx = { mentoradaId, podeEditar, aoSalvar, previa, envioId };
 
   return (
     <div className="space-y-6 text-sm leading-relaxed">
@@ -98,7 +101,7 @@ export function FormularioDoApp({
   );
 }
 
-type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; previa?: boolean };
+type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; previa?: boolean; envioId?: string };
 
 async function salvar(
   ctx: Ctx,
@@ -109,7 +112,7 @@ async function salvar(
   const r = await fetch('/api/tutorias/respostas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId, ...valor }),
+    body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId, envioId: ctx.envioId, ...valor }),
   });
   if (r.ok) ctx.aoSalvar?.();
   return r.ok;
@@ -224,6 +227,7 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
       form.append('mentorada', ctx.mentoradaId);
       form.append('pergunta', pergunta.id);
       form.append('arquivo', arquivo);
+      if (ctx.envioId) form.append('envio', ctx.envioId);
       const r = await fetch('/api/tutorias/arquivos', { method: 'POST', body: form });
       if (!r.ok) {
         setEstado(r.status === 413 ? 'grande' : 'erro');
@@ -240,7 +244,7 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
     const r = await fetch('/api/tutorias/arquivos', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId: pergunta.id, caminho: a.caminho }),
+      body: JSON.stringify({ mentorada: ctx.mentoradaId, perguntaId: pergunta.id, caminho: a.caminho, envioId: ctx.envioId }),
     });
     if (r.ok) {
       setAnexos((atual) => atual.filter((x) => x.caminho !== a.caminho));
@@ -499,8 +503,6 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
   const celula =
     'w-full min-w-24 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
 
-  if (!ctx.podeEditar && linhas.length === 0) return <p className="text-texto-suave">Nada preenchido.</p>;
-
   return (
     <div className="space-y-1.5">
       <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
@@ -553,6 +555,14 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
                 ) : null}
               </tr>
             ))}
+            {!ctx.podeEditar && linhas.length === 0 ? (
+              // Vazia: a tabela aparece mesmo assim, com uma linha em branco.
+              <tr>
+                {colunas.map((c) => (
+                  <td key={c} className="px-3 py-3" />
+                ))}
+              </tr>
+            ) : null}
             {ctx.podeEditar ? (
               <tr className="border-t border-borda bg-superficie-2/40">
                 {colunas.map((c, j) => (

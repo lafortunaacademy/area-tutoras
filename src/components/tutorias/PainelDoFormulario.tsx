@@ -212,6 +212,9 @@ export function PainelDoFormulario({
                   envio={e}
                   maisRecente={i === 0}
                   titulo={daEquipe ? rotulo.caixa : `${rotulo.caixa} ${quando(e.enviadoEm!)}`}
+                  // Registros salvos continuam editáveis por quem pode preencher (a tabela da carteira, por exemplo).
+                  editavel={daEquipe && podeEditar}
+                  aoMudar={() => buscas.delete(`${mentoradaId}:${materialId}`)}
                   perguntas={material.perguntas}
                   mentoradaId={mentoradaId}
                   consulta={consulta}
@@ -238,6 +241,8 @@ function CaixaDeEnvio({
   envio,
   maisRecente,
   titulo,
+  editavel,
+  aoMudar,
   perguntas,
   mentoradaId,
   consulta,
@@ -246,6 +251,8 @@ function CaixaDeEnvio({
   maisRecente: boolean;
   /** "Enviada em 18/09/2026, 16:05" (pré-sessão) ou "Tutoria de Produto · 12/09/2026" (registro da equipe). */
   titulo: string;
+  editavel: boolean;
+  aoMudar: () => void;
   perguntas: Pergunta[];
   mentoradaId: string;
   consulta: string;
@@ -284,7 +291,17 @@ function CaixaDeEnvio({
             </p>
           ) : null}
           {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
-          {respostas ? <FormularioDoApp perguntas={perguntas} respostas={respostas} mentoradaId={mentoradaId} podeEditar={false} /> : null}
+          {respostas ? (
+            <FormularioDoApp
+              perguntas={perguntas}
+              respostas={respostas}
+              mentoradaId={mentoradaId}
+              podeEditar={editavel}
+              envioId={editavel ? envio.id : undefined}
+              semAviso
+              aoSalvar={aoMudar}
+            />
+          ) : null}
         </TelaDasRespostas>
       ) : null}
     </>
