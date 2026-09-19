@@ -123,7 +123,10 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
       <Secao titulo="Onde cada mentorada está" descricao={`Sessões realizadas no ${ciclo}, de todas as previstas.`}>
         <ul className="space-y-3 rounded-xl border border-borda bg-superficie p-4 sm:p-5">
-          {mentoradas.map((m) => (
+          {/* Aqui a ordem é alfabética; nos alertas, pela situação. */}
+          {[...mentoradas]
+            .sort((a, b) => a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'))
+            .map((m) => (
               <li key={m.mentorada.id} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[minmax(0,14rem)_1fr_auto]">
                 <Link href={`/mentoradas/${m.mentorada.id}`} className="truncate hover:text-marca">
                   {m.mentorada.nome}
