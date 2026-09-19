@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Check, ChevronRight, Link2 } from 'lucide-react';
 import type { Material } from '@/lib/tutorias/modelo';
 import type { Progresso } from '@/lib/tutorias/respostas';
-import { PainelDoFormulario } from './PainelDoFormulario';
+import { PainelDoFormulario, prebuscarFormulario } from './PainelDoFormulario';
 import { IconeDoModelo } from './IconeDoModelo';
 
 const ehPreSessao = (t: string) =>
@@ -67,7 +67,12 @@ function ItemDaArvore({
         if ((e.currentTarget as HTMLDetailsElement).open) setAberto(true);
       }}
     >
-      <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+      <summary
+        onMouseEnter={() => {
+          if (material.tipo === 'formulario') void prebuscarFormulario(material.id, mentoradaId).catch(() => {});
+        }}
+        className="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 text-sm font-medium [&::-webkit-details-marker]:hidden"
+      >
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave transition-transform group-open:rotate-90" />
         <IconeDoModelo icone={material.icone} tamanho={16} />
         <span className={`leading-snug ${preSessao ? 'text-marca' : ''}`}>{material.nome}</span>

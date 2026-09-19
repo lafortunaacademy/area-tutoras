@@ -8,6 +8,24 @@ import { FormularioDoApp } from './FormularioDoApp';
 
 type Dados = { material: { nome: string; perguntas: Pergunta[]; quemPreenche: QuemPreenche }; estado: EstadoDoFormulario; podeEditar: boolean };
 
+/**
+ * Busca já começada (ao passar o mouse no nome do material), para o toggle
+ * abrir com o formulário pronto. Uma por material e mentorada; some ao enviar.
+ */
+const buscas = new Map<string, Promise<Dados>>();
+export function prebuscarFormulario(materialId: string, mentoradaId: string): Promise<Dados> {
+  const chave = `${mentoradaId}:${materialId}`;
+  let busca = buscas.get(chave);
+  if (!busca) {
+    busca = fetch(`/api/tutorias/materiais/${materialId}?mentorada=${encodeURIComponent(mentoradaId)}`).then((r) =>
+      r.ok ? (r.json() as Promise<Dados>) : Promise.reject(new Error('falhou')),
+    );
+    busca.catch(() => buscas.delete(chave));
+    buscas.set(chave, busca);
+  }
+  return busca;
+}
+
 const quando = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
 
@@ -40,11 +58,7 @@ export function PainelDoFormulario({
 
   const consulta = `mentorada=${encodeURIComponent(mentoradaId)}`;
 
-  const buscar = useCallback(async (): Promise<Dados> => {
-    const r = await fetch(`/api/tutorias/materiais/${materialId}?${consulta}`);
-    if (!r.ok) throw new Error('falhou');
-    return (await r.json()) as Dados;
-  }, [materialId, consulta]);
+  const buscar = useCallback(() => prebuscarFormulario(materialId, mentoradaId), [materialId, mentoradaId]);
 
   useEffect(() => {
     let vivo = true;
@@ -73,6 +87,7 @@ export function PainelDoFormulario({
     if (paraMentorada) setObrigado(true);
     setMexeu(false);
     setDados(null);
+    buscas.delete(`${mentoradaId}:${materialId}`);
     await buscar()
       .then(setDados)
       .catch(() => setErro(true));
@@ -125,7 +140,11 @@ export function PainelDoFormulario({
         mentoradaId={mentoradaId}
         podeEditar
         semAviso={daEquipe}
-        aoSalvar={() => setMexeu(true)}
+        aoSalvar={() => {
+          setMexeu(true);
+          // O que estava guardado da busca ficou velho.
+          buscas.delete(`${mentoradaId}:${materialId}`);
+        }}
       />
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
         {enviando === 'vazio' ? <p className="text-xs text-parado">{rotulo.faltou}</p> : null}
