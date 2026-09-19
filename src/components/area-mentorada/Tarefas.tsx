@@ -246,7 +246,7 @@ function LinhaNova({ adicionar }: { adicionar: (dados: NovaTarefa) => Promise<bo
             value={tarefa}
             onChange={(e) => setTarefa(e.target.value)}
             onKeyDown={aoTeclar}
-            placeholder="Edite aqui"
+            placeholder="Nova tarefa"
             aria-label="Nova tarefa"
             className={campo}
           />
