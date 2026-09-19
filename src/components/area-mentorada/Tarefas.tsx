@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useFormStatus } from 'react-dom';
-import { Check, Plus } from 'lucide-react';
+import { Check, Loader2, Plus } from 'lucide-react';
 import { alternarTarefa } from '@/app/mentoradas/actions';
 
 export type Tarefa = {
@@ -164,56 +164,106 @@ export function Tarefas({
 }
 
 /** Uma linha a mais na tabela para escrever o próximo passo, o prazo e as observações. Enter adiciona. */
-function LinhaNova({ adicionar }: { adicionar: (dados: { tarefa: string; prazo: string; observacoes: string }) => Promise<boolean> }) {
+type NovaTarefa = { tarefa: string; prazo: string; observacoes: string };
+
+/**
+ * A linha de adicionar. A tarefa sai da linha na hora e fica logo acima,
+ * esmaecida, enquanto grava; se não gravar, volta para os campos.
+ */
+function LinhaNova({ adicionar }: { adicionar: (dados: NovaTarefa) => Promise<boolean> }) {
   const [tarefa, setTarefa] = useState('');
   const [prazo, setPrazo] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro'>('parado');
+  const [gravando, setGravando] = useState<(NovaTarefa & { chave: number })[]>([]);
+  const [erro, setErro] = useState(false);
+  const campoTarefa = useRef<HTMLInputElement>(null);
 
-  const enviar = async () => {
-    if (!tarefa.trim() || estado === 'salvando') return;
-    setEstado('salvando');
-    if (await adicionar({ tarefa: tarefa.trim(), prazo, observacoes: observacoes.trim() })) {
-      setTarefa('');
-      setPrazo('');
-      setObservacoes('');
-      setEstado('parado');
-    } else {
-      setEstado('erro');
+  const enviar = () => {
+    if (!tarefa.trim()) {
+      campoTarefa.current?.focus();
+      return;
     }
+    const nova = { tarefa: tarefa.trim(), prazo, observacoes: observacoes.trim(), chave: Date.now() };
+    setGravando((g) => [...g, nova]);
+    setTarefa('');
+    setPrazo('');
+    setObservacoes('');
+    setErro(false);
+    campoTarefa.current?.focus();
+
+    void adicionar(nova).then((ok) => {
+      setGravando((g) => g.filter((x) => x.chave !== nova.chave));
+      if (!ok) {
+        setTarefa(nova.tarefa);
+        setPrazo(nova.prazo);
+        setObservacoes(nova.observacoes);
+        setErro(true);
+      }
+    });
   };
   const aoTeclar = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      void enviar();
+      enviar();
     }
   };
   const campo = 'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
+  const pronta = Boolean(tarefa.trim());
 
   return (
-    <tr className="border-t border-borda bg-superficie/60">
-      <td className="px-4 py-2">
-        <button
-          type="button"
-          onClick={enviar}
-          disabled={!tarefa.trim() || estado === 'salvando'}
-          aria-label="Adicionar próximo passo"
-          className="flex size-5 items-center justify-center rounded-md border border-dashed border-borda text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-50"
-        >
-          <Plus aria-hidden size={12} />
-        </button>
-      </td>
-      <td className="px-2 py-1.5">
-        <input value={tarefa} onChange={(e) => setTarefa(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Próximo passo" className={campo} />
-        {estado === 'erro' ? <p className="px-2 text-[11px] text-parado">Não salvou. Tente de novo.</p> : null}
-      </td>
-      <td className="px-2 py-1.5">
-        <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
-      </td>
-      <td className="px-2 py-1.5">
-        <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Observações" className={campo} />
-      </td>
-    </tr>
+    <>
+      {gravando.map((g) => (
+        <tr key={g.chave} className="border-t border-borda opacity-60">
+          <td className="px-4 py-2">
+            <Loader2 aria-label="Salvando" size={14} className="animate-spin text-texto-suave" />
+          </td>
+          <td className="truncate px-4 py-2.5">{g.tarefa}</td>
+          <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
+            {g.prazo ? g.prazo.split('-').reverse().join('/') : ''}
+          </td>
+          <td className="truncate px-4 py-2.5 text-texto-suave">{g.observacoes}</td>
+        </tr>
+      ))}
+      <tr className="border-t border-borda bg-superficie/60">
+        <td className="px-4 py-2 align-top">
+          <button
+            type="button"
+            onClick={enviar}
+            aria-label="Adicionar tarefa"
+            title="Adicionar tarefa"
+            className={`mt-1 flex size-5 items-center justify-center rounded-md border transition ${
+              pronta
+                ? 'border-marca bg-marca text-marca-contraste hover:opacity-90'
+                : 'border-dashed border-borda text-texto-suave hover:border-marca hover:text-marca'
+            }`}
+          >
+            <Plus aria-hidden size={12} />
+          </button>
+        </td>
+        <td className="px-2 py-1.5">
+          <input
+            ref={campoTarefa}
+            value={tarefa}
+            onChange={(e) => setTarefa(e.target.value)}
+            onKeyDown={aoTeclar}
+            placeholder="Edite aqui"
+            aria-label="Nova tarefa"
+            className={campo}
+          />
+          {erro ? (
+            <p className="px-2 text-[11px] text-parado">Não salvou. Tente de novo.</p>
+          ) : pronta ? (
+            <p className="px-2 text-[11px] text-texto-suave">Aperte Enter ou clique no + para adicionar</p>
+          ) : null}
+        </td>
+        <td className="px-2 py-1.5 align-top">
+          <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
+        </td>
+        <td className="px-2 py-1.5 align-top">
+          <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Observações" className={campo} />
+        </td>
+      </tr>
+    </>
   );
 }
 

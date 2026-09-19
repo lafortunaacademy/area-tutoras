@@ -464,7 +464,9 @@ export function ProximosPassos({ mentoradaId, previa, lendo }: { mentoradaId: st
                 body: JSON.stringify({ mentorada: mentoradaId, ...nova }),
               });
               if (!r.ok) return false;
-              await buscar().then(setDados).catch(() => setErro(true));
+              // A tarefa criada entra direto na lista; buscar tudo de novo no Notion demora.
+              const { tarefa } = (await r.json()) as { tarefa: Tarefa };
+              setDados((d) => (d?.tarefas ? { ...d, tarefas: [...d.tarefas, tarefa] } : d));
               return true;
             }
           : undefined

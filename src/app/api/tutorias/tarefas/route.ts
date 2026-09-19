@@ -59,7 +59,17 @@ export async function POST(request: NextRequest) {
       prazo,
       observacoes: (corpo.observacoes ?? '').trim().slice(0, 2000),
     });
-    return criada ? NextResponse.json({ ok: true }) : NextResponse.json({ erro: 'sem base de tarefas' }, { status: 404 });
+    if (!criada) return NextResponse.json({ erro: 'sem base de tarefas' }, { status: 404 });
+    return NextResponse.json({
+      ok: true,
+      tarefa: {
+        id: criada,
+        tarefa,
+        prazo: prazo ? prazo.split('-').reverse().join('/') : '',
+        observacoes: (corpo.observacoes ?? '').trim().slice(0, 2000),
+        feita: false,
+      },
+    });
   } catch {
     return NextResponse.json({ erro: 'falhou' }, { status: 502 });
   }

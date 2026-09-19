@@ -42,7 +42,7 @@ export async function tarefasDaMentorada(mentoradaId: string): Promise<TarefaDaM
 export async function criarTarefa(
   mentoradaId: string,
   dados: { tarefa: string; prazo: string | null; observacoes: string },
-): Promise<boolean> {
+): Promise<string | null> {
   const criada = await comBase(mentoradaId, (baseId) =>
     createPage({
       parent: { database_id: baseId },
@@ -68,7 +68,8 @@ export async function criarTarefa(
       },
     }),
   );
-  return criada !== null;
+  // O id da tarefa nova: quem chamou mostra na lista sem buscar tudo de novo.
+  return criada?.id ?? null;
 }
 
 export async function marcarTarefa(mentoradaId: string, tarefaId: string, feita: boolean): Promise<boolean> {
