@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Check, ExternalLink, FileText, Loader2, Paperclip, Plus, X } from 'lucide-react';
 import { Tarefas, type Tarefa } from '@/components/area-mentorada/Tarefas';
 import type { Pergunta } from '@/lib/tutorias/modelo';
-import type { Anexo, SessaoCitada, Valor } from '@/lib/tutorias/respostas';
+import type { Anexo, Valor } from '@/lib/tutorias/respostas';
 
 /**
  * Um formulário das tutorias (pré-sessão, 1:1…), com as respostas guardadas no
@@ -60,12 +60,10 @@ export function FormularioDoApp({
             ) : (
               <div key={p.id} className="rounded-lg bg-superficie-2 p-3.5">
                 <p className="font-medium">{p.texto}</p>
-                {p.ajuda && (!semAviso || p.tipo === 'tarefas') ? <p className="mt-1 whitespace-pre-line text-xs text-texto-suave">{p.ajuda}</p> : null}
+                {p.ajuda && podeEditar && (!semAviso || p.tipo === 'tarefas') ? <p className="mt-1 whitespace-pre-line text-xs text-texto-suave">{p.ajuda}</p> : null}
                 <div className="mt-2">
                   {p.tipo === 'texto' ? (
                     <CampoTexto pergunta={p} inicial={respostas[p.id]?.texto ?? ''} ctx={ctx} />
-                  ) : p.tipo === 'sessao' ? (
-                    <CampoSessao pergunta={p} inicial={respostas[p.id]?.sessao ?? null} ctx={ctx} />
                   ) : p.tipo === 'tabela' ? (
                     <Tabela pergunta={p} inicial={respostas[p.id]?.linhas ?? []} ctx={ctx} />
                   ) : p.tipo === 'links' ? (
@@ -84,7 +82,7 @@ export function FormularioDoApp({
                       ) : null}
                     </div>
                   ) : p.tipo === 'tarefas' ? (
-                    <ProximosPassos mentoradaId={mentoradaId} previa={Boolean(previa)} />
+                    <ProximosPassos mentoradaId={mentoradaId} previa={Boolean(previa)} lendo={!podeEditar} />
                   ) : p.tipo === 'opcoes' ? (
                     <Opcoes pergunta={p} inicial={respostas[p.id]?.opcoes ?? []} ctx={ctx} />
                   ) : (
@@ -105,7 +103,7 @@ type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; pr
 async function salvar(
   ctx: Ctx,
   perguntaId: string,
-  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][]; sessaoId?: string | null },
+  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][] },
 ): Promise<boolean> {
   if (ctx.previa) return true;
   const r = await fetch('/api/tutorias/respostas', {
@@ -410,7 +408,7 @@ function nomeDoLink(url: string): string {
 }
 
 /** Próximos passos: as Tarefas da mentoria, da mesma base da página da mentorada. */
-function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: boolean }) {
+function ProximosPassos({ mentoradaId, previa, lendo }: { mentoradaId: string; previa: boolean; lendo: boolean }) {
   const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean } | null>(null);
   const [erro, setErro] = useState(false);
 
@@ -453,7 +451,8 @@ function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: 
         void buscar().then(setDados).catch(() => setErro(true));
       }}
       adicionarEmLinha={
-        dados.podeAdicionar
+        // Numa tutoria já salva só se lê: a linha de adicionar aparece ao preencher.
+        dados.podeAdicionar && !lendo
           ? async (nova) => {
               const r = await fetch('/api/tutorias/tarefas', {
                 method: 'POST',
@@ -590,73 +589,6 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
         </table>
       </div>
       {estado === 'erro' ? <p className="text-xs text-parado">Não salvou. Tente de novo.</p> : null}
-    </div>
-  );
-}
-
-const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : 'sem data');
-
-/**
- * A sessão (da base de Sessões) a que este registro se refere. É dela que vem
- * a data da caixinha.
- */
-function CampoSessao({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: SessaoCitada | null; ctx: Ctx }) {
-  const [escolhida, setEscolhida] = useState(inicial?.id ?? '');
-  const [opcoes, setOpcoes] = useState<{ id: string; titulo: string; data: string | null; tutoras: string[] }[] | null>(null);
-  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro'>('parado');
-
-  useEffect(() => {
-    if (!ctx.podeEditar || ctx.previa) return;
-    let vivo = true;
-    fetch(`/api/tutorias/sessoes?mentorada=${encodeURIComponent(ctx.mentoradaId)}&material=${pergunta.materialId}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('falhou'))))
-      .then((d: { sessoes: NonNullable<typeof opcoes> }) => vivo && setOpcoes(d.sessoes))
-      .catch(() => vivo && setEstado('erro'));
-    return () => {
-      vivo = false;
-    };
-  }, [ctx.podeEditar, ctx.previa, ctx.mentoradaId, pergunta.materialId]);
-
-  if (!ctx.podeEditar) {
-    return inicial ? (
-      <p>
-        {inicial.titulo} <span className="text-texto-suave">· {dataCurta(inicial.data)}</span>
-      </p>
-    ) : (
-      <p className="text-texto-suave">Nenhuma sessão escolhida.</p>
-    );
-  }
-
-  const escolher = async (id: string) => {
-    const antes = escolhida;
-    setEscolhida(id);
-    setEstado('salvando');
-    if (await salvar(ctx, pergunta.id, { sessaoId: id || null })) setEstado('parado');
-    else {
-      setEscolhida(antes);
-      setEstado('erro');
-    }
-  };
-
-  return (
-    <div>
-      <select
-        value={escolhida}
-        onChange={(e) => escolher(e.target.value)}
-        disabled={!opcoes && !ctx.previa}
-        aria-label={pergunta.texto}
-        className="w-full rounded-lg border border-borda bg-superficie px-3 py-2 text-sm outline-none focus:border-marca focus:ring-2 focus:ring-marca/20"
-      >
-        <option value="">{opcoes || ctx.previa ? 'Escolha a sessão' : 'Carregando sessões…'}</option>
-        {inicial && !opcoes?.some((o) => o.id === inicial.id) ? <option value={inicial.id}>{inicial.titulo}</option> : null}
-        {(opcoes ?? []).map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.titulo} · {dataCurta(o.data)}
-            {o.tutoras.length ? ` · ${o.tutoras.join(', ')}` : ''}
-          </option>
-        ))}
-      </select>
-      {estado === 'erro' ? <p className="mt-1 text-xs text-parado">Não salvou. Tente de novo.</p> : null}
     </div>
   );
 }

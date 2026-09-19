@@ -29,8 +29,6 @@ ok(await db.from('tutoria_materiais').update({ tipo: 'formulario', quem_preenche
 ok(await db.from('tutoria_perguntas').delete().eq('material_id', material.id), 'limpar perguntas');
 ok(
   await db.from('tutoria_perguntas').insert([
-    // A sessão (base de Sessões) a que o registro se refere: dá o nome e a data da caixinha.
-    { material_id: material.id, ordem: -1, tipo: 'sessao', texto: 'Sessão', opcoes: [] },
     { material_id: material.id, ordem: 0, tipo: 'texto', texto: 'Anotações', opcoes: [] },
     {
       material_id: material.id,

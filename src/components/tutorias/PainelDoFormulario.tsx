@@ -32,8 +32,6 @@ export function prebuscarFormulario(materialId: string, mentoradaId: string): Pr
   return busca;
 }
 
-const dataDaSessao = (iso: string) => iso.slice(0, 10).split('-').reverse().join('/');
-
 const quando = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
 
@@ -91,8 +89,8 @@ export function PainelDoFormulario({
     }
     setEnviando('parado');
     setRegistrando(false);
-    // A mentorada vê o agradecimento; a equipe, que registra uma tutoria por sessão, volta ao formulário em branco.
-    if (paraMentorada) setObrigado(true);
+    // Na pré-sessão a mentorada vê o agradecimento; nos registros, a caixinha nova já aparece na lista.
+    if (paraMentorada && dados?.material.quemPreenche !== 'equipe') setObrigado(true);
     setMexeu(false);
     setDados(null);
     buscas.delete(`${mentoradaId}:${materialId}`);
@@ -113,12 +111,10 @@ export function PainelDoFormulario({
 
   const { material, estado, podeEditar, area } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
-  // Registros da equipe em ordem de sessão (a mais recente primeiro); pré-sessões, em ordem de envio.
-  const dataDoEnvio = (e: Envio) => estado.sessoesDosEnvios[e.id]?.data ?? e.enviadoEm ?? '';
-  const ordenados = material.quemPreenche === 'equipe' ? [...enviados].sort((a, b) => dataDoEnvio(b).localeCompare(dataDoEnvio(a))) : enviados;
   // Quem escreve depende do material: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria).
   const daEquipe = material.quemPreenche === 'equipe';
-  const editando = podeEditar && !obrigado && (daEquipe ? !paraMentorada : paraMentorada);
+  // Registros (tutoria, carteira…): a equipe e a mentorada escrevem. Pré-sessões: só a mentorada.
+  const editando = podeEditar && !obrigado && (daEquipe || paraMentorada);
   // O registro leva o nome do material: "Tutoria terapêutica" → tutoria, "Carteira de investimentos" → carteira.
   const coisa = material.nome.split(/\s+/)[0].toLowerCase();
   const Coisa = coisa.charAt(0).toUpperCase() + coisa.slice(1);
@@ -210,17 +206,12 @@ export function PainelDoFormulario({
             {rotulo.lista} ({enviados.length})
           </p>
           <ul className="space-y-2">
-            {ordenados.map((e, i) => (
+            {enviados.map((e, i) => (
               <li key={e.id}>
                 <CaixaDeEnvio
                   envio={e}
                   maisRecente={i === 0}
-                  titulo={
-                    daEquipe
-                      ? // Registro da equipe: a data é a da sessão escolhida, não a do dia em que foi salvo.
-                        `${rotulo.caixa}${estado.sessoesDosEnvios[e.id]?.data ? ` · ${dataDaSessao(estado.sessoesDosEnvios[e.id].data!)}` : ''}`
-                      : `${rotulo.caixa} ${quando(e.enviadoEm!)}`
-                  }
+                  titulo={daEquipe ? rotulo.caixa : `${rotulo.caixa} ${quando(e.enviadoEm!)}`}
                   perguntas={material.perguntas}
                   mentoradaId={mentoradaId}
                   consulta={consulta}

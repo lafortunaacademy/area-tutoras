@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
-import { formulario } from '@/lib/tutorias/modelo';
+import { areaDoMaterial, formulario } from '@/lib/tutorias/modelo';
 import { estadoDoFormulario } from '@/lib/tutorias/respostas';
-import { areaDoMaterial } from '@/lib/tutorias/sessoes';
 
 /** Um formulário das tutorias com o rascunho, o último envio e o histórico da mentorada. */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ materialId: string }> }) {

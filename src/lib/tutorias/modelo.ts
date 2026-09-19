@@ -10,7 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export type TipoMaterial = 'formulario' | 'conteudo' | 'grupo' | 'especial';
 /** `anexos`: links e arquivos no mesmo campo (ex.: o mapa mental, no Canva ou em PDF). */
-export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'anexos' | 'tarefas' | 'tabela' | 'sessao';
+export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'anexos' | 'tarefas' | 'tabela';
 /** Quem responde o formulário: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria). */
 export type QuemPreenche = 'mentorada' | 'equipe';
 
@@ -171,4 +171,10 @@ export async function caminhoDoMaterial(materialId: string): Promise<{ pilar: st
 export async function quemPreencheO(materialId: string): Promise<QuemPreenche | null> {
   const { data } = await supabaseAdmin().from('tutoria_materiais').select('quem_preenche').eq('id', materialId).maybeSingle();
   return data ? ((data.quem_preenche as QuemPreenche) ?? 'mentorada') : null;
+}
+
+/** A área de um material, para o nome da caixinha: "Produto", "Investimentos", "Design"… */
+export async function areaDoMaterial(materialId: string): Promise<string | null> {
+  const caminho = await caminhoDoMaterial(materialId);
+  return caminho ? (caminho.grupos[0] ?? caminho.tutoria) : null;
 }

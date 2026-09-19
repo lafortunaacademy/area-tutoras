@@ -9,7 +9,8 @@ import type { QuemPreenche } from './modelo';
  * Ver: o administrativo, a tutora (mentoradas da carteira dela) e a própria
  * mentorada. Escrever depende de quem preenche o material:
  * - da mentorada (pré-sessões): a mentorada e o administrativo;
- * - da equipe (registro de cada tutoria): a tutora e o administrativo.
+ * - registro de cada tutoria (marcado "equipe"): a tutora, o administrativo e
+ *   também a própria mentorada.
  * No "ver como", o admin escreve como a tutora que está vendo.
  */
 export type Permissao = { podeEditar: boolean; quem: string };
@@ -29,7 +30,7 @@ export async function permissaoNasTutorias(mentoradaId: string, quemPreenche: Qu
 
   const acesso = await getAcessoMentorada();
   if (acesso && normalizarId(acesso.notion_page_id) === alvo) {
-    return { podeEditar: quemPreenche === 'mentorada', quem: acesso.email };
+    return { podeEditar: true, quem: acesso.email };
   }
   return null;
 }

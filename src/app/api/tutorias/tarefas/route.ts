@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const podeMexer = Boolean(
       (sessao?.real.is_admin && !sessao.verComo) || (acesso && normalizarId(acesso.notion_page_id) === normalizarId(mentoradaId)),
     );
-    // Adicionar dentro de uma tutoria: quem registra a tutoria (a equipe).
+    // Adicionar dentro de uma tutoria: quem registra a tutoria (equipe ou a própria mentorada).
     const podeAdicionar = Boolean((await permissaoNasTutorias(mentoradaId, 'equipe'))?.podeEditar);
     return NextResponse.json({
       podeMexer,
