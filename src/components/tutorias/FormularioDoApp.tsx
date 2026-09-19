@@ -28,7 +28,7 @@ export function FormularioDoApp({
   aoSalvar?: () => void;
   /** Prévia para a equipe: dá para mexer, mas nada é salvo. */
   previa?: boolean;
-  /** Sem a explicação de que salva sozinho (a equipe, que já sabe). */
+  /** Sem as explicações (que salva sozinho, "um por linha"…): a equipe já sabe. */
   semAviso?: boolean;
 }) {
   // Agrupa por seção, na ordem em que aparecem.
@@ -57,7 +57,7 @@ export function FormularioDoApp({
             ) : (
               <div key={p.id} className="rounded-lg bg-superficie-2 p-3.5">
                 <p className="font-medium">{p.texto}</p>
-                {p.ajuda ? <p className="mt-1 whitespace-pre-line text-xs text-texto-suave">{p.ajuda}</p> : null}
+                {p.ajuda && !semAviso ? <p className="mt-1 whitespace-pre-line text-xs text-texto-suave">{p.ajuda}</p> : null}
                 <div className="mt-2">
                   {p.tipo === 'texto' ? (
                     <CampoTexto pergunta={p} inicial={respostas[p.id]?.texto ?? ''} ctx={ctx} />
