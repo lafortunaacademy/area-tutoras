@@ -99,17 +99,13 @@ export function PainelDoFormulario({
 
   const editor = (
           <div className="space-y-4">
-      {daEquipe ? (
-        <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
-          Ao salvar, esta tutoria vira uma caixinha com a data, e a mentorada vê.
-        </p>
-      ) : null}
       <FormularioDoApp
         key={estado.rascunho?.envio.id ?? 'novo'}
         perguntas={material.perguntas}
         respostas={estado.rascunho?.respostas ?? {}}
         mentoradaId={mentoradaId}
         podeEditar
+        semAviso={daEquipe}
         aoSalvar={() => setMexeu(true)}
       />
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">

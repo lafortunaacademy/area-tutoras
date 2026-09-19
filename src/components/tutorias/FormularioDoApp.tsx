@@ -18,6 +18,7 @@ export function FormularioDoApp({
   podeEditar,
   aoSalvar,
   previa = false,
+  semAviso = false,
 }: {
   perguntas: Pergunta[];
   respostas: Record<string, Valor>;
@@ -27,6 +28,8 @@ export function FormularioDoApp({
   aoSalvar?: () => void;
   /** Prévia para a equipe: dá para mexer, mas nada é salvo. */
   previa?: boolean;
+  /** Sem a explicação de que salva sozinho (a equipe, que já sabe). */
+  semAviso?: boolean;
 }) {
   // Agrupa por seção, na ordem em que aparecem.
   const secoes: { titulo: string | null; perguntas: Pergunta[] }[] = [];
@@ -40,7 +43,7 @@ export function FormularioDoApp({
 
   return (
     <div className="space-y-6 text-sm leading-relaxed">
-      {podeEditar && !previa ? (
+      {podeEditar && !previa && !semAviso ? (
         <p className="rounded-lg bg-superficie-2 px-3 py-2 text-xs text-texto-suave">
           As respostas são salvas sozinhas: as opções na hora, os textos quando você sai do campo.
         </p>
