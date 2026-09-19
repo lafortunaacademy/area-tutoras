@@ -75,7 +75,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Mentorada', 'Próxima a agendar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
+                  {['Situação', 'Mentorada', 'Próxima a agendar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
                     <th key={c} className="px-4 py-2.5 text-[11px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
@@ -85,14 +85,17 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
               <tbody>
                 {semAgenda.map((m) => (
                   <tr key={m.mentorada.id} className="border-b border-borda/60 last:border-0">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <EtiquetaNotion
+                        texto={m.mentorada.situacao || 'Sem situação'}
+                        cor={m.mentorada.situacao ? m.mentorada.corSituacao : 'default'}
+                      />
+                    </td>
                     <td className="px-4 py-2.5">
                       <Link href={`/mentoradas/${m.mentorada.id}/sessoes`} className="flex items-center gap-2.5 hover:text-marca">
                         <Retrato nome={m.mentorada.nome} foto={m.mentorada.foto} />
                         <span className="min-w-0">
-                          <span className="flex flex-wrap items-center gap-2 font-medium">
-                            <EtiquetaNotion texto={m.mentorada.situacao || 'Sem situação'} cor={m.mentorada.situacao ? m.mentorada.corSituacao : 'default'} />
-                            {m.mentorada.nome}
-                          </span>
+                          <span className="block font-medium">{m.mentorada.nome}</span>
                           {m.mentorada.mentoria ? <span className="block text-xs text-texto-suave">{m.mentorada.mentoria}</span> : null}
                         </span>
                       </Link>
