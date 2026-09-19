@@ -189,9 +189,16 @@ export async function salvarResposta(
   let novo: Valor;
   if (p.tipo === 'texto' && typeof valor.texto === 'string') novo = { texto: valor.texto.slice(0, 20_000) };
   else if (p.tipo === 'opcoes' && Array.isArray(valor.opcoes)) novo = { opcoes: valor.opcoes.filter((o) => p.opcoes.includes(o)) };
-  else if (p.tipo === 'links' && Array.isArray(valor.links)) {
+  else if ((p.tipo === 'links' || p.tipo === 'anexos') && Array.isArray(valor.links)) {
     // Só endereços web de verdade: nada de "javascript:" ou texto solto virando link.
     novo = { links: valor.links.map((l) => String(l).trim()).filter((l) => /^https?:\/\/\S+$/i.test(l)).slice(0, 30) };
+    // Em "anexos" os arquivos do mesmo campo ficam como estão.
+    if (p.tipo === 'anexos') {
+      const envioId = await rascunho(mentoradaId, p.materialId, quem);
+      const atual = await valorNoRascunho(envioId, p.id);
+      await gravarComMentorada(envioId, mentoradaId, p.id, { ...atual, links: novo.links }, quem);
+      return p;
+    }
   } else if (p.tipo === 'tabela' && Array.isArray(valor.linhas)) {
     // Uma célula por coluna do modelo; linha toda vazia não conta.
     novo = {
@@ -235,7 +242,7 @@ async function valorNoRascunho(envioId: string, perguntaId: string): Promise<Val
 /** Anexa um arquivo numa pergunta do tipo arquivo, no rascunho. Devolve o anexo já com link. */
 export async function anexarArquivo(mentoradaId: string, perguntaId: string, arquivo: File, quem: string): Promise<Anexo | null> {
   const p = await lerPergunta(perguntaId);
-  if (!p || p.tipo !== 'arquivo') return null;
+  if (!p || (p.tipo !== 'arquivo' && p.tipo !== 'anexos')) return null;
 
   const db = supabaseAdmin();
   const id = normalizarId(mentoradaId);
@@ -248,7 +255,7 @@ export async function anexarArquivo(mentoradaId: string, perguntaId: string, arq
   const envioId = await rascunho(mentoradaId, p.materialId, quem);
   const anexo: Anexo = { caminho, nome: arquivo.name, tipo: arquivo.type };
   const atual = await valorNoRascunho(envioId, p.id);
-  await gravarComMentorada(envioId, mentoradaId, p.id, { arquivos: [...(atual.arquivos ?? []), anexo] }, quem);
+  await gravarComMentorada(envioId, mentoradaId, p.id, { ...atual, arquivos: [...(atual.arquivos ?? []), anexo] }, quem);
 
   const { data: link } = await db.storage.from(BUCKET).createSignedUrl(caminho, VALIDADE_DO_LINK_S);
   return { ...anexo, url: link?.signedUrl };
@@ -266,7 +273,7 @@ export async function removerArquivo(mentoradaId: string, perguntaId: string, ca
   const atual = await valorNoRascunho(envioId, perguntaId);
   if (!(atual.arquivos ?? []).some((a) => a.caminho === caminho)) return false;
 
-  await gravarComMentorada(envioId, mentoradaId, perguntaId, { arquivos: (atual.arquivos ?? []).filter((a) => a.caminho !== caminho) }, quem);
+  await gravarComMentorada(envioId, mentoradaId, perguntaId, { ...atual, arquivos: (atual.arquivos ?? []).filter((a) => a.caminho !== caminho) }, quem);
   await supabaseAdmin().storage.from(BUCKET).remove([caminho]);
   return true;
 }

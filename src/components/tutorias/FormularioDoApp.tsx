@@ -68,6 +68,19 @@ export function FormularioDoApp({
                     <Tabela pergunta={p} inicial={respostas[p.id]?.linhas ?? []} ctx={ctx} />
                   ) : p.tipo === 'links' ? (
                     <Links pergunta={p} inicial={respostas[p.id]?.links ?? []} ctx={ctx} />
+                  ) : p.tipo === 'anexos' ? (
+                    // Link e arquivo no mesmo campo: o que não tiver, some na leitura.
+                    <div className="space-y-3">
+                      {ctx.podeEditar || respostas[p.id]?.links?.length ? (
+                        <Links pergunta={p} inicial={respostas[p.id]?.links ?? []} ctx={ctx} />
+                      ) : null}
+                      {ctx.podeEditar || respostas[p.id]?.arquivos?.length ? (
+                        <Arquivos pergunta={p} inicial={respostas[p.id]?.arquivos ?? []} ctx={ctx} />
+                      ) : null}
+                      {!ctx.podeEditar && !respostas[p.id]?.links?.length && !respostas[p.id]?.arquivos?.length ? (
+                        <p className="text-texto-suave">Nada adicionado.</p>
+                      ) : null}
+                    </div>
                   ) : p.tipo === 'tarefas' ? (
                     <ProximosPassos mentoradaId={mentoradaId} previa={Boolean(previa)} />
                   ) : p.tipo === 'opcoes' ? (

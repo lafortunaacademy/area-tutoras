@@ -9,7 +9,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
  */
 
 export type TipoMaterial = 'formulario' | 'conteudo' | 'grupo' | 'especial';
-export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'tarefas' | 'tabela';
+/** `anexos`: links e arquivos no mesmo campo (ex.: o mapa mental, no Canva ou em PDF). */
+export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'anexos' | 'tarefas' | 'tabela';
 /** Quem responde o formulário: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria). */
 export type QuemPreenche = 'mentorada' | 'equipe';
 

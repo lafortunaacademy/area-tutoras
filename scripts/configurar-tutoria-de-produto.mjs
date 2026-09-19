@@ -2,7 +2,7 @@
 /**
  * Transforma o material "Tutoria de produto" (Pilar Negócio › Produto ›
  * Produto) no registro que a equipe preenche, uma caixinha por fluxo desenhado:
- *   Estrutura do método  (link do mapa mental: Canva, Miro, MindMeister…)
+ *   Estrutura do método  (link do mapa mental — Canva, Miro, MindMeister… — e/ou arquivo)
  *
  *   node scripts/configurar-tutoria-de-produto.mjs
  *
@@ -29,7 +29,7 @@ ok(
     {
       material_id: material.id,
       ordem: 0,
-      tipo: 'links',
+      tipo: 'anexos',
       texto: 'Estrutura do método',
       ajuda: 'Cole o link do mapa mental (Canva, Miro, MindMeister…)',
       opcoes: [],
