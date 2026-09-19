@@ -22,7 +22,7 @@ export const BUCKET = 'tutorias';
 const VALIDADE_DO_LINK_S = 60 * 60;
 
 export type Anexo = { caminho: string; nome: string; tipo: string; url?: string };
-export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[] };
+export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[]; links?: string[] };
 export type Envio = { id: string; criadoEm: string; atualizadoEm: string; enviadoEm: string | null };
 
 export type EstadoDoFormulario = {
@@ -94,7 +94,7 @@ export async function estadoDoFormulario(mentoradaId: string, materialId: string
   };
 }
 
-const temConteudo = (v: Valor) => Boolean(v.texto?.trim() || v.opcoes?.length || v.arquivos?.length);
+const temConteudo = (v: Valor) => Boolean(v.texto?.trim() || v.opcoes?.length || v.arquivos?.length || v.links?.length);
 
 /**
  * Quantas perguntas de cada formulário estão respondidas no envio que importa
@@ -179,7 +179,7 @@ async function rascunho(mentoradaId: string, materialId: string, quem: string): 
 export async function salvarResposta(
   mentoradaId: string,
   perguntaId: string,
-  valor: { texto?: string; opcoes?: string[] },
+  valor: { texto?: string; opcoes?: string[]; links?: string[] },
   quem: string,
 ): Promise<Pergunta | null> {
   const p = await lerPergunta(perguntaId);
@@ -188,6 +188,10 @@ export async function salvarResposta(
   let novo: Valor;
   if (p.tipo === 'texto' && typeof valor.texto === 'string') novo = { texto: valor.texto.slice(0, 20_000) };
   else if (p.tipo === 'opcoes' && Array.isArray(valor.opcoes)) novo = { opcoes: valor.opcoes.filter((o) => p.opcoes.includes(o)) };
+  else if (p.tipo === 'links' && Array.isArray(valor.links)) {
+    // Só endereços web de verdade: nada de "javascript:" ou texto solto virando link.
+    novo = { links: valor.links.map((l) => String(l).trim()).filter((l) => /^https?:\/\/\S+$/i.test(l)).slice(0, 30) };
+  }
   else return null;
 
   const envioId = await rascunho(mentoradaId, p.materialId, quem);

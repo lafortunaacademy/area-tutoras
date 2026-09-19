@@ -9,14 +9,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const mentoradaId = request.nextUrl.searchParams.get('mentorada');
   if (!mentoradaId) return NextResponse.json({ erro: 'mentorada não informada' }, { status: 400 });
 
-  const permissao = await permissaoNasTutorias(mentoradaId);
-  if (!permissao) {
-    return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
-  }
-
   try {
     const material = await formulario(materialId);
     if (!material) return NextResponse.json({ erro: 'não encontrado' }, { status: 404 });
+    const permissao = await permissaoNasTutorias(mentoradaId, material.quemPreenche);
+    if (!permissao) return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     const estado = await estadoDoFormulario(mentoradaId, materialId);
     return NextResponse.json({ material, estado, podeEditar: permissao.podeEditar });
   } catch {

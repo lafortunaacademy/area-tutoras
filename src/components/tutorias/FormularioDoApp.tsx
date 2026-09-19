@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, FileText, Loader2, Paperclip, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Check, ExternalLink, FileText, Loader2, Paperclip, Plus, X } from 'lucide-react';
+import { Tarefas, type Tarefa } from '@/components/area-mentorada/Tarefas';
 import type { Pergunta } from '@/lib/tutorias/modelo';
 import type { Anexo, Valor } from '@/lib/tutorias/respostas';
 
@@ -57,6 +58,10 @@ export function FormularioDoApp({
                 <div className="mt-2">
                   {p.tipo === 'texto' ? (
                     <CampoTexto pergunta={p} inicial={respostas[p.id]?.texto ?? ''} ctx={ctx} />
+                  ) : p.tipo === 'links' ? (
+                    <Links pergunta={p} inicial={respostas[p.id]?.links ?? []} ctx={ctx} />
+                  ) : p.tipo === 'tarefas' ? (
+                    <ProximosPassos mentoradaId={mentoradaId} previa={Boolean(previa)} />
                   ) : p.tipo === 'opcoes' ? (
                     <Opcoes pergunta={p} inicial={respostas[p.id]?.opcoes ?? []} ctx={ctx} />
                   ) : (
@@ -74,7 +79,7 @@ export function FormularioDoApp({
 
 type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; previa?: boolean };
 
-async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[] }): Promise<boolean> {
+async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[]; links?: string[] }): Promise<boolean> {
   if (ctx.previa) return true;
   const r = await fetch('/api/tutorias/respostas', {
     method: 'POST',
@@ -91,7 +96,18 @@ function CampoTexto({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: s
   const [estado, setEstado] = useState<'parado' | 'salvando' | 'salvo' | 'erro'>('parado');
 
   if (!ctx.podeEditar) {
-    return inicial ? <p className="whitespace-pre-line">{inicial}</p> : <p className="text-texto-suave">Sem resposta.</p>;
+    if (!inicial) return <p className="text-texto-suave">Sem resposta.</p>;
+    const linhas = inicial.split('\n').map((l) => l.trim()).filter(Boolean);
+    // Campo de "um por linha" (pontos, cuidados, ações): lido como lista.
+    return /uma? por linha/i.test(pergunta.ajuda ?? '') && linhas.length > 1 ? (
+      <ul className="list-disc space-y-1 pl-5">
+        {linhas.map((l, i) => (
+          <li key={i}>{l}</li>
+        ))}
+      </ul>
+    ) : (
+      <p className="whitespace-pre-line">{inicial}</p>
+    );
   }
 
   const gravar = async () => {
@@ -263,5 +279,150 @@ function Arquivos({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: Ane
       {estado === 'grande' ? <p className="text-xs text-parado">Cada arquivo pode ter até 4 MB.</p> : null}
       {estado === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
     </div>
+  );
+}
+
+/** Material complementar: links (PDF, Google Docs, Spotify…), quantos quiser. */
+function Links({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: string[]; ctx: Ctx }) {
+  const [links, setLinks] = useState(inicial);
+  const [novo, setNovo] = useState('');
+  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro' | 'invalido'>('parado');
+
+  const gravar = async (lista: string[]) => {
+    setEstado('salvando');
+    if (await salvar(ctx, pergunta.id, { links: lista })) {
+      setLinks(lista);
+      setEstado('parado');
+      return true;
+    }
+    setEstado('erro');
+    return false;
+  };
+
+  const adicionar = async () => {
+    const url = novo.trim();
+    if (!/^https?:\/\/\S+$/i.test(url)) {
+      setEstado('invalido');
+      return;
+    }
+    if (await gravar([...links, url])) setNovo('');
+  };
+
+  return (
+    <div className="space-y-2">
+      {links.length ? (
+        <ul className="space-y-1.5">
+          {links.map((l) => (
+            <li key={l} className="group flex items-center gap-2 rounded-lg border border-borda bg-superficie px-3 py-2">
+              <ExternalLink aria-hidden size={14} className="shrink-0 text-texto-suave" />
+              <a href={l} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate text-marca underline-offset-2 hover:underline">
+                {nomeDoLink(l)}
+              </a>
+              {ctx.podeEditar ? (
+                <button
+                  type="button"
+                  onClick={() => gravar(links.filter((x) => x !== l))}
+                  aria-label="Tirar o link"
+                  className="shrink-0 rounded p-0.5 text-texto-suave opacity-0 transition group-hover:opacity-100 hover:text-parado focus:opacity-100"
+                >
+                  <X aria-hidden size={13} />
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : !ctx.podeEditar ? (
+        <p className="text-texto-suave">Nenhum material.</p>
+      ) : null}
+
+      {ctx.podeEditar ? (
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={novo}
+            onChange={(e) => {
+              setNovo(e.target.value);
+              if (estado === 'invalido') setEstado('parado');
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void adicionar();
+              }
+            }}
+            placeholder="Cole o link (PDF, Google Docs, Spotify…)"
+            className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm outline-none focus:border-marca focus:ring-2 focus:ring-marca/20"
+          />
+          <button
+            type="button"
+            onClick={adicionar}
+            disabled={estado === 'salvando' || !novo.trim()}
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-borda px-3 py-2 text-xs font-medium transition hover:border-marca hover:text-marca disabled:opacity-50"
+          >
+            <Plus aria-hidden size={13} />
+            Adicionar
+          </button>
+        </div>
+      ) : null}
+      {estado === 'invalido' ? <p className="text-xs text-parado">Cole um endereço que comece com https://</p> : null}
+      {estado === 'erro' ? <p className="text-xs text-parado">Não salvou. Tente de novo.</p> : null}
+    </div>
+  );
+}
+
+/** "docs.google.com/…" em vez do endereço inteiro. */
+function nomeDoLink(url: string): string {
+  try {
+    const u = new URL(url);
+    const caminho = decodeURIComponent(u.pathname).split('/').filter(Boolean).at(-1);
+    return caminho && /\.[a-z0-9]{2,5}$/i.test(caminho) ? caminho : `${u.hostname.replace(/^www\./, '')}${u.pathname.length > 1 ? '/…' : ''}`;
+  } catch {
+    return url;
+  }
+}
+
+/** Próximos passos: as Tarefas da mentoria, da mesma base da página da mentorada. */
+function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: boolean }) {
+  const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean } | null>(null);
+  const [erro, setErro] = useState(false);
+
+  const buscar = useCallback(async () => {
+    const r = await fetch(`/api/tutorias/tarefas?mentorada=${encodeURIComponent(mentoradaId)}`);
+    if (!r.ok) throw new Error('falhou');
+    return (await r.json()) as { tarefas: Tarefa[] | null; podeMexer: boolean };
+  }, [mentoradaId]);
+
+  useEffect(() => {
+    if (previa) return;
+    let vivo = true;
+    buscar()
+      .then((d) => vivo && setDados(d))
+      .catch(() => vivo && setErro(true));
+    return () => {
+      vivo = false;
+    };
+  }, [buscar, previa]);
+
+  if (previa) return <p className="text-texto-suave">Aqui aparecem as Tarefas da mentoria de cada mentorada.</p>;
+  if (erro) return <p className="text-parado">Não foi possível carregar as tarefas agora.</p>;
+  if (!dados) {
+    return (
+      <p className="flex items-center gap-2 text-texto-suave">
+        <Loader2 aria-hidden size={14} className="animate-spin" />
+        Carregando tarefas…
+      </p>
+    );
+  }
+  if (!dados.tarefas) return <p className="text-texto-suave">Esta mentorada ainda não tem a base de tarefas.</p>;
+
+  return (
+    <Tarefas
+      mentoradaId={mentoradaId}
+      tarefas={dados.tarefas}
+      somenteLeitura={!dados.podeMexer}
+      aoMudar={() => {
+        void buscar().then(setDados).catch(() => setErro(true));
+      }}
+    />
   );
 }

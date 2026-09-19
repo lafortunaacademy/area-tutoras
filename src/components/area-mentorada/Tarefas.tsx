@@ -27,7 +27,19 @@ type Aba = (typeof ABAS)[number]['chave'];
  * As tarefas da mentoria, separadas como no Notion: a fazer, feitas, todas.
  * Criar ou marcar como feita aqui grava na mesma base do Notion.
  */
-export function Tarefas({ mentoradaId, tarefas }: { mentoradaId: string; tarefas: Tarefa[] }) {
+export function Tarefas({
+  mentoradaId,
+  tarefas,
+  somenteLeitura = false,
+  aoMudar,
+}: {
+  mentoradaId: string;
+  tarefas: Tarefa[];
+  /** Sem criar nem marcar (a tutora, que não mexe nas tarefas da mentorada). */
+  somenteLeitura?: boolean;
+  /** Depois de marcar: quem buscou a lista por fora recarrega. */
+  aoMudar?: () => void;
+}) {
   const [aba, setAba] = useState<Aba>('fazer');
   const atual = ABAS.find((a) => a.chave === aba)!;
 
@@ -57,6 +69,7 @@ export function Tarefas({ mentoradaId, tarefas }: { mentoradaId: string; tarefas
         ))}
         </div>
 
+        {somenteLeitura ? null : (
         <Link
           href={`/mentoradas/${mentoradaId}/tarefas/nova`}
           className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90"
@@ -64,6 +77,7 @@ export function Tarefas({ mentoradaId, tarefas }: { mentoradaId: string; tarefas
           <Plus aria-hidden size={14} />
           Adicionar tarefa
         </Link>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-borda">
@@ -96,12 +110,28 @@ export function Tarefas({ mentoradaId, tarefas }: { mentoradaId: string; tarefas
               visiveis.map((t) => (
                 <tr key={t.id} className="border-b border-borda last:border-0">
                   <td className="px-4 py-2">
-                    <form action={alternarTarefa}>
-                      <input type="hidden" name="mentoradaId" value={mentoradaId} />
-                      <input type="hidden" name="tarefaId" value={t.id} />
-                      <input type="hidden" name="feita" value={String(!t.feita)} />
-                      <CaixaFeita feita={t.feita} tarefa={t.tarefa} />
-                    </form>
+                    {somenteLeitura ? (
+                      <span
+                        aria-label={t.feita ? 'Feita' : 'A fazer'}
+                        className={`flex size-5 items-center justify-center rounded-md border ${
+                          t.feita ? 'border-marca bg-marca text-marca-contraste' : 'border-borda bg-superficie'
+                        }`}
+                      >
+                        {t.feita ? <Check aria-hidden size={13} strokeWidth={3} /> : null}
+                      </span>
+                    ) : (
+                      <form
+                        action={async (dados) => {
+                          await alternarTarefa(dados);
+                          aoMudar?.();
+                        }}
+                      >
+                        <input type="hidden" name="mentoradaId" value={mentoradaId} />
+                        <input type="hidden" name="tarefaId" value={t.id} />
+                        <input type="hidden" name="feita" value={String(!t.feita)} />
+                        <CaixaFeita feita={t.feita} tarefa={t.tarefa} />
+                      </form>
+                    )}
                   </td>
                   <td
                     className={`truncate px-4 py-2.5 ${t.feita ? 'text-texto-suave line-through' : ''}`}

@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, FileText, Loader2, Send, X } from 'lucide-react';
-import type { Pergunta } from '@/lib/tutorias/modelo';
+import type { Pergunta, QuemPreenche } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
 
-type Dados = { material: { perguntas: Pergunta[] }; estado: EstadoDoFormulario; podeEditar: boolean };
+type Dados = { material: { perguntas: Pergunta[]; quemPreenche: QuemPreenche }; estado: EstadoDoFormulario; podeEditar: boolean };
 
 const quando = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
@@ -66,6 +66,7 @@ export function PainelDoFormulario({
       return;
     }
     setEnviando('parado');
+    // A mentorada vê o agradecimento; a equipe, que registra uma tutoria por sessão, volta ao formulário em branco.
     if (paraMentorada) setObrigado(true);
     setMexeu(false);
     setDados(null);
@@ -87,7 +88,12 @@ export function PainelDoFormulario({
   const { material, estado, podeEditar } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
   // Quem preenche é a mentorada (no link ou logada); a equipe só vê as respostas enviadas.
-  const editando = podeEditar && paraMentorada && !obrigado;
+  // Quem escreve depende do material: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria).
+  const daEquipe = material.quemPreenche === 'equipe';
+  const editando = podeEditar && !obrigado && (daEquipe ? !paraMentorada : paraMentorada);
+  const rotulo = daEquipe
+    ? { enviar: 'Salvar tutoria', caixa: 'Tutoria de', lista: 'Tutorias registradas', vazio: 'Nenhuma tutoria registrada ainda.', faltou: 'Preencha ao menos um campo antes de salvar.' }
+    : { enviar: 'Enviar respostas', caixa: 'Enviada em', lista: paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas', vazio: 'Nenhuma resposta enviada ainda.', faltou: 'Responda ao menos uma pergunta antes de enviar.' };
 
   if (obrigado && paraMentorada) {
     return (
@@ -103,12 +109,11 @@ export function PainelDoFormulario({
 
   return (
     <div className="space-y-5">
-      {podeEditar ? (
-        editando ? (
+      {editando ? (
           <div className="space-y-4">
-            {enviados.length && !paraMentorada ? (
+            {daEquipe ? (
               <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
-                Resposta nova. As já enviadas continuam guardadas logo abaixo.
+                Registre a tutoria desta sessão. Ao salvar, ela vira uma caixinha com a data, e a mentorada vê.
               </p>
             ) : null}
             <FormularioDoApp
@@ -120,7 +125,7 @@ export function PainelDoFormulario({
               aoSalvar={() => setMexeu(true)}
             />
             <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
-              {enviando === 'vazio' ? <p className="text-xs text-parado">Responda ao menos uma pergunta antes de enviar.</p> : null}
+              {enviando === 'vazio' ? <p className="text-xs text-parado">{rotulo.faltou}</p> : null}
               {enviando === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
               <button
                 type="button"
@@ -129,12 +134,11 @@ export function PainelDoFormulario({
                 className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
               >
                 {enviando === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Send aria-hidden size={14} />}
-                Enviar respostas
+                {rotulo.enviar}
               </button>
             </div>
           </div>
-        ) : null
-      ) : estado.rascunho ? (
+      ) : estado.rascunho && !daEquipe && !paraMentorada ? (
         <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
           Há uma resposta em preenchimento, ainda não enviada.
         </p>
@@ -143,7 +147,7 @@ export function PainelDoFormulario({
       {enviados.length && mostrarEnviadas ? (
         <div className="space-y-2">
           <p className="text-[11px] font-medium tracking-[0.14em] text-texto-suave uppercase">
-            {paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas'} ({enviados.length})
+            {rotulo.lista} ({enviados.length})
           </p>
           <ul className="space-y-2">
             {enviados.map((e, i) => (
@@ -151,6 +155,7 @@ export function PainelDoFormulario({
                 <CaixaDeEnvio
                   envio={e}
                   maisRecente={i === 0}
+                  prefixo={rotulo.caixa}
                   perguntas={material.perguntas}
                   mentoradaId={mentoradaId}
                   consulta={consulta}
@@ -159,8 +164,8 @@ export function PainelDoFormulario({
             ))}
           </ul>
         </div>
-      ) : !podeEditar ? (
-        <p className="text-sm text-texto-suave">Nenhuma resposta enviada ainda.</p>
+      ) : !editando ? (
+        <p className="text-sm text-texto-suave">{rotulo.vazio}</p>
       ) : null}
     </div>
   );
@@ -170,12 +175,15 @@ export function PainelDoFormulario({
 function CaixaDeEnvio({
   envio,
   maisRecente,
+  prefixo,
   perguntas,
   mentoradaId,
   consulta,
 }: {
   envio: Envio;
   maisRecente: boolean;
+  /** "Enviada em" (pré-sessão) ou "Tutoria de" (registro da equipe). */
+  prefixo: string;
   perguntas: Pergunta[];
   mentoradaId: string;
   consulta: string;
@@ -201,13 +209,15 @@ function CaixaDeEnvio({
         className="flex w-full items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2.5 text-left text-sm transition hover:border-marca hover:shadow-[var(--sombra)]"
       >
         <FileText aria-hidden size={15} className="shrink-0 text-texto-suave" />
-        <span className="font-medium">Enviada em {quando(envio.enviadoEm!)}</span>
+        <span className="font-medium">
+          {prefixo} {quando(envio.enviadoEm!)}
+        </span>
         {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[10.5px] text-ok">mais recente</span> : null}
         <ChevronRight aria-hidden size={14} className="ml-auto shrink-0 text-texto-suave" />
       </button>
 
       {aberta ? (
-        <TelaDasRespostas titulo={`Enviada em ${quando(envio.enviadoEm!)}`} aoFechar={() => setAberta(false)}>
+        <TelaDasRespostas titulo={`${prefixo} ${quando(envio.enviadoEm!)}`} aoFechar={() => setAberta(false)}>
           {!respostas && !erro ? (
             <p className="flex items-center gap-2 text-sm text-texto-suave">
               <Loader2 aria-hidden size={14} className="animate-spin" />

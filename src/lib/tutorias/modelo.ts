@@ -9,13 +9,16 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
  */
 
 export type TipoMaterial = 'formulario' | 'conteudo' | 'grupo' | 'especial';
-export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso';
+export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'tarefas';
+/** Quem responde o formulário: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria). */
+export type QuemPreenche = 'mentorada' | 'equipe';
 
 export type Material = {
   id: string;
   nome: string;
   icone: string | null;
   tipo: TipoMaterial;
+  quemPreenche: QuemPreenche;
   filhos: Material[];
   /** Perguntas que pedem resposta (sem contar os avisos). */
   totalPerguntas: number;
@@ -48,7 +51,7 @@ export const modeloDasTutorias = cache(async (): Promise<Pilar[]> => {
   const [pilares, tutorias, materiais, perguntas] = await Promise.all([
     db.from('tutoria_pilares').select('id, nome, icone, frase, ordem').order('ordem'),
     db.from('tutoria_tutorias').select('id, pilar_id, nome, icone, ordem').order('ordem'),
-    db.from('tutoria_materiais').select('id, tutoria_id, pai_id, nome, icone, tipo, ordem').order('ordem'),
+    db.from('tutoria_materiais').select('id, tutoria_id, pai_id, nome, icone, tipo, quem_preenche, ordem').order('ordem'),
     db.from('tutoria_perguntas').select('material_id, tipo'),
   ]);
   for (const r of [pilares, tutorias, materiais, perguntas]) if (r.error) throw new Error(r.error.message);
@@ -58,13 +61,14 @@ export const modeloDasTutorias = cache(async (): Promise<Pilar[]> => {
     if (p.tipo !== 'aviso') contagem.set(p.material_id, (contagem.get(p.material_id) ?? 0) + 1);
   }
 
-  type LinhaMaterial = Linha<{ id: string; tutoria_id: string; pai_id: string | null; nome: string; icone: string | null; tipo: TipoMaterial }>;
+  type LinhaMaterial = Linha<{ id: string; tutoria_id: string; pai_id: string | null; nome: string; icone: string | null; tipo: TipoMaterial; quem_preenche: QuemPreenche }>;
   const todos = (materiais.data ?? []) as LinhaMaterial[];
   const montar = (m: LinhaMaterial): Material => ({
     id: m.id,
     nome: m.nome,
     icone: m.icone,
     tipo: m.tipo,
+    quemPreenche: m.quem_preenche ?? 'mentorada',
     totalPerguntas: contagem.get(m.id) ?? 0,
     filhos: todos.filter((f) => f.pai_id === m.id).map(montar),
   });
@@ -86,10 +90,12 @@ export const modeloDasTutorias = cache(async (): Promise<Pilar[]> => {
 });
 
 /** O material e as perguntas dele, na ordem. `null` se não existir. */
-export async function formulario(materialId: string): Promise<{ id: string; nome: string; tipo: TipoMaterial; perguntas: Pergunta[] } | null> {
+export type Formulario = { id: string; nome: string; tipo: TipoMaterial; quemPreenche: QuemPreenche; perguntas: Pergunta[] };
+
+export async function formulario(materialId: string): Promise<Formulario | null> {
   const db = supabaseAdmin();
   const [material, perguntas] = await Promise.all([
-    db.from('tutoria_materiais').select('id, nome, tipo').eq('id', materialId).maybeSingle(),
+    db.from('tutoria_materiais').select('id, nome, tipo, quem_preenche').eq('id', materialId).maybeSingle(),
     db.from('tutoria_perguntas').select('id, material_id, secao, texto, ajuda, tipo, opcoes').eq('material_id', materialId).order('ordem'),
   ]);
   if (material.error) throw new Error(material.error.message);
@@ -97,8 +103,10 @@ export async function formulario(materialId: string): Promise<{ id: string; nome
   if (!material.data) return null;
 
   return {
-    ...material.data,
+    id: material.data.id,
+    nome: material.data.nome,
     tipo: material.data.tipo as TipoMaterial,
+    quemPreenche: (material.data.quem_preenche as QuemPreenche) ?? 'mentorada',
     perguntas: (perguntas.data ?? []).map((p) => ({
       id: p.id,
       materialId: p.material_id,
@@ -156,4 +164,10 @@ export async function caminhoDoMaterial(materialId: string): Promise<{ pilar: st
   if (!tutoria) return null;
   const pilar = (await db.from('tutoria_pilares').select('nome').eq('id', tutoria.pilar_id).maybeSingle()).data;
   return { pilar: (pilar?.nome as string) ?? '', tutoria: tutoria.nome as string, grupos };
+}
+
+/** Quem preenche um material. `null` se ele não existir. */
+export async function quemPreencheO(materialId: string): Promise<QuemPreenche | null> {
+  const { data } = await supabaseAdmin().from('tutoria_materiais').select('quem_preenche').eq('id', materialId).maybeSingle();
+  return data ? ((data.quem_preenche as QuemPreenche) ?? 'mentorada') : null;
 }

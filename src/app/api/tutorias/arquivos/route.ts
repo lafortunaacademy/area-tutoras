@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
-import { pergunta } from '@/lib/tutorias/modelo';
+import { pergunta, quemPreencheO } from '@/lib/tutorias/modelo';
 import { anexarArquivo, removerArquivo } from '@/lib/tutorias/respostas';
 
 /** Na Vercel o corpo do pedido vai até ~4,5 MB. */
@@ -9,7 +9,7 @@ const LIMITE_BYTES = 4 * 1024 * 1024;
 async function autorizar(mentorada: string, perguntaId: string) {
   const p = await pergunta(perguntaId);
   if (!p) return null;
-  const permissao = await permissaoNasTutorias(mentorada);
+  const permissao = await permissaoNasTutorias(mentorada, (await quemPreencheO(p.materialId)) ?? 'mentorada');
   if (!permissao?.podeEditar) return null;
   return permissao;
 }
