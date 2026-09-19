@@ -29,7 +29,7 @@ ok(await db.from('tutoria_materiais').update({ tipo: 'formulario', quem_preenche
 ok(await db.from('tutoria_perguntas').delete().eq('material_id', material.id), 'limpar perguntas');
 ok(
   await db.from('tutoria_perguntas').insert([
-    { material_id: material.id, ordem: 0, tipo: 'texto', texto: 'Anotações' },
+    { material_id: material.id, ordem: 0, tipo: 'texto', texto: 'Anotações', opcoes: [] },
     {
       material_id: material.id,
       ordem: 1,
