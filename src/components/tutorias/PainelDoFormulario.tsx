@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, FileText, Loader2, Plus, Send, X } from 'lucide-react';
+import { ChevronRight, Loader2, Plus, Send, X } from 'lucide-react';
 import type { Pergunta, QuemPreenche } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
@@ -225,7 +225,6 @@ function CaixaDeEnvio({
         onClick={abrir}
         className="flex w-full items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2.5 text-left text-sm transition hover:border-marca hover:shadow-[var(--sombra)]"
       >
-        <FileText aria-hidden size={15} className="shrink-0 text-texto-suave" />
         <span className="font-medium">
           {prefixo} {quando(envio.enviadoEm!)}
         </span>
