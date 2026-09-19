@@ -362,7 +362,8 @@ function Links({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: string
                 void adicionar();
               }
             }}
-            placeholder="Cole o link (PDF, Google Docs, Spotify…)"
+            // A ajuda da pergunta diz que link é esperado ("Cole o link do mapa mental…").
+            placeholder={pergunta.ajuda?.replace(/\.$/, '') || 'Cole o link (PDF, Google Docs, Spotify…)'}
             className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-2 text-sm outline-none focus:border-marca focus:ring-2 focus:ring-marca/20"
           />
           <button
