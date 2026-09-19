@@ -42,7 +42,6 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
       <div role="tablist" aria-label="Filtrar por área" className="mb-4 flex flex-wrap gap-1.5">
         {[null, ...areas].map((a) => {
           const ativo = area === a;
-          const total = a ? tutoras.filter((t) => t.especialidades.includes(a)).length : tutoras.length;
           return (
             <button
               key={a ?? 'todas'}
@@ -55,7 +54,6 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
               }`}
             >
               {a ?? 'Todas'}
-              <span className="ml-1.5 tabular-nums opacity-70">{total}</span>
             </button>
           );
         })}
