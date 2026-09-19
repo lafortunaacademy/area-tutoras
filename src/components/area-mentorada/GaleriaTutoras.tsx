@@ -22,85 +22,67 @@ function buscarTutora(id: string): Promise<BlocoSimples[]> {
 }
 
 /**
- * A galeria "Tutorias do HUB", só para ver: as tutoras agrupadas por área
- * (Áreas/Especialidades), como o quadro "por área" do Notion. Cada cartão abre
- * por cima da página.
+ * A galeria "Tutorias do HUB", só para ver: um mosaico com todas as tutoras,
+ * que quebra em linhas (nada de rolar para o lado), e um filtro por área
+ * (Áreas/Especialidades). Cada cartão abre por cima da página.
  */
 export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
   const [aberta, setAberta] = useState<TutoraDoHub | null>(null);
+  const [area, setArea] = useState<string | null>(null);
 
   if (tutoras.length === 0) {
     return <p className="text-sm text-texto-suave">Nenhuma tutora ativa no momento.</p>;
   }
 
-  const eventos = (t: TutoraDoHub) => ({
-    onClick: () => setAberta(t),
-    onMouseEnter: () => void buscarTutora(t.id).catch(() => {}),
-    onFocus: () => void buscarTutora(t.id).catch(() => {}),
-  });
+  const areas = [...new Set(tutoras.flatMap((t) => t.especialidades))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const visiveis = area ? tutoras.filter((t) => t.especialidades.includes(area)) : tutoras;
 
   return (
     <>
-      <PorArea tutoras={tutoras} eventos={eventos} />
+      <div role="tablist" aria-label="Filtrar por área" className="mb-4 flex flex-wrap gap-1.5">
+        {[null, ...areas].map((a) => {
+          const ativo = area === a;
+          const total = a ? tutoras.filter((t) => t.especialidades.includes(a)).length : tutoras.length;
+          return (
+            <button
+              key={a ?? 'todas'}
+              type="button"
+              role="tab"
+              aria-selected={ativo}
+              onClick={() => setArea(a)}
+              className={`rounded-full px-3 py-1 text-xs transition ${
+                ativo ? 'bg-marca font-medium text-marca-contraste' : 'bg-superficie-2 text-texto-suave hover:text-texto'
+              }`}
+            >
+              {a ?? 'Todas'}
+              <span className="ml-1.5 tabular-nums opacity-70">{total}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {visiveis.map((t) => (
+          <li key={t.id}>
+            <button
+              type="button"
+              onClick={() => setAberta(t)}
+              onMouseEnter={() => void buscarTutora(t.id).catch(() => {})}
+              onFocus={() => void buscarTutora(t.id).catch(() => {})}
+              className="group flex h-full w-full flex-col overflow-hidden rounded-xl border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
+            >
+              <Foto tutora={t} className="aspect-[4/5] w-full transition group-hover:brightness-105" />
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-2.5">
+                <p className="text-sm font-medium leading-tight">{t.nome}</p>
+                <Etiquetas itens={t.especialidades} />
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
 
       {aberta ? <Cartao tutora={aberta} aoFechar={() => setAberta(null)} /> : null}
     </>
-  );
-}
-
-/**
- * Colunas por área, como o quadro "por área" do Notion. Quem tem duas
- * especialidades aparece nas duas colunas; quem não tem nenhuma vai para
- * "Sem área", no fim.
- */
-function PorArea({
-  tutoras,
-  eventos,
-}: {
-  tutoras: TutoraDoHub[];
-  eventos: (t: TutoraDoHub) => React.ButtonHTMLAttributes<HTMLButtonElement>;
-}) {
-  const grupos = new Map<string, TutoraDoHub[]>();
-  for (const t of tutoras) {
-    for (const area of t.especialidades.length ? t.especialidades : ['Sem área']) {
-      grupos.set(area, [...(grupos.get(area) ?? []), t]);
-    }
-  }
-  const areas = [...grupos.keys()].sort((a, b) =>
-    a === 'Sem área' ? 1 : b === 'Sem área' ? -1 : a.localeCompare(b, 'pt-BR'),
-  );
-
-  return (
-    <div className="-mx-1 overflow-x-auto px-1 pb-2">
-      <div className="flex items-start gap-3">
-        {areas.map((area) => (
-          <section key={area} className="w-40 shrink-0 rounded-xl bg-fundo p-1.5">
-            <h4 className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] leading-tight">
-              <span className="rounded bg-superficie-2 px-1.5 py-0.5 font-medium">{area}</span>
-              <span className="text-texto-suave tabular-nums">{grupos.get(area)!.length}</span>
-            </h4>
-            <ul className="space-y-1.5">
-              {grupos.get(area)!.map((t) => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    {...eventos(t)}
-                    className="flex w-full flex-col overflow-hidden rounded-lg border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
-                  >
-                    <Foto tutora={t} className="h-24 w-full" />
-                    <div className="flex min-w-0 flex-col gap-1 p-1.5">
-                      <p className="text-[11.5px] font-medium leading-tight">{t.nome}</p>
-                      {t.legendaEntregaveis ? <p className="text-[10px] font-medium text-destaque">{t.legendaEntregaveis}</p> : null}
-                      <Etiquetas itens={t.topicos} suave />
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
-    </div>
   );
 }
 
