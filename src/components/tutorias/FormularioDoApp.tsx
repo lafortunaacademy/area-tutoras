@@ -64,6 +64,8 @@ export function FormularioDoApp({
                 <div className="mt-2">
                   {p.tipo === 'texto' ? (
                     <CampoTexto pergunta={p} inicial={respostas[p.id]?.texto ?? ''} ctx={ctx} />
+                  ) : p.tipo === 'tabela' ? (
+                    <Tabela pergunta={p} inicial={respostas[p.id]?.linhas ?? []} ctx={ctx} />
                   ) : p.tipo === 'links' ? (
                     <Links pergunta={p} inicial={respostas[p.id]?.links ?? []} ctx={ctx} />
                   ) : p.tipo === 'tarefas' ? (
@@ -85,7 +87,11 @@ export function FormularioDoApp({
 
 type Ctx = { mentoradaId: string; podeEditar: boolean; aoSalvar?: () => void; previa?: boolean };
 
-async function salvar(ctx: Ctx, perguntaId: string, valor: { texto?: string; opcoes?: string[]; links?: string[] }): Promise<boolean> {
+async function salvar(
+  ctx: Ctx,
+  perguntaId: string,
+  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][] },
+): Promise<boolean> {
   if (ctx.previa) return true;
   const r = await fetch('/api/tutorias/respostas', {
     method: 'POST',
@@ -445,5 +451,129 @@ function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: 
           : undefined
       }
     />
+  );
+}
+
+/**
+ * Tabela (ex.: a Carteira de investimentos): as colunas vêm do modelo. Cada
+ * célula salva ao sair dela; linha nova se escreve embaixo, como nas tarefas.
+ */
+function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: string[][]; ctx: Ctx }) {
+  const colunas = pergunta.opcoes;
+  const [linhas, setLinhas] = useState(inicial);
+  const [nova, setNova] = useState<string[]>(() => colunas.map(() => ''));
+  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro'>('parado');
+
+  const gravar = async (lista: string[][]) => {
+    setEstado('salvando');
+    const ok = await salvar(ctx, pergunta.id, { linhas: lista });
+    setEstado(ok ? 'parado' : 'erro');
+    return ok;
+  };
+
+  const mudarCelula = (i: number, j: number, valor: string) =>
+    setLinhas((atual) => atual.map((l, li) => (li === i ? l.map((c, cj) => (cj === j ? valor : c)) : l)));
+
+  const adicionar = async () => {
+    if (!nova.some((c) => c.trim())) return;
+    const lista = [...linhas, nova];
+    setLinhas(lista);
+    if (await gravar(lista)) setNova(colunas.map(() => ''));
+  };
+
+  const celula =
+    'w-full min-w-24 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
+
+  if (!ctx.podeEditar && linhas.length === 0) return <p className="text-texto-suave">Nada preenchido.</p>;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="border-b border-borda text-left">
+              {colunas.map((c) => (
+                <th key={c} className="px-3 py-2 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                  {c}
+                </th>
+              ))}
+              {ctx.podeEditar ? <th className="w-8" /> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((l, i) => (
+              <tr key={i} className="group border-b border-borda/60 last:border-0">
+                {colunas.map((_, j) =>
+                  ctx.podeEditar ? (
+                    <td key={j} className="px-1 py-1">
+                      <input
+                        value={l[j] ?? ''}
+                        onChange={(e) => mudarCelula(i, j, e.target.value)}
+                        onBlur={() => gravar(linhas)}
+                        aria-label={`${colunas[j]}, linha ${i + 1}`}
+                        className={celula}
+                      />
+                    </td>
+                  ) : (
+                    <td key={j} className="px-3 py-2">
+                      {l[j]}
+                    </td>
+                  ),
+                )}
+                {ctx.podeEditar ? (
+                  <td className="px-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const lista = linhas.filter((_, li) => li !== i);
+                        setLinhas(lista);
+                        void gravar(lista);
+                      }}
+                      aria-label={`Tirar a linha ${i + 1}`}
+                      className="rounded p-1 text-texto-suave opacity-0 transition group-hover:opacity-100 hover:text-parado focus:opacity-100"
+                    >
+                      <X aria-hidden size={13} />
+                    </button>
+                  </td>
+                ) : null}
+              </tr>
+            ))}
+            {ctx.podeEditar ? (
+              <tr className="border-t border-borda bg-superficie-2/40">
+                {colunas.map((c, j) => (
+                  <td key={c} className="px-1 py-1">
+                    <input
+                      value={nova[j]}
+                      onChange={(e) => setNova((atual) => atual.map((v, vj) => (vj === j ? e.target.value : v)))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void adicionar();
+                        }
+                      }}
+                      placeholder="Edite aqui"
+                      aria-label={`${c}, linha nova`}
+                      className={celula}
+                    />
+                  </td>
+                ))}
+                <td className="px-1">
+                  <button
+                    type="button"
+                    onClick={adicionar}
+                    disabled={!nova.some((c) => c.trim())}
+                    aria-label="Adicionar linha"
+                    className="flex size-6 items-center justify-center rounded-md border border-dashed border-borda text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-40"
+                  >
+                    <Plus aria-hidden size={12} />
+                  </button>
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+      {estado === 'erro' ? <p className="text-xs text-parado">Não salvou. Tente de novo.</p> : null}
+    </div>
   );
 }

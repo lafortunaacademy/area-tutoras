@@ -9,7 +9,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
  */
 
 export type TipoMaterial = 'formulario' | 'conteudo' | 'grupo' | 'especial';
-export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'tarefas';
+export type TipoPergunta = 'texto' | 'opcoes' | 'arquivo' | 'aviso' | 'links' | 'tarefas' | 'tabela';
 /** Quem responde o formulário: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria). */
 export type QuemPreenche = 'mentorada' | 'equipe';
 

@@ -6,7 +6,7 @@ import type { Pergunta, QuemPreenche } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
 
-type Dados = { material: { perguntas: Pergunta[]; quemPreenche: QuemPreenche }; estado: EstadoDoFormulario; podeEditar: boolean };
+type Dados = { material: { nome: string; perguntas: Pergunta[]; quemPreenche: QuemPreenche }; estado: EstadoDoFormulario; podeEditar: boolean };
 
 const quando = (iso: string) =>
   new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(iso));
@@ -93,9 +93,28 @@ export function PainelDoFormulario({
   // Quem escreve depende do material: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria).
   const daEquipe = material.quemPreenche === 'equipe';
   const editando = podeEditar && !obrigado && (daEquipe ? !paraMentorada : paraMentorada);
+  // O registro leva o nome do material: "Tutoria terapêutica" → tutoria, "Carteira de investimentos" → carteira.
+  const coisa = material.nome.split(/\s+/)[0].toLowerCase();
+  const Coisa = coisa.charAt(0).toUpperCase() + coisa.slice(1);
   const rotulo = daEquipe
-    ? { enviar: 'Salvar tutoria', caixa: 'Tutoria de', lista: 'Tutorias registradas', vazio: 'Nenhuma tutoria registrada ainda.', faltou: 'Preencha ao menos um campo antes de salvar.' }
-    : { enviar: 'Enviar respostas', caixa: 'Enviada em', lista: paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas', vazio: 'Nenhuma resposta enviada ainda.', faltou: 'Responda ao menos uma pergunta antes de enviar.' };
+    ? {
+        enviar: `Salvar ${coisa}`,
+        caixa: `${Coisa} de`,
+        lista: `${Coisa}s registradas`,
+        vazio: `Nenhuma ${coisa} registrada ainda.`,
+        faltou: 'Preencha ao menos um campo antes de salvar.',
+        nova: `Nova ${coisa}`,
+        continuar: `Continuar a ${coisa} em andamento`,
+      }
+    : {
+        enviar: 'Enviar respostas',
+        caixa: 'Enviada em',
+        lista: paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas',
+        vazio: 'Nenhuma resposta enviada ainda.',
+        faltou: 'Responda ao menos uma pergunta antes de enviar.',
+        nova: '',
+        continuar: '',
+      };
 
   const editor = (
           <div className="space-y-4">
@@ -145,7 +164,7 @@ export function PainelDoFormulario({
           className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90"
         >
           <Plus aria-hidden size={14} />
-          {estado.rascunho ? 'Continuar a tutoria em andamento' : 'Nova tutoria'}
+          {estado.rascunho ? rotulo.continuar : rotulo.nova}
         </button>
       ) : editando ? (
         editor
@@ -180,7 +199,7 @@ export function PainelDoFormulario({
       ) : null}
 
       {registrando ? (
-        <TelaDasRespostas titulo="Nova tutoria" aoFechar={() => setRegistrando(false)}>
+        <TelaDasRespostas titulo={rotulo.nova} aoFechar={() => setRegistrando(false)}>
           {editor}
         </TelaDasRespostas>
       ) : null}

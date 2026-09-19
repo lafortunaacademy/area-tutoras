@@ -6,7 +6,7 @@ import { salvarResposta } from '@/lib/tutorias/respostas';
 /** Grava uma resposta (texto ou opções) de uma pergunta das tutorias. */
 export async function POST(request: NextRequest) {
   const corpo = (await request.json().catch(() => null)) as
-    | { mentorada?: string; perguntaId?: string; texto?: string; opcoes?: string[]; links?: string[] }
+    | { mentorada?: string; perguntaId?: string; texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][] }
     | null;
   if (!corpo?.mentorada || !corpo.perguntaId) return NextResponse.json({ erro: 'pedido inválido' }, { status: 400 });
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ erro: 'não autorizada' }, { status: 403 });
     }
 
-    const salva = await salvarResposta(corpo.mentorada, p.id, { texto: corpo.texto, opcoes: corpo.opcoes, links: corpo.links }, permissao.quem);
+    const salva = await salvarResposta(corpo.mentorada, p.id, { texto: corpo.texto, opcoes: corpo.opcoes, links: corpo.links, linhas: corpo.linhas }, permissao.quem);
     if (!salva) return NextResponse.json({ erro: 'resposta inválida' }, { status: 400 });
     return NextResponse.json({ ok: true });
   } catch {

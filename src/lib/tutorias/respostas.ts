@@ -22,7 +22,7 @@ export const BUCKET = 'tutorias';
 const VALIDADE_DO_LINK_S = 60 * 60;
 
 export type Anexo = { caminho: string; nome: string; tipo: string; url?: string };
-export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[]; links?: string[] };
+export type Valor = { texto?: string; opcoes?: string[]; arquivos?: Anexo[]; links?: string[]; linhas?: string[][] };
 export type Envio = { id: string; criadoEm: string; atualizadoEm: string; enviadoEm: string | null };
 
 export type EstadoDoFormulario = {
@@ -94,7 +94,8 @@ export async function estadoDoFormulario(mentoradaId: string, materialId: string
   };
 }
 
-const temConteudo = (v: Valor) => Boolean(v.texto?.trim() || v.opcoes?.length || v.arquivos?.length || v.links?.length);
+const temConteudo = (v: Valor) =>
+  Boolean(v.texto?.trim() || v.opcoes?.length || v.arquivos?.length || v.links?.length || v.linhas?.length);
 
 /**
  * Quantas perguntas de cada formulário estão respondidas no envio que importa
@@ -179,7 +180,7 @@ async function rascunho(mentoradaId: string, materialId: string, quem: string): 
 export async function salvarResposta(
   mentoradaId: string,
   perguntaId: string,
-  valor: { texto?: string; opcoes?: string[]; links?: string[] },
+  valor: { texto?: string; opcoes?: string[]; links?: string[]; linhas?: string[][] },
   quem: string,
 ): Promise<Pergunta | null> {
   const p = await lerPergunta(perguntaId);
@@ -191,6 +192,15 @@ export async function salvarResposta(
   else if (p.tipo === 'links' && Array.isArray(valor.links)) {
     // Só endereços web de verdade: nada de "javascript:" ou texto solto virando link.
     novo = { links: valor.links.map((l) => String(l).trim()).filter((l) => /^https?:\/\/\S+$/i.test(l)).slice(0, 30) };
+  } else if (p.tipo === 'tabela' && Array.isArray(valor.linhas)) {
+    // Uma célula por coluna do modelo; linha toda vazia não conta.
+    novo = {
+      linhas: valor.linhas
+        .filter(Array.isArray)
+        .map((l) => p.opcoes.map((_, i) => String(l[i] ?? '').slice(0, 500)))
+        .filter((l) => l.some((c) => c.trim()))
+        .slice(0, 200),
+    };
   }
   else return null;
 
