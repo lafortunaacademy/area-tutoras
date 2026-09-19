@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { alternarTarefa } from '@/app/mentoradas/actions';
@@ -42,17 +42,35 @@ export function Tarefas({
   /** Depois de marcar: quem buscou a lista por fora recarrega. */
   aoMudar?: () => void;
   /**
-   * Adicionar numa linha embaixo da tabela, sem ir para outra página (dentro das
-   * tutorias). Quando vem, o botão "Adicionar tarefa" sai.
+   * Como adicionar na linha de baixo da tabela. Sem ela, a linha grava direto na
+   * base de tarefas e recarrega a página (a seção Tarefas da mentoria).
    */
   adicionarEmLinha?: (dados: { tarefa: string; prazo: string; observacoes: string }) => Promise<boolean>;
-  /** Sem o botão "Adicionar tarefa" (dentro das tutorias ele nunca aparece). */
+  /** Sem a linha de adicionar. */
   semBotaoAdicionar?: boolean;
 }) {
   const [aba, setAba] = useState<Aba>('fazer');
   const atual = ABAS.find((a) => a.chave === aba)!;
+  const router = useRouter();
+  // Criadas aqui: aparecem na hora, antes de a página recarregar do Notion.
+  const [novas, setNovas] = useState<Tarefa[]>([]);
+  const todas = [...tarefas, ...novas.filter((n) => !tarefas.some((t) => t.id === n.id))];
 
-  const visiveis = tarefas.filter((t) =>
+  const adicionarNaBase = async (dados: { tarefa: string; prazo: string; observacoes: string }) => {
+    const r = await fetch('/api/tutorias/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mentorada: mentoradaId, ...dados }),
+    }).catch(() => null);
+    if (!r?.ok) return false;
+    const { tarefa } = (await r.json()) as { tarefa: Tarefa };
+    setNovas((n) => [...n, tarefa]);
+    router.refresh();
+    return true;
+  };
+  const adicionar = somenteLeitura ? undefined : (adicionarEmLinha ?? (semBotaoAdicionar ? undefined : adicionarNaBase));
+
+  const visiveis = todas.filter((t) =>
     aba === 'todas' ? true : aba === 'feitas' ? t.feita : !t.feita,
   );
 
@@ -78,15 +96,6 @@ export function Tarefas({
         ))}
         </div>
 
-        {somenteLeitura || adicionarEmLinha || semBotaoAdicionar ? null : (
-        <Link
-          href={`/mentoradas/${mentoradaId}/tarefas/nova`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90"
-        >
-          <Plus aria-hidden size={14} />
-          Adicionar tarefa
-        </Link>
-        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-borda">
@@ -155,7 +164,7 @@ export function Tarefas({
                 </tr>
               ))
             )}
-            {adicionarEmLinha ? <LinhaNova adicionar={adicionarEmLinha} /> : null}
+            {adicionar ? <LinhaNova adicionar={adicionar} /> : null}
           </tbody>
         </table>
       </div>
