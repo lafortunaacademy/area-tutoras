@@ -11,6 +11,8 @@ import { TabelaNotion } from '@/components/TabelaNotion';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
 import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
+import { opcoesDasSessoes, sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
+import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +37,11 @@ export default async function MentoradaPage({
     handsoffs(mentorada, tutoraId).catch(() => []),
     modeloDasTutorias().catch(() => null),
     progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
+  ]);
+  const [sessoesPorPilar, opcoes, permissao] = await Promise.all([
+    tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null,
+    opcoesDasSessoes().catch(() => null),
+    permissaoNasTutorias(mentorada.id, 'equipe'),
   ]);
 
   return (
@@ -143,7 +150,15 @@ export default async function MentoradaPage({
         ) : tutorias.length === 0 ? (
           <Vazio>Nenhuma tutoria cadastrada ainda.</Vazio>
         ) : (
-          <PilaresDoApp pilares={tutorias} mentoradaId={mentorada.id} progresso={progresso} admin={false} />
+          <PilaresDoApp
+            pilares={tutorias}
+            mentoradaId={mentorada.id}
+            progresso={progresso}
+            admin={false}
+            sessoes={sessoesPorPilar}
+            opcoesDasSessoes={opcoes}
+            podeEditarSessoes={Boolean(permissao?.podeEditar)}
+          />
         )}
       </Secao>
     </div>
