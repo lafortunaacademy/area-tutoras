@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, FileText, Loader2, Send, X } from 'lucide-react';
+import { ChevronRight, FileText, Loader2, Plus, Send, X } from 'lucide-react';
 import type { Pergunta, QuemPreenche } from '@/lib/tutorias/modelo';
 import type { Envio, EstadoDoFormulario, Valor } from '@/lib/tutorias/respostas';
 import { FormularioDoApp } from './FormularioDoApp';
@@ -34,6 +34,8 @@ export function PainelDoFormulario({
   const [mexeu, setMexeu] = useState(false);
   // Acabou de enviar: a mentorada vê o agradecimento em vez de um formulário novo.
   const [obrigado, setObrigado] = useState(false);
+  // Equipe: o formulário de uma tutoria nova abre numa tela por cima, pelo botão.
+  const [registrando, setRegistrando] = useState(false);
   const [enviando, setEnviando] = useState<'parado' | 'enviando' | 'vazio' | 'erro'>('parado');
 
   const consulta = `mentorada=${encodeURIComponent(mentoradaId)}`;
@@ -66,6 +68,7 @@ export function PainelDoFormulario({
       return;
     }
     setEnviando('parado');
+    setRegistrando(false);
     // A mentorada vê o agradecimento; a equipe, que registra uma tutoria por sessão, volta ao formulário em branco.
     if (paraMentorada) setObrigado(true);
     setMexeu(false);
@@ -87,13 +90,43 @@ export function PainelDoFormulario({
 
   const { material, estado, podeEditar } = dados;
   const enviados = estado.envios.filter((e) => e.enviadoEm);
-  // Quem preenche é a mentorada (no link ou logada); a equipe só vê as respostas enviadas.
   // Quem escreve depende do material: a mentorada (pré-sessões) ou a equipe (registro de cada tutoria).
   const daEquipe = material.quemPreenche === 'equipe';
   const editando = podeEditar && !obrigado && (daEquipe ? !paraMentorada : paraMentorada);
   const rotulo = daEquipe
     ? { enviar: 'Salvar tutoria', caixa: 'Tutoria de', lista: 'Tutorias registradas', vazio: 'Nenhuma tutoria registrada ainda.', faltou: 'Preencha ao menos um campo antes de salvar.' }
     : { enviar: 'Enviar respostas', caixa: 'Enviada em', lista: paraMentorada ? 'Suas respostas anteriores' : 'Respostas enviadas', vazio: 'Nenhuma resposta enviada ainda.', faltou: 'Responda ao menos uma pergunta antes de enviar.' };
+
+  const editor = (
+          <div className="space-y-4">
+      {daEquipe ? (
+        <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
+          Ao salvar, esta tutoria vira uma caixinha com a data, e a mentorada vê.
+        </p>
+      ) : null}
+      <FormularioDoApp
+        key={estado.rascunho?.envio.id ?? 'novo'}
+        perguntas={material.perguntas}
+        respostas={estado.rascunho?.respostas ?? {}}
+        mentoradaId={mentoradaId}
+        podeEditar
+        aoSalvar={() => setMexeu(true)}
+      />
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
+        {enviando === 'vazio' ? <p className="text-xs text-parado">{rotulo.faltou}</p> : null}
+        {enviando === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
+        <button
+          type="button"
+          onClick={enviar}
+          disabled={enviando === 'enviando' || (!estado.rascunho && !mexeu)}
+          className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
+        >
+          {enviando === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Send aria-hidden size={14} />}
+          {rotulo.enviar}
+        </button>
+      </div>
+    </div>
+  );
 
   if (obrigado && paraMentorada) {
     return (
@@ -109,35 +142,17 @@ export function PainelDoFormulario({
 
   return (
     <div className="space-y-5">
-      {editando ? (
-          <div className="space-y-4">
-            {daEquipe ? (
-              <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
-                Registre a tutoria desta sessão. Ao salvar, ela vira uma caixinha com a data, e a mentorada vê.
-              </p>
-            ) : null}
-            <FormularioDoApp
-              key={estado.rascunho?.envio.id ?? 'novo'}
-              perguntas={material.perguntas}
-              respostas={estado.rascunho?.respostas ?? {}}
-              mentoradaId={mentoradaId}
-              podeEditar
-              aoSalvar={() => setMexeu(true)}
-            />
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-borda pt-4">
-              {enviando === 'vazio' ? <p className="text-xs text-parado">{rotulo.faltou}</p> : null}
-              {enviando === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
-              <button
-                type="button"
-                onClick={enviar}
-                disabled={enviando === 'enviando' || (!estado.rascunho && !mexeu)}
-                className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
-              >
-                {enviando === 'enviando' ? <Loader2 aria-hidden size={14} className="animate-spin" /> : <Send aria-hidden size={14} />}
-                {rotulo.enviar}
-              </button>
-            </div>
-          </div>
+      {editando && daEquipe ? (
+        <button
+          type="button"
+          onClick={() => setRegistrando(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-marca px-4 py-2 text-sm font-medium text-marca-contraste transition hover:opacity-90"
+        >
+          <Plus aria-hidden size={14} />
+          {estado.rascunho ? 'Continuar a tutoria em andamento' : 'Nova tutoria'}
+        </button>
+      ) : editando ? (
+        editor
       ) : estado.rascunho && !daEquipe && !paraMentorada ? (
         <p className="rounded-lg bg-andamento-suave px-3 py-2 text-xs text-andamento">
           Há uma resposta em preenchimento, ainda não enviada.
@@ -164,8 +179,14 @@ export function PainelDoFormulario({
             ))}
           </ul>
         </div>
-      ) : !editando ? (
+      ) : !editando || daEquipe ? (
         <p className="text-sm text-texto-suave">{rotulo.vazio}</p>
+      ) : null}
+
+      {registrando ? (
+        <TelaDasRespostas titulo="Nova tutoria" aoFechar={() => setRegistrando(false)}>
+          {editor}
+        </TelaDasRespostas>
       ) : null}
     </div>
   );
