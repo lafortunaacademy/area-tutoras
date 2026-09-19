@@ -61,7 +61,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
         })}
       </div>
 
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
         {visiveis.map((t) => (
           <li key={t.id}>
             <button
@@ -71,9 +71,9 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
               onFocus={() => void buscarTutora(t.id).catch(() => {})}
               className="group flex h-full w-full flex-col overflow-hidden rounded-xl border border-borda bg-superficie text-left transition hover:border-marca hover:shadow-[var(--sombra)]"
             >
-              <Foto tutora={t} className="aspect-[4/5] w-full transition group-hover:brightness-105" />
+              <Foto tutora={t} className="h-28 w-full transition group-hover:brightness-105" />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-2.5">
-                <p className="text-sm font-medium leading-tight">{t.nome}</p>
+                <p className="text-[13px] font-medium leading-tight">{t.nome}</p>
                 <Etiquetas itens={t.especialidades} />
               </div>
             </button>
