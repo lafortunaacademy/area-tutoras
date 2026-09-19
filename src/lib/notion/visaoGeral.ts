@@ -48,9 +48,11 @@ export async function visaoGeral(): Promise<VisaoGeral> {
     resumos.push(...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ano)))));
   }
 
-  // Quem está há mais tempo sem sessão primeiro; sem data nenhuma, antes de todas.
+  // Sempre pela situação: em risco, depois atenção, depois fluindo (o resto no fim).
+  // Na mesma situação, quem está há mais tempo sem sessão primeiro.
   resumos.sort(
     (a, b) =>
+      pesoDaSituacao(a.mentorada.situacao) - pesoDaSituacao(b.mentorada.situacao) ||
       (b.diasSemSessao ?? Infinity) - (a.diasSemSessao ?? Infinity) ||
       a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'),
   );
@@ -91,6 +93,14 @@ async function resumir(m: Mentorada, hoje: string, ano: string): Promise<ResumoD
     diasSemSessao: ultimaSessao ? diasEntre(ultimaSessao, hoje) : null,
     incompleto: sessoes === null || tarefas === null,
   };
+}
+
+function pesoDaSituacao(situacao: string): number {
+  const s = situacao.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  if (s.includes('risco') || s.includes('crise')) return 0;
+  if (s.includes('atencao')) return 1;
+  if (s.includes('fluindo')) return 2;
+  return 3;
 }
 
 function hojeEmSaoPaulo(): string {
