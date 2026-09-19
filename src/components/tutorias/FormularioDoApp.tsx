@@ -509,17 +509,33 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-borda text-left">
+              {ctx.podeEditar ? <th className="w-8" /> : null}
               {colunas.map((c) => (
                 <th key={c} className="px-3 py-2 text-[11px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}
-              {ctx.podeEditar ? <th className="w-8" /> : null}
             </tr>
           </thead>
           <tbody>
             {linhas.map((l, i) => (
               <tr key={i} className="group border-b border-borda/60 last:border-0">
+                {ctx.podeEditar ? (
+                  <td className="px-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const lista = linhas.filter((_, li) => li !== i);
+                        setLinhas(lista);
+                        void gravar(lista);
+                      }}
+                      aria-label={`Tirar a linha ${i + 1}`}
+                      className="rounded p-1 text-texto-suave opacity-0 transition group-hover:opacity-100 hover:text-parado focus:opacity-100"
+                    >
+                      <X aria-hidden size={13} />
+                    </button>
+                  </td>
+                ) : null}
                 {colunas.map((_, j) =>
                   ctx.podeEditar ? (
                     <td key={j} className="px-1 py-1">
@@ -537,22 +553,6 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
                     </td>
                   ),
                 )}
-                {ctx.podeEditar ? (
-                  <td className="px-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const lista = linhas.filter((_, li) => li !== i);
-                        setLinhas(lista);
-                        void gravar(lista);
-                      }}
-                      aria-label={`Tirar a linha ${i + 1}`}
-                      className="rounded p-1 text-texto-suave opacity-0 transition group-hover:opacity-100 hover:text-parado focus:opacity-100"
-                    >
-                      <X aria-hidden size={13} />
-                    </button>
-                  </td>
-                ) : null}
               </tr>
             ))}
             {!ctx.podeEditar && linhas.length === 0 ? (
@@ -565,6 +565,17 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
             ) : null}
             {ctx.podeEditar ? (
               <tr className="border-t border-borda bg-superficie-2/40">
+                <td className="px-1">
+                  <button
+                    type="button"
+                    onClick={adicionar}
+                    disabled={!nova.some((c) => c.trim())}
+                    aria-label="Adicionar linha"
+                    className="flex size-6 items-center justify-center rounded-md border border-dashed border-borda text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-40"
+                  >
+                    <Plus aria-hidden size={12} />
+                  </button>
+                </td>
                 {colunas.map((c, j) => (
                   <td key={c} className="px-1 py-1">
                     <input
@@ -582,17 +593,6 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
                     />
                   </td>
                 ))}
-                <td className="px-1">
-                  <button
-                    type="button"
-                    onClick={adicionar}
-                    disabled={!nova.some((c) => c.trim())}
-                    aria-label="Adicionar linha"
-                    className="flex size-6 items-center justify-center rounded-md border border-dashed border-borda text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-40"
-                  >
-                    <Plus aria-hidden size={12} />
-                  </button>
-                </td>
               </tr>
             ) : null}
           </tbody>
