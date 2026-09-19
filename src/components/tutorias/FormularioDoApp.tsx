@@ -389,13 +389,13 @@ function nomeDoLink(url: string): string {
 
 /** Próximos passos: as Tarefas da mentoria, da mesma base da página da mentorada. */
 function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: boolean }) {
-  const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean } | null>(null);
+  const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean } | null>(null);
   const [erro, setErro] = useState(false);
 
   const buscar = useCallback(async () => {
     const r = await fetch(`/api/tutorias/tarefas?mentorada=${encodeURIComponent(mentoradaId)}`);
     if (!r.ok) throw new Error('falhou');
-    return (await r.json()) as { tarefas: Tarefa[] | null; podeMexer: boolean };
+    return (await r.json()) as { tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean };
   }, [mentoradaId]);
 
   useEffect(() => {
@@ -426,9 +426,24 @@ function ProximosPassos({ mentoradaId, previa }: { mentoradaId: string; previa: 
       mentoradaId={mentoradaId}
       tarefas={dados.tarefas}
       somenteLeitura={!dados.podeMexer}
+      semBotaoAdicionar
       aoMudar={() => {
         void buscar().then(setDados).catch(() => setErro(true));
       }}
+      adicionarEmLinha={
+        dados.podeAdicionar
+          ? async (nova) => {
+              const r = await fetch('/api/tutorias/tarefas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mentorada: mentoradaId, ...nova }),
+              });
+              if (!r.ok) return false;
+              await buscar().then(setDados).catch(() => setErro(true));
+              return true;
+            }
+          : undefined
+      }
     />
   );
 }

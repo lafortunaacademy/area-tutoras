@@ -32,6 +32,8 @@ export function Tarefas({
   tarefas,
   somenteLeitura = false,
   aoMudar,
+  adicionarEmLinha,
+  semBotaoAdicionar = false,
 }: {
   mentoradaId: string;
   tarefas: Tarefa[];
@@ -39,6 +41,13 @@ export function Tarefas({
   somenteLeitura?: boolean;
   /** Depois de marcar: quem buscou a lista por fora recarrega. */
   aoMudar?: () => void;
+  /**
+   * Adicionar numa linha embaixo da tabela, sem ir para outra página (dentro das
+   * tutorias). Quando vem, o botão "Adicionar tarefa" sai.
+   */
+  adicionarEmLinha?: (dados: { tarefa: string; prazo: string; observacoes: string }) => Promise<boolean>;
+  /** Sem o botão "Adicionar tarefa" (dentro das tutorias ele nunca aparece). */
+  semBotaoAdicionar?: boolean;
 }) {
   const [aba, setAba] = useState<Aba>('fazer');
   const atual = ABAS.find((a) => a.chave === aba)!;
@@ -69,7 +78,7 @@ export function Tarefas({
         ))}
         </div>
 
-        {somenteLeitura ? null : (
+        {somenteLeitura || adicionarEmLinha || semBotaoAdicionar ? null : (
         <Link
           href={`/mentoradas/${mentoradaId}/tarefas/nova`}
           className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90"
@@ -146,10 +155,65 @@ export function Tarefas({
                 </tr>
               ))
             )}
+            {adicionarEmLinha ? <LinhaNova adicionar={adicionarEmLinha} /> : null}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+/** Uma linha a mais na tabela para escrever o próximo passo, o prazo e as observações. Enter adiciona. */
+function LinhaNova({ adicionar }: { adicionar: (dados: { tarefa: string; prazo: string; observacoes: string }) => Promise<boolean> }) {
+  const [tarefa, setTarefa] = useState('');
+  const [prazo, setPrazo] = useState('');
+  const [observacoes, setObservacoes] = useState('');
+  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro'>('parado');
+
+  const enviar = async () => {
+    if (!tarefa.trim() || estado === 'salvando') return;
+    setEstado('salvando');
+    if (await adicionar({ tarefa: tarefa.trim(), prazo, observacoes: observacoes.trim() })) {
+      setTarefa('');
+      setPrazo('');
+      setObservacoes('');
+      setEstado('parado');
+    } else {
+      setEstado('erro');
+    }
+  };
+  const aoTeclar = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      void enviar();
+    }
+  };
+  const campo = 'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
+
+  return (
+    <tr className="border-t border-borda bg-superficie/60">
+      <td className="px-4 py-2">
+        <button
+          type="button"
+          onClick={enviar}
+          disabled={!tarefa.trim() || estado === 'salvando'}
+          aria-label="Adicionar próximo passo"
+          className="flex size-5 items-center justify-center rounded-md border border-dashed border-borda text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-50"
+        >
+          <Plus aria-hidden size={12} />
+        </button>
+      </td>
+      <td className="px-2 py-1.5">
+        <input value={tarefa} onChange={(e) => setTarefa(e.target.value)} onKeyDown={aoTeclar} placeholder="Novo próximo passo" aria-label="Próximo passo" className={campo} />
+        {estado === 'erro' ? <p className="px-2 text-[11px] text-parado">Não salvou. Tente de novo.</p> : null}
+      </td>
+      <td className="px-2 py-1.5">
+        <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
+      </td>
+      <td className="px-2 py-1.5">
+        <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Observações" aria-label="Observações" className={campo} />
+      </td>
+    </tr>
   );
 }
 
