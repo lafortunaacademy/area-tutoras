@@ -204,14 +204,14 @@ function LinhaNova({ adicionar }: { adicionar: (dados: { tarefa: string; prazo: 
         </button>
       </td>
       <td className="px-2 py-1.5">
-        <input value={tarefa} onChange={(e) => setTarefa(e.target.value)} onKeyDown={aoTeclar} placeholder="Novo próximo passo" aria-label="Próximo passo" className={campo} />
+        <input value={tarefa} onChange={(e) => setTarefa(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Próximo passo" className={campo} />
         {estado === 'erro' ? <p className="px-2 text-[11px] text-parado">Não salvou. Tente de novo.</p> : null}
       </td>
       <td className="px-2 py-1.5">
         <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
       </td>
       <td className="px-2 py-1.5">
-        <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Observações" aria-label="Observações" className={campo} />
+        <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Observações" className={campo} />
       </td>
     </tr>
   );
