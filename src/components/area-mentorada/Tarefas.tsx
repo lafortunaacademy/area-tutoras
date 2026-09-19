@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
-import { Check, Loader2, Plus } from 'lucide-react';
+import { Check, Loader2, Plus, X } from 'lucide-react';
 import { alternarTarefa } from '@/app/mentoradas/actions';
 
 export type Tarefa = {
@@ -54,6 +54,7 @@ export function Tarefas({
   const router = useRouter();
   // Criadas aqui: aparecem na hora, antes de a página recarregar do Notion.
   const [novas, setNovas] = useState<Tarefa[]>([]);
+  const [criando, setCriando] = useState(false);
   const todas = [...tarefas, ...novas.filter((n) => !tarefas.some((t) => t.id === n.id))];
 
   const adicionarNaBase = async (dados: { tarefa: string; prazo: string; observacoes: string }) => {
@@ -68,7 +69,9 @@ export function Tarefas({
     router.refresh();
     return true;
   };
-  const adicionar = somenteLeitura ? undefined : (adicionarEmLinha ?? (semBotaoAdicionar ? undefined : adicionarNaBase));
+  // Quem passa `adicionarEmLinha` já decidiu que pode adicionar: a tutora adiciona
+  // próximos passos mesmo sem poder marcar as tarefas como feitas.
+  const adicionar = adicionarEmLinha ?? (somenteLeitura || semBotaoAdicionar ? undefined : adicionarNaBase);
 
   const visiveis = todas.filter((t) =>
     aba === 'todas' ? true : aba === 'feitas' ? t.feita : !t.feita,
@@ -105,7 +108,7 @@ export function Tarefas({
               {[
                 ['Status', 'w-20'],
                 ['Tarefa', ''],
-                ['Prazo', 'w-28'],
+                ['Prazo', 'w-36'],
                 ['Observações', 'w-1/3'],
               ].map(([nome, largura]) => (
                 <th
@@ -164,28 +167,55 @@ export function Tarefas({
                 </tr>
               ))
             )}
-            {adicionar ? <LinhaNova adicionar={adicionar} /> : null}
+            {adicionar ? <LinhaNova adicionar={adicionar} aberta={criando} aoFechar={() => setCriando(false)} /> : null}
           </tbody>
         </table>
       </div>
+
+      {adicionar && !criando ? (
+        <button
+          type="button"
+          onClick={() => setCriando(true)}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90"
+        >
+          <Plus aria-hidden size={14} />
+          Nova tarefa
+        </button>
+      ) : null}
     </div>
   );
 }
 
-/** Uma linha a mais na tabela para escrever o próximo passo, o prazo e as observações. Enter adiciona. */
 type NovaTarefa = { tarefa: string; prazo: string; observacoes: string };
 
 /**
- * A linha de adicionar. A tarefa sai da linha na hora e fica logo acima,
- * esmaecida, enquanto grava; se não gravar, volta para os campos.
+ * A linha de escrever uma tarefa, aberta pelo botão "Nova tarefa". Salvar (ou
+ * Enter) manda gravar: a tarefa sobe para a lista na hora, esmaecida enquanto
+ * grava, e a linha fica limpa para a próxima. Esc ou o X fecham.
  */
-function LinhaNova({ adicionar }: { adicionar: (dados: NovaTarefa) => Promise<boolean> }) {
+function LinhaNova({
+  adicionar,
+  aberta,
+  aoFechar,
+}: {
+  adicionar: (dados: NovaTarefa) => Promise<boolean>;
+  aberta: boolean;
+  aoFechar: () => void;
+}) {
   const [tarefa, setTarefa] = useState('');
   const [prazo, setPrazo] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [gravando, setGravando] = useState<(NovaTarefa & { chave: number })[]>([]);
   const [erro, setErro] = useState(false);
   const campoTarefa = useRef<HTMLInputElement>(null);
+
+  const fechar = () => {
+    setTarefa('');
+    setPrazo('');
+    setObservacoes('');
+    setErro(false);
+    aoFechar();
+  };
 
   const enviar = () => {
     if (!tarefa.trim()) {
@@ -215,9 +245,10 @@ function LinhaNova({ adicionar }: { adicionar: (dados: NovaTarefa) => Promise<bo
       e.preventDefault();
       enviar();
     }
+    if (e.key === 'Escape') fechar();
   };
-  const campo = 'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
-  const pronta = Boolean(tarefa.trim());
+  const campo =
+    'w-full rounded-md border border-borda bg-superficie px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave/70 focus:border-marca';
 
   return (
     <>
@@ -233,45 +264,51 @@ function LinhaNova({ adicionar }: { adicionar: (dados: NovaTarefa) => Promise<bo
           <td className="truncate px-4 py-2.5 text-texto-suave">{g.observacoes}</td>
         </tr>
       ))}
-      <tr className="border-t border-borda bg-superficie/60">
-        <td className="px-4 py-2 align-top">
-          <button
-            type="button"
-            onClick={enviar}
-            aria-label="Adicionar tarefa"
-            title="Adicionar tarefa"
-            className={`mt-1 flex size-5 items-center justify-center rounded-md border transition ${
-              pronta
-                ? 'border-marca bg-marca text-marca-contraste hover:opacity-90'
-                : 'border-dashed border-borda text-texto-suave hover:border-marca hover:text-marca'
-            }`}
-          >
-            <Plus aria-hidden size={12} />
-          </button>
-        </td>
-        <td className="px-2 py-1.5">
-          <input
-            ref={campoTarefa}
-            value={tarefa}
-            onChange={(e) => setTarefa(e.target.value)}
-            onKeyDown={aoTeclar}
-            placeholder="Nova tarefa"
-            aria-label="Nova tarefa"
-            className={campo}
-          />
-          {erro ? (
-            <p className="px-2 text-[11px] text-parado">Não salvou. Tente de novo.</p>
-          ) : pronta ? (
-            <p className="px-2 text-[11px] text-texto-suave">Aperte Enter ou clique no + para adicionar</p>
-          ) : null}
-        </td>
-        <td className="px-2 py-1.5 align-top">
-          <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
-        </td>
-        <td className="px-2 py-1.5 align-top">
-          <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Observações" className={campo} />
-        </td>
-      </tr>
+      {aberta ? (
+        <tr className="border-t border-borda bg-marca-suave/40">
+          <td className="px-3 py-2 align-top">
+            <button
+              type="button"
+              onClick={enviar}
+              className="mt-0.5 rounded-md bg-marca px-2 py-1 text-[11px] font-medium text-marca-contraste transition hover:opacity-90"
+            >
+              Salvar
+            </button>
+          </td>
+          <td className="px-2 py-2">
+            <input
+              ref={campoTarefa}
+              autoFocus
+              value={tarefa}
+              onChange={(e) => setTarefa(e.target.value)}
+              onKeyDown={aoTeclar}
+              placeholder="Nova tarefa"
+              aria-label="Nova tarefa"
+              className={campo}
+            />
+            <p className={`mt-1 px-1 text-[11px] ${erro ? 'text-parado' : 'text-texto-suave'}`}>
+              {erro ? 'Não salvou. Tente de novo.' : 'Enter também salva · Esc cancela'}
+            </p>
+          </td>
+          <td className="px-2 py-2 align-top">
+            <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} onKeyDown={aoTeclar} aria-label="Prazo" className={`${campo} tabular-nums`} />
+          </td>
+          <td className="px-2 py-2 align-top">
+            <div className="flex items-center gap-1">
+              <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} onKeyDown={aoTeclar} placeholder="Edite aqui" aria-label="Observações" className={campo} />
+              <button
+                type="button"
+                onClick={fechar}
+                aria-label="Cancelar"
+                title="Cancelar"
+                className="shrink-0 rounded-md p-1 text-texto-suave transition hover:bg-superficie-2 hover:text-texto"
+              >
+                <X aria-hidden size={14} />
+              </button>
+            </div>
+          </td>
+        </tr>
+      ) : null}
     </>
   );
 }
