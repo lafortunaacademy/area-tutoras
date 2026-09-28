@@ -163,6 +163,24 @@ export function porMes(sessoes: Sessao[]): MesDeSessoes[] {
     });
 }
 
+/**
+ * O mesmo mês a mês, adiantado em um mês: a tutora recebe as sessões de um mês
+ * no mês seguinte. Então setembro vira "recebido em outubro".
+ */
+export function comoRecebimento(meses: MesDeSessoes[]): MesDeSessoes[] {
+  return meses.map((m) => {
+    const chave = mesSeguinte(m.chave);
+    return { ...m, chave, rotulo: rotuloDoMes(chave) };
+  });
+}
+
+/** "2026-12" -> "2027-01". */
+export function mesSeguinte(chave: string): string {
+  const [ano, mes] = chave.split('-').map(Number);
+  const d = new Date(Date.UTC(ano, mes, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
 /** As mentorias que aparecem nas sessões, sempre na mesma ordem (a cor segue essa ordem). */
 export function mentoriasDe(sessoes: Sessao[]): string[] {
   const nomes = [...new Set(sessoes.map((s) => s.mentoria))];

@@ -1,5 +1,7 @@
 import { exigirSessao } from '@/lib/session';
 import {
+  comoRecebimento,
+  mesSeguinte,
   desdeAPrimeiraSessao,
   emReais,
   perfilDaTutora,
@@ -39,6 +41,10 @@ export default async function InicioPage() {
   const esteMes = meses.find((m) => m.chave === agora);
 
   const cronologico = [...meses].reverse();
+  // O pagamento cai no mês seguinte ao da sessão.
+  const recebimentos = comoRecebimento(cronologico);
+  const aReceber = esteMes?.valorEmReais ?? null;
+  const mesQueVem = rotuloCurtoDoMes(mesSeguinte(agora));
 
   // Programa e Mentoria são a mesma pergunta feita duas vezes ("de que produto
   // você é tutora?"), e vinham repetindo item. Viram um campo só, sem repetição.
@@ -99,6 +105,7 @@ export default async function InicioPage() {
         <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
         {total !== null ? <Numero rotulo="Total recebido" valor={emReais(total)} /> : null}
+        {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
         <Numero
           rotulo="Atuando há"
           valor={inicio ? `${inicio.meses} ${inicio.meses === 1 ? 'mês' : 'meses'}` : '—'}
@@ -106,7 +113,7 @@ export default async function InicioPage() {
         />
       </div>
 
-      <Secao titulo="Recebido mês a mês">
+      <Secao titulo="Recebido mês a mês" nota="O valor de cada mês cai no mês seguinte; o gráfico já mostra no mês do recebimento.">
         {meses.length === 0 ? (
           <Vazio>
             {semUsuario
@@ -114,7 +121,7 @@ export default async function InicioPage() {
               : 'Nenhuma tutoria realizada ainda.'}
           </Vazio>
         ) : (
-          <GraficoMeses meses={cronologico} tipo="reais" mentorias={mentorias} />
+          <GraficoMeses meses={recebimentos} tipo="reais" mentorias={mentorias} />
         )}
       </Secao>
 
@@ -137,13 +144,22 @@ function Numero({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?:
   );
 }
 
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Secao({ titulo, nota, children }: { titulo: string; nota?: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="rotulo mb-3 text-[11px] text-texto-suave">{titulo}</h2>
+      <h2 className="rotulo mb-1 text-[11px] text-texto-suave">{titulo}</h2>
+      {nota ? <p className="mb-3 text-xs text-texto-suave">{nota}</p> : null}
+      {!nota ? <div className="mb-3" /> : null}
       {children}
     </section>
   );
+}
+
+/** "2026-10" -> "out/26", para caber no rótulo de um número. */
+function rotuloCurtoDoMes(chave: string): string {
+  const [ano, mes] = chave.split('-');
+  const nomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return `${nomes[Number(mes) - 1] ?? mes}/${ano.slice(2)}`;
 }
 
 function Vazio({ children }: { children: React.ReactNode }) {
