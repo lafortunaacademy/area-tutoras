@@ -25,8 +25,17 @@ export type Sessao = {
   titulo: string;
   data: string | null;
   mentoradaIds: string[];
+  /** Mentoria da mentorada atendida ("My Partner", "Pronta Para Fazer Dinheiro"). */
+  mentoria: string;
   /** Da tabela de preços, pela mentoria da mentorada atendida. */
   valor: number | null;
+};
+
+export type FatiaDeMentoria = {
+  mentoria: string;
+  sessoes: number;
+  valor: number | null;
+  valorEmReais: string | null;
 };
 
 export type MesDeSessoes = {
@@ -37,7 +46,12 @@ export type MesDeSessoes = {
   valor: number | null;
   /** Já em reais. Formatar no servidor evita mandar função para o cliente. */
   valorEmReais: string | null;
+  /** O mês aberto por mentoria, na ordem de `mentoriasDe`. */
+  porMentoria: FatiaDeMentoria[];
 };
+
+/** Rótulo de quem ficou sem mentoria preenchida no Notion. */
+export const SEM_MENTORIA = 'Sem mentoria';
 
 /** id da tutora -> nome, para rotular quem assinou cada hands-off. */
 export const nomesDasTutoras = cache(async (): Promise<Map<string, string>> => {
@@ -97,6 +111,7 @@ export async function sessoesDaTutora(
       titulo: t.sessao,
       data: t.data,
       mentoradaIds: t.mentoradaIds,
+      mentoria: mentoria.trim() || SEM_MENTORIA,
       valor: valorDaSessao(mentoria),
     };
   });
@@ -108,27 +123,55 @@ export function valorDaSessao(mentoria: string): number | null {
   return VALOR_POR_SESSAO.find((r) => alvo.includes(r.contem))?.valor ?? null;
 }
 
-/** Agrupa por mês, do mais recente para o mais antigo. */
+/** Agrupa por mês, do mais recente para o mais antigo, e abre cada mês por mentoria. */
 export function porMes(sessoes: Sessao[]): MesDeSessoes[] {
-  const mapa = new Map<string, { sessoes: number; valor: number | null }>();
+  const ordem = mentoriasDe(sessoes);
+  const mapa = new Map<string, Map<string, { sessoes: number; valor: number | null }>>();
 
   for (const s of sessoes) {
     if (!s.data) continue;
     const chave = s.data.slice(0, 7);
-    const atual = mapa.get(chave) ?? { sessoes: 0, valor: null };
+    const mes = mapa.get(chave) ?? new Map();
+    const atual = mes.get(s.mentoria) ?? { sessoes: 0, valor: null };
     atual.sessoes += 1;
     if (s.valor !== null) atual.valor = (atual.valor ?? 0) + s.valor;
-    mapa.set(chave, atual);
+    mes.set(s.mentoria, atual);
+    mapa.set(chave, mes);
   }
 
   return [...mapa.entries()]
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([chave, v]) => ({
-      chave,
-      rotulo: rotuloDoMes(chave),
-      ...v,
-      valorEmReais: v.valor === null ? null : emReais(v.valor),
-    }));
+    .map(([chave, mes]) => {
+      const porMentoria = ordem
+        .filter((m) => mes.has(m))
+        .map((m) => {
+          const v = mes.get(m)!;
+          return { mentoria: m, sessoes: v.sessoes, valor: v.valor, valorEmReais: v.valor === null ? null : emReais(v.valor) };
+        });
+      const sessoesDoMes = porMentoria.reduce((t, f) => t + f.sessoes, 0);
+      const valor = porMentoria.some((f) => f.valor !== null)
+        ? porMentoria.reduce((t, f) => t + (f.valor ?? 0), 0)
+        : null;
+      return {
+        chave,
+        rotulo: rotuloDoMes(chave),
+        sessoes: sessoesDoMes,
+        valor,
+        valorEmReais: valor === null ? null : emReais(valor),
+        porMentoria,
+      };
+    });
+}
+
+/** As mentorias que aparecem nas sessões, sempre na mesma ordem (a cor segue essa ordem). */
+export function mentoriasDe(sessoes: Sessao[]): string[] {
+  const nomes = [...new Set(sessoes.map((s) => s.mentoria))];
+  // "Sem mentoria" por último; o resto em ordem alfabética, para a cor de cada
+  // mentoria não mudar de uma tela para outra.
+  return nomes
+    .filter((m) => m !== SEM_MENTORIA)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    .concat(nomes.includes(SEM_MENTORIA) ? [SEM_MENTORIA] : []);
 }
 
 function rotuloDoMes(chave: string): string {
@@ -157,6 +200,7 @@ export function desdeAPrimeiraSessao(sessoes: Sessao[]): { desde: string; meses:
   return { desde: primeira, meses: Math.max(0, meses) };
 }
 
+/** "R$3.500,00": como a La Fortuna escreve, sem espaço depois do R$. */
 export function emReais(valor: number): string {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '');
 }

@@ -3,6 +3,7 @@ import {
   desdeAPrimeiraSessao,
   emReais,
   perfilDaTutora,
+  mentoriasDe,
   porMes,
   sessoesDaTutora,
 } from '@/lib/notion/tutora';
@@ -29,6 +30,7 @@ export default async function InicioPage() {
   }
 
   const meses = porMes(sessoes);
+  const mentorias = mentoriasDe(sessoes);
   const inicio = desdeAPrimeiraSessao(sessoes);
   const comValor = sessoes.some((s) => s.valor !== null);
   const total = comValor ? sessoes.reduce((soma, s) => soma + (s.valor ?? 0), 0) : null;
@@ -112,13 +114,13 @@ export default async function InicioPage() {
               : 'Nenhuma tutoria realizada ainda.'}
           </Vazio>
         ) : (
-          <GraficoMeses meses={cronologico} tipo="reais" />
+          <GraficoMeses meses={cronologico} tipo="reais" mentorias={mentorias} />
         )}
       </Secao>
 
       {meses.length > 0 ? (
         <Secao titulo="Tutorias por mês">
-          <GraficoMeses meses={cronologico} tipo="volume" />
+          <GraficoMeses meses={cronologico} tipo="volume" mentorias={mentorias} />
         </Secao>
       ) : null}
     </div>

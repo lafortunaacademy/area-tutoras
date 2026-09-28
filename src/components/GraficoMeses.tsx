@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { MesDeSessoes } from '@/lib/notion/tutora';
+import type { FatiaDeMentoria, MesDeSessoes } from '@/lib/notion/tutora';
 
 /**
  * Um mês por barra, do começo até agora.
@@ -10,16 +10,19 @@ import type { MesDeSessoes } from '@/lib/notion/tutora';
  * gráfico: reais e volume andam juntos mas têm ordens de grandeza diferentes, e
  * um eixo só mentiria sobre a proporção do outro.
  *
- * O eixo é discreto de propósito: linhas de grade em tom de apoio, atrás das
- * barras. Quem lê quer comparar meses, não medir pixels.
+ * Sem grade e sem eixo: o valor de cada mês fica escrito em cima da própria
+ * barra, que é o que se quer ler. Sobra só a linha do zero, como apoio.
  */
 export function GraficoMeses({
   meses,
   tipo,
+  mentorias,
 }: {
   /** Do mais antigo para o mais recente. */
   meses: MesDeSessoes[];
   tipo: 'reais' | 'volume';
+  /** As mentorias na ordem das cores; com uma só, a legenda não aparece. */
+  mentorias: string[];
 }) {
   const [sobre, setSobre] = useState<number | null>(null);
 
@@ -29,12 +32,26 @@ export function GraficoMeses({
   const rotuloCheio = (m: MesDeSessoes) =>
     tipo === 'reais' ? (m.valorEmReais ?? '—') : `${m.sessoes} ${m.sessoes === 1 ? 'tutoria' : 'tutorias'}`;
 
+  /** O número em cima da barra: em reais, com o R$ e os milhares separados. */
+  const rotuloCurto = (m: MesDeSessoes) => {
+    const v = valorDe(m);
+    if (!v) return '';
+    return tipo === 'reais' ? formatarReais(v) : String(v);
+  };
+
+  const valorDaFatia = (f: FatiaDeMentoria) => (tipo === 'reais' ? (f.valor ?? 0) : f.sessoes);
+  const corDa = (mentoria: string) => CORES[Math.max(mentorias.indexOf(mentoria), 0) % CORES.length];
+
+  // No gráfico de valores, mentoria sem preço (as "Sem mentoria") não vira
+  // fatia nenhuma: também não entra na legenda.
+  const naLegenda = mentorias.filter((m) =>
+    meses.some((mes) => mes.porMentoria.some((f) => f.mentoria === m && valorDaFatia(f) > 0)),
+  );
+
   const pico = Math.max(...meses.map(valorDe), 1);
   const topo = arredondarParaCima(pico);
   const total = meses.reduce((s, m) => s + valorDe(m), 0);
   const ultimo = meses.length - 1;
-
-  const linhas = [1, 0.75, 0.5, 0.25, 0];
 
   return (
     <figure className="rounded-xl border border-borda bg-superficie p-6">
@@ -52,82 +69,97 @@ export function GraficoMeses({
         </p>
       </div>
 
-      <div className="flex gap-3">
-        {/* Eixo à esquerda: três marcas bastam para dar noção de grandeza. */}
-        <div className="flex h-44 w-10 shrink-0 flex-col justify-between text-right">
-          {linhas.slice(0, -1).map((f) => (
-            <span key={f} className="text-[10px] leading-none text-destaque tabular-nums">
-              {tipo === 'reais' ? compacto(topo * f) : Math.round(topo * f)}
-            </span>
-          ))}
-          <span className="text-[10px] leading-none text-destaque">0</span>
-        </div>
+      <div
+        className="relative flex h-40 items-end gap-2 border-b border-borda"
+        onMouseLeave={() => setSobre(null)}
+      >
+        {meses.map((m, i) => {
+          const v = valorDe(m);
+          // 12% reservados para o rótulo, que fica em cima da barra.
+          const altura = (v / topo) * 88;
+          const ativo = sobre === i;
+          const apagado = sobre !== null && !ativo;
 
-        <div className="min-w-0 flex-1">
-          <div
-            className="relative flex h-44 items-stretch gap-1.5"
-            onMouseLeave={() => setSobre(null)}
-          >
-            {/* Grade atrás das barras, sem competir com elas. */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 flex flex-col justify-between">
-              {linhas.map((f) => (
-                <div
-                  key={f}
-                  className={f === 0 ? 'border-b border-borda' : 'border-b border-borda/45'}
-                />
-              ))}
-            </div>
-
-            {meses.map((m, i) => {
-              const v = valorDe(m);
-              const altura = (v / topo) * 100;
-              const ativo = sobre === i;
-              const apagado = sobre !== null && !ativo;
-
-              return (
-                <div
-                  key={m.chave}
-                  className="group relative flex min-w-0 flex-1 flex-col justify-end"
-                  onMouseEnter={() => setSobre(i)}
-                  onFocus={() => setSobre(i)}
-                  onBlur={() => setSobre(null)}
-                  tabIndex={0}
-                >
+          return (
+            <div
+              key={m.chave}
+              className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+              onMouseEnter={() => setSobre(i)}
+              onFocus={() => setSobre(i)}
+              onBlur={() => setSobre(null)}
+              tabIndex={0}
+            >
+              <span
+                className={`mb-1 text-[10px] whitespace-nowrap tabular-nums transition-opacity ${
+                  apagado ? 'text-texto-suave opacity-40' : 'text-texto-suave'
+                }`}
+              >
+                {rotuloCurto(m)}
+              </span>
+              <div
+                className={`flex w-full max-w-7 flex-col-reverse justify-start overflow-hidden rounded-t-[4px] transition-all duration-300 ${
+                  apagado ? 'opacity-40' : 'opacity-100'
+                }`}
+                style={{ height: `${v > 0 ? Math.max(altura, 1.5) : 0}%` }}
+              >
+                {m.porMentoria.map((f) => (
                   <div
-                    className={`rounded-t-[4px] transition-all duration-300 ${
-                      i === ultimo ? 'bg-marca' : 'bg-marca/80'
-                    } ${apagado ? 'opacity-35' : 'opacity-100'}`}
-                    style={{ height: `${v > 0 ? Math.max(altura, 1.5) : 0}%` }}
+                    key={f.mentoria}
+                    // 2px de fundo entre as fatias: separa sem precisar de borda.
+                    className="w-full shrink-0 border-t-2 border-superficie first:border-t-0"
+                    style={{
+                      height: `${v > 0 ? (valorDaFatia(f) / v) * 100 : 0}%`,
+                      backgroundColor: corDa(f.mentoria),
+                    }}
                   />
+                ))}
+              </div>
 
-                  {ativo ? (
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-lg border border-borda bg-superficie px-3 py-2 shadow-[var(--sombra)]">
-                      <p className="text-[11px] text-texto-suave">{m.rotulo}</p>
-                      <p className="mt-0.5 text-sm font-medium">{rotuloCheio(m)}</p>
-                    </div>
+              {ativo ? (
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-lg border border-borda bg-superficie px-3 py-2 shadow-[var(--sombra)]">
+                  <p className="text-[11px] text-texto-suave">{m.rotulo}</p>
+                  <p className="mt-0.5 text-sm font-medium">{rotuloCheio(m)}</p>
+                  {m.porMentoria.length > 1 ? (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {m.porMentoria.map((f) => (
+                        <li key={f.mentoria} className="flex items-center gap-1.5 text-[11px] text-texto-suave">
+                          <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: corDa(f.mentoria) }} />
+                          {f.mentoria}: {tipo === 'reais' ? (f.valorEmReais ?? '—') : f.sessoes}
+                        </li>
+                      ))}
+                    </ul>
                   ) : null}
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-2 flex gap-1.5">
-            {meses.map((m, i) => (
-              <span
-                key={m.chave}
-                className={`min-w-0 flex-1 truncate text-center text-[10px] tabular-nums transition-colors ${
-                  sobre === i || (sobre === null && i === ultimo)
-                    ? 'font-medium text-texto'
-                    : 'text-texto-suave'
-                }`}
-                title={m.rotulo}
-              >
-                {curto(m.chave)}
-              </span>
-            ))}
-          </div>
-        </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
+
+      <div className="mt-2 flex gap-2">
+        {meses.map((m, i) => (
+          <span
+            key={m.chave}
+            className={`min-w-0 flex-1 truncate text-center text-[10px] tabular-nums transition-colors ${
+              sobre === i || (sobre === null && i === ultimo) ? 'font-medium text-texto' : 'text-texto-suave'
+            }`}
+            title={m.rotulo}
+          >
+            {curto(m.chave)}
+          </span>
+        ))}
+      </div>
+
+      {naLegenda.length > 1 ? (
+        <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
+          {naLegenda.map((m) => (
+            <li key={m} className="flex items-center gap-1.5 text-[11px] text-texto-suave">
+              <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: corDa(m) }} />
+              {m}
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <figcaption className="sr-only">
         <table>
@@ -146,6 +178,13 @@ export function GraficoMeses({
   );
 }
 
+/**
+ * Uma cor por mentoria, na ordem fixa de `mentoriasDe`: o marrom da marca, o
+ * taupe de apoio e o bege. São tons da própria marca, distinguíveis também em
+ * preto e branco por causa da diferença de claridade.
+ */
+const CORES = ['var(--marca)', 'var(--destaque)', 'var(--borda)', 'var(--texto-suave)'];
+
 /** Topo do eixo num número redondo, para as marcas não saírem quebradas. */
 function arredondarParaCima(v: number): number {
   if (v <= 10) return Math.ceil(v);
@@ -160,13 +199,8 @@ function curto(chave: string): string {
   return `${nomes[Number(mes) - 1] ?? mes}/${ano.slice(2)}`;
 }
 
+/** "R$3.500,00": como a La Fortuna escreve, sem espaço depois do R$. */
 function formatarReais(v: number): string {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\s/g, '');
 }
 
-/** No eixo só cabe a ordem de grandeza: 3500 -> "3,5k". */
-function compacto(v: number): string {
-  if (v < 1000) return String(Math.round(v));
-  const mil = v / 1000;
-  return `${mil.toFixed(mil < 10 ? 1 : 0).replace('.', ',')}k`;
-}
