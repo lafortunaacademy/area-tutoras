@@ -2,7 +2,6 @@ import { exigirSessao } from '@/lib/session';
 import {
   comoRecebimento,
   mesSeguinte,
-  desdeAPrimeiraSessao,
   emReais,
   perfilDaTutora,
   mentoriasDe,
@@ -10,7 +9,6 @@ import {
   sessoesDaTutora,
 } from '@/lib/notion/tutora';
 import { temUsuarioNoNotion } from '@/lib/notion/tutorias';
-import { formatarData } from '@/lib/notion/props';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
 import { GraficoMeses } from '@/components/GraficoMeses';
@@ -25,7 +23,7 @@ export default async function InicioPage() {
   try {
     [perfil, sessoes] = await Promise.all([
       perfilDaTutora(tutoraId),
-      sessoesDaTutora(tutoraId, sessao.tutora.email),
+      sessoesDaTutora(tutoraId),
     ]);
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
@@ -33,7 +31,6 @@ export default async function InicioPage() {
 
   const meses = porMes(sessoes);
   const mentorias = mentoriasDe(sessoes);
-  const inicio = desdeAPrimeiraSessao(sessoes);
   const comValor = sessoes.some((s) => s.valor !== null);
   const total = comValor ? sessoes.reduce((soma, s) => soma + (s.valor ?? 0), 0) : null;
 
@@ -106,11 +103,6 @@ export default async function InicioPage() {
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
         {total !== null ? <Numero rotulo="Total recebido" valor={emReais(total)} /> : null}
         {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
-        <Numero
-          rotulo="Atuando há"
-          valor={inicio ? `${inicio.meses} ${inicio.meses === 1 ? 'mês' : 'meses'}` : '—'}
-          nota={inicio ? `desde a 1ª sessão, ${formatarData(inicio.desde)}` : undefined}
-        />
       </div>
 
       <Secao titulo="Recebido mês a mês" nota="O valor de cada mês cai no mês seguinte; o gráfico já mostra no mês do recebimento.">

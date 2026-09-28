@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { exigirSessao } from '@/lib/session';
-import { carteiraDaTutora } from '@/lib/notion/carteira';
+import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { AvisoNotion } from '@/components/AvisoNotion';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export default async function PainelPage() {
 
   let mentoradas;
   try {
-    mentoradas = await carteiraDaTutora();
+    mentoradas = await mentoradasDoModeloNovo();
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }

@@ -8,14 +8,13 @@ import { corDaOpcao, data, relationIds, texto } from './props';
 /**
  * As tutorias dadas, da base "Acompanhamento de clientes".
  *
- * É o controle de verdade — 961 sessões, contra os poucos hands-off, que são o
- * diário da sessão e não o registro dela. Só `Realizada` conta.
+ * É o controle de verdade — mais de mil sessões, contra os poucos hands-off, que
+ * são o diário da sessão e não o registro dela. Só `Realizada` conta.
  *
- * O campo `Tutora` lá é de pessoa (usuário do Notion), e a tutora logada é uma
- * linha no Supabase com um e-mail. A ponte entre os dois é esse e-mail: os
- * usuários que aparecem nas sessões são consultados uma vez e casados por ele.
- * Nome não serve — "Maisa Miranda" no Notion é "Maísa Miranda" no usuário,
- * "Rafaela Ribas" é "Rafaela Ribas da Rocha".
+ * Quem deu a sessão sai da relation `Tutoras`, que aponta para a página dela na
+ * base Tutoras — é o mesmo recorte das visualizações do Notion. A coluna
+ * `Tutora`, de pessoa, não entra: sessões antigas têm só a relation preenchida,
+ * e misturar as duas contava sessão a mais para umas e a menos para outras.
  */
 
 export type Tutoria = {
@@ -25,6 +24,8 @@ export type Tutoria = {
   mentoradaIds: string[];
   /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
   tema: string;
+  /** Mentoria da mentorada, pelo rollup da própria linha. */
+  mentoria: string;
 };
 
 /** Sessão que ainda vai acontecer, da mesma base. */
@@ -36,6 +37,7 @@ export type TutoriaAgendada = {
   data: string | null;
   mentoradaIds: string[];
   tema: string;
+  mentoria: string;
 };
 
 /** Todas as sessões realizadas, cruas. Uma consulta por requisição. */
@@ -69,19 +71,12 @@ const usuariosPorEmail = cache(async (): Promise<Map<string, string>> => {
   return mapa;
 });
 
-export async function tutoriasDaTutora(email: string): Promise<Tutoria[]> {
-  const usuarios = await usuariosPorEmail();
-  const usuarioId = usuarios.get(email.trim().toLowerCase());
-  if (!usuarioId) return [];
-
+/** As sessões realizadas dela, pela relation `Tutoras`. */
+export async function tutoriasDaTutora(tutoraPageId: string): Promise<Tutoria[]> {
   const linhas = await todasRealizadas();
 
   return linhas
-    .filter((p) => {
-      const prop = p.properties?.[TUTORIA.tutora];
-      if (prop?.type !== 'people') return false;
-      return ((prop.people as { id: string }[]) ?? []).some((u) => u.id === usuarioId);
-    })
+    .filter((p) => relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
     .map((p) => ({
       id: p.id,
       sessao: texto(p, TUTORIA.sessao),
@@ -89,6 +84,7 @@ export async function tutoriasDaTutora(email: string): Promise<Tutoria[]> {
       data: data(p, TUTORIA.dataRealizada) ?? data(p, TUTORIA.dataPrevista),
       mentoradaIds: relationIds(p, TUTORIA.mentorada),
       tema: texto(p, TUTORIA.tema),
+      mentoria: texto(p, TUTORIA.mentoria),
     }))
     .sort((a, b) => (b.data ?? '').localeCompare(a.data ?? ''));
 }
@@ -112,19 +108,11 @@ const todasARealizar = cache(async (): Promise<NotionPage[]> => {
  * As próximas sessões da tutora, da mais próxima para a mais distante. Sem data
  * marcada entram no fim: são as que faltam agendar.
  */
-export async function proximasDaTutora(email: string, tutoraPageId: string): Promise<TutoriaAgendada[]> {
-  const usuarios = await usuariosPorEmail();
-  const usuarioId = usuarios.get(email.trim().toLowerCase());
+export async function proximasDaTutora(tutoraPageId: string): Promise<TutoriaAgendada[]> {
   const linhas = await todasARealizar();
 
   return linhas
-    .filter((p) => {
-      const prop = p.properties?.[TUTORIA.tutora];
-      const dela = prop?.type === 'people' && ((prop.people as { id: string }[]) ?? []).some((u) => u.id === usuarioId);
-      // A relation `Tutoras` cobre quem ainda não tem sessão realizada (e por
-      // isso nenhum usuário reconhecido pelo e-mail).
-      return dela || relationIds(p, TUTORIA.tutoras).includes(tutoraPageId);
-    })
+    .filter((p) => relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
     .map((p) => ({
       id: p.id,
       sessao: texto(p, TUTORIA.sessao),
@@ -133,6 +121,7 @@ export async function proximasDaTutora(email: string, tutoraPageId: string): Pro
       data: data(p, TUTORIA.dataPrevista),
       mentoradaIds: relationIds(p, TUTORIA.mentorada),
       tema: texto(p, TUTORIA.tema),
+      mentoria: texto(p, TUTORIA.mentoria),
     }))
     .sort((a, b) => (a.data ?? '9999').localeCompare(b.data ?? '9999'));
 }

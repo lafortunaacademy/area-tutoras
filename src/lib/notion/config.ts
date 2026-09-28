@@ -184,6 +184,8 @@ export const TUTORIA = {
   ciclo: 'Ciclo',
   /** Fórmula que tira o tema do nome da sessão ("Produto", "Conteúdo"…; "Fernanda" quando não é tutoria). */
   tema: 'Tutoria',
+  /** Rollup que traz a mentoria da mentorada ("My Partner 2.0", "Pronta Para Fazer Dinheiro"). */
+  mentoria: 'Rollup',
 } as const;
 
 /**

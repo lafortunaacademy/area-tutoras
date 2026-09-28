@@ -1,5 +1,5 @@
 import { exigirSessao } from '@/lib/session';
-import { carteiraDaTutora } from '@/lib/notion/carteira';
+import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraVerComo } from '@/components/BarraVerComo';
 import { Cabecalho } from '@/components/Cabecalho';
 import { MenuMentoradas } from '@/components/MenuMentoradas';
@@ -7,9 +7,9 @@ import { MenuMentoradas } from '@/components/MenuMentoradas';
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
   const sessao = await exigirSessao();
 
-  // `carteiraDaTutora` é cacheada por requisição, então o menu e a página que
+  // `mentoradasDoModeloNovo` é cacheada por requisição, então o menu e a página que
   // ele envolve dividem a mesma ida ao Notion.
-  const mentoradas = await carteiraDaTutora().catch(() => []);
+  const mentoradas = await mentoradasDoModeloNovo().catch(() => []);
 
   return (
     <div className="min-h-dvh">

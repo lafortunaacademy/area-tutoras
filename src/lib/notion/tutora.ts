@@ -4,7 +4,6 @@ import { getPage, queryDatabase } from './client';
 import { tutoriasDaTutora } from './tutorias';
 import { resolverDatabaseId } from './resolver';
 import { TUTORA, VALOR_POR_SESSAO } from './config';
-import { carteiraDaTutora } from './carteira';
 import { arquivoUrl, texto } from './props';
 
 /** Quem é a tutora e o que ela já fez — o conteúdo da página de Início. */
@@ -83,38 +82,21 @@ export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora
  * hands-off é o relato da sessão, escrito quando dá; o controle é onde a sessão
  * é marcada como realizada. Contar hands-off subestimaria o trabalho dela.
  *
- * O valor sai da mentoria da mentorada atendida: My Partner e Pronta Para Fazer
- * Dinheiro pagam diferente.
+ * Quem deu a sessão vem da relation `Tutoras`, e a mentoria vem do rollup da
+ * própria linha — sem depender da carteira, que não cobre sessão sem mentorada
+ * preenchida. O valor sai dessa mentoria.
  */
-export async function sessoesDaTutora(
-  tutoraPageId: string,
-  email: string,
-): Promise<Sessao[]> {
-  const [tutorias, mentoradas] = await Promise.all([
-    tutoriasDaTutora(email),
-    carteiraDaTutora(),
-  ]);
+export async function sessoesDaTutora(tutoraPageId: string): Promise<Sessao[]> {
+  const tutorias = await tutoriasDaTutora(tutoraPageId);
 
-  // A relation `Mentorada` do controle aponta para a página da cliente em "Área
-  // clientes", não para a linha dela em "Área das tutoras". Indexar pelo ID
-  // errado casa zero e faz todo valor virar null — foi o que aconteceu.
-  const mentoriaPor = new Map<string, string>();
-  for (const m of mentoradas) {
-    for (const id of m.areaDaClienteIds) mentoriaPor.set(id, m.mentoria);
-    mentoriaPor.set(m.id, m.mentoria);
-  }
-
-  return tutorias.map((t) => {
-    const mentoria = t.mentoradaIds.map((id) => mentoriaPor.get(id)).find(Boolean) ?? '';
-    return {
-      id: t.id,
-      titulo: t.sessao,
-      data: t.data,
-      mentoradaIds: t.mentoradaIds,
-      mentoria: mentoria.trim() || SEM_MENTORIA,
-      valor: valorDaSessao(mentoria),
-    };
-  });
+  return tutorias.map((t) => ({
+    id: t.id,
+    titulo: t.sessao,
+    data: t.data,
+    mentoradaIds: t.mentoradaIds,
+    mentoria: t.mentoria.trim() || SEM_MENTORIA,
+    valor: valorDaSessao(t.mentoria),
+  }));
 }
 
 /** `null` quando a mentoria não casa com nenhuma regra — melhor do que chutar. */
