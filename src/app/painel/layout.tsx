@@ -3,6 +3,7 @@ import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraVerComo } from '@/components/BarraVerComo';
 import { Cabecalho } from '@/components/Cabecalho';
 import { MenuMentoradas } from '@/components/MenuMentoradas';
+import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
   const sessao = await exigirSessao();
@@ -27,12 +28,20 @@ export default async function PainelLayout({ children }: { children: React.React
             <MenuMentoradas
               base="/painel"
               inicio={{ href: '/painel/inicio', rotulo: 'Início' }}
+              secoes={[
+                { rotulo: 'Mapa da cliente', ancora: 'mapa' },
+                { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
+                { rotulo: 'Briefings', ancora: 'briefings' },
+                { rotulo: 'Hands-off', ancora: 'hands-off' },
+                { rotulo: 'Tutorias', ancora: 'tutorias' },
+              ]}
               mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
             />
           </div>
         </aside>
 
         <main className="min-w-0 flex-1">{children}</main>
+        <RolarParaAncora />
       </div>
     </div>
   );

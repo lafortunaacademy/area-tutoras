@@ -69,7 +69,7 @@ export default async function MentoradaPage({
         </div>
       </div>
 
-      <Secao titulo="Mapa da cliente">
+      <Secao titulo="Mapa da cliente" ancora="mapa">
         {mapa.length === 0 ? (
           <Vazio>Nenhum mapa preenchido ainda.</Vazio>
         ) : (
@@ -81,7 +81,7 @@ export default async function MentoradaPage({
         )}
       </Secao>
 
-      <Secao titulo="Planejamento estratégico">
+      <Secao titulo="Planejamento estratégico" ancora="planejamento">
         {plano instanceof Error ? (
           <AvisoNotion erro={plano} detalhar={sessao.real.is_admin} />
         ) : plano === null ? (
@@ -95,7 +95,7 @@ export default async function MentoradaPage({
         )}
       </Secao>
 
-      <Secao titulo="Briefings">
+      <Secao titulo="Briefings" ancora="briefings">
         <TabelaNotion
           mentoradaId={mentorada.id}
           vazio="Nenhum briefing para esta mentorada."
@@ -114,6 +114,7 @@ export default async function MentoradaPage({
 
       <Secao
         titulo="Hands-off"
+        ancora="hands-off"
         acao={
           sessao.verComo ? (
             <span className="text-xs text-texto-suave">preview — só leitura</span>
@@ -149,7 +150,7 @@ export default async function MentoradaPage({
       </Secao>
 
       {/* Respostas da mentorada às tutorias (pré-sessões, 1:1…). A tutora só lê. */}
-      <Secao titulo="Tutorias">
+      <Secao titulo="Tutorias" ancora="tutorias">
         {tutorias === null ? (
           <Vazio>Não foi possível carregar as tutorias agora.</Vazio>
         ) : tutorias.length === 0 ? (
@@ -170,15 +171,18 @@ export default async function MentoradaPage({
 
 function Secao({
   titulo,
+  ancora,
   acao,
   children,
 }: {
   titulo: string;
+  /** id da seção, para o menu lateral levar até ela. */
+  ancora?: string;
   acao?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mb-10">
+    <section id={ancora} className="mb-10 scroll-mt-24">
       <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className="rotulo text-[11px] text-texto-suave">{titulo}</h2>
         {acao}
