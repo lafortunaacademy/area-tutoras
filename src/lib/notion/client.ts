@@ -183,6 +183,16 @@ export async function getDatabase(databaseId: string): Promise<{
   return call(`/databases/${databaseId}`);
 }
 
+/** Um bloco sozinho, para subir a árvore pelo `parent`. */
+export async function getBlock(blockId: string): Promise<NotionBlock & { parent: Pai }> {
+  return call(`/blocks/${blockId}`);
+}
+
+/** Muda o conteúdo de um bloco (texto de um parágrafo, marcação de um to-do…). */
+export async function updateBlock(blockId: string, body: Record<string, unknown>): Promise<NotionBlock> {
+  return call<NotionBlock>(`/blocks/${blockId}`, { method: 'PATCH', body });
+}
+
 /** De onde uma página, base ou bloco pendura. */
 export type Pai = { type: string; page_id?: string; database_id?: string; block_id?: string; workspace?: boolean };
 

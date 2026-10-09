@@ -3,32 +3,35 @@ import { ArrowLeft, Users } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import { tutorasDoHub } from '@/lib/notion/hub';
-import { modeloDasTutorias } from '@/lib/tutorias/modelo';
-import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
+import { pilaresDaMentorada } from '@/lib/notion/pilares';
 import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
 import { GaleriaTutoras } from '@/components/area-mentorada/GaleriaTutoras';
-import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
+import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares, que
- * moram no próprio app (as respostas também).
+ * Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares, lidos
+ * da página Tutorias desta mentorada no Notion. O que ela responde é gravado lá.
  */
 export default async function TutoriasPage({ params }: { params: Promise<{ mentoradaId: string }> }) {
   const { mentoradaId } = await params;
   const visitante = await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [tutoras, pilares, progresso] = await Promise.all([
+  const [tutoras, pilares] = await Promise.all([
     tutorasDoHub().catch((e) => e as Error),
-    modeloDasTutorias().catch((e) => e as Error),
-    progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
+    pilaresDaMentorada(mentorada).catch(() => null),
   ]);
-  // Sem Notion, os pilares aparecem do mesmo jeito, só sem a lista de sessões.
-  const sessoes = await (pilares instanceof Error ? null : sessoesDosPilares(mentorada, pilares).catch(() => null));
+  // As sessões de cada pilar vêm do controle, não da página de tutorias.
+  const sessoes = pilares
+    ? await sessoesDosPilares(
+        mentorada,
+        pilares.map((p) => ({ id: p.id, tutorias: p.tutorias.map((t) => ({ nome: t.titulo })) })),
+      ).catch(() => null)
+    : null;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -52,19 +55,12 @@ export default async function TutoriasPage({ params }: { params: Promise<{ mento
       </Bloco>
 
       <div className="mt-4">
-        {pilares instanceof Error ? (
+        {pilares === null ? (
           <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
             Não foi possível carregar as tutorias agora.
           </p>
         ) : pilares.length ? (
-          <PilaresDoApp
-            pilares={pilares}
-            mentoradaId={mentorada.id}
-            progresso={progresso}
-            sessoes={sessoes}
-            admin={visitante.admin}
-            paraMentorada={!visitante.admin}
-          />
+          <PilaresDeTutoria pilares={pilares} mentoradaId={mentorada.id} admin={visitante.admin} sessoes={sessoes} />
         ) : null}
       </div>
     </div>

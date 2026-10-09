@@ -8,11 +8,10 @@ import { Etiqueta } from '@/components/Etiqueta';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
-import { modeloDasTutorias } from '@/lib/tutorias/modelo';
-import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
-import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
+import { pilaresDaMentorada } from '@/lib/notion/pilares';
+import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
 import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
-import { tutoriasDaTutora } from '@/lib/tutorias/acesso';
+import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,24 +29,26 @@ export default async function MentoradaPage({
 
   // Só as listagens são carregadas aqui — o conteúdo de cada item fica para
   // quando a tutora expandir aquele item.
-  const [mapa, plano, brief, hands, tutorias, progresso] = await Promise.all([
+  const [mapa, plano, brief, hands, tutorias] = await Promise.all([
     mapaDaCliente(mentorada).catch(() => []),
     planejamento(mentorada).catch((e) => e as Error),
     briefings(mentorada, tutoraId).catch(() => []),
     handsoffs(mentorada, tutoraId).catch(() => []),
     // Só as tutorias da área desta tutora (o administrativo vê todas).
-    Promise.all([modeloDasTutorias(), tutoriasDaTutora()])
-      .then(([pilares, liberadas]) =>
-        liberadas
-          ? pilares
-              .map((p) => ({ ...p, tutorias: p.tutorias.filter((t) => liberadas.has(t.id)) }))
-              .filter((p) => p.tutorias.length)
-          : pilares,
+    Promise.all([pilaresDaMentorada(mentorada), trechosDaTutora()])
+      .then(([pilares, trechos]) =>
+        pilares
+          ?.map((p) => ({ ...p, tutorias: p.tutorias.filter((t) => daArea(t.titulo, trechos)) }))
+          .filter((p) => p.tutorias.length) ?? null,
       )
       .catch(() => null),
-    progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
-  const sessoesPorPilar = await (tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null);
+  const sessoesPorPilar = tutorias
+    ? await sessoesDosPilares(
+        mentorada,
+        tutorias.map((p) => ({ id: p.id, tutorias: p.tutorias.map((t) => ({ nome: t.titulo })) })),
+      ).catch(() => null)
+    : null;
 
   return (
     <div>
@@ -156,13 +157,7 @@ export default async function MentoradaPage({
         ) : tutorias.length === 0 ? (
           <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
         ) : (
-          <PilaresDoApp
-            pilares={tutorias}
-            mentoradaId={mentorada.id}
-            progresso={progresso}
-            admin={false}
-            sessoes={sessoesPorPilar}
-          />
+          <PilaresDeTutoria pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
         )}
       </Secao>
     </div>

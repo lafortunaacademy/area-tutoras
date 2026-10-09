@@ -75,3 +75,21 @@ async function materialLiberado(materialId: string): Promise<boolean> {
   const { data } = await supabaseAdmin().from('tutoria_materiais').select('tutoria_id').eq('id', materialId).maybeSingle();
   return Boolean(data && liberadas.has(data.tutoria_id as string));
 }
+
+/**
+ * Os trechos de nome das tutorias que a tutora logada acompanha ("terap",
+ * "invest"…), pelas especialidades dela no Notion. `null` quando vê todas.
+ */
+export const trechosDaTutora = cache(async (): Promise<string[] | null> => {
+  const sessao = await getSessao();
+  if (!sessao || (sessao.real.is_admin && !sessao.verComo)) return null;
+
+  const especialidades = await especialidadesDasTutoras();
+  const minhas = new Set((especialidades.get(normalizarId(sessao.tutora.notion_tutora_page_id)) ?? []).map(semAcento));
+  return TEMAS_DE_TUTORIA.filter((t) => t.especialidades.some((e) => minhas.has(semAcento(e)))).map((t) => t.trecho);
+});
+
+/** A tutoria é da área dela? Compara o nome com os trechos (sem acento, sem maiúsculas). */
+export function daArea(nomeDaTutoria: string, trechos: string[] | null): boolean {
+  return trechos === null || trechos.some((t) => semAcento(nomeDaTutoria).includes(t));
+}
