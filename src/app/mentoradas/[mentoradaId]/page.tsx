@@ -11,6 +11,7 @@ import {
   PiggyBank,
   Target,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
@@ -118,7 +119,19 @@ export default async function AreaDaMentoradaPage({
         </div>
 
         <div id="area" className="scroll-mt-6">
-          <Bloco icone={LayoutGrid} titulo="Área da mentorada">
+          <Bloco
+            icone={LayoutGrid}
+            titulo="Área da mentorada"
+            acao={
+              <Link
+                href={`/mentoradas/${mentorada.id}/hub-de-tutoras`}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs font-medium whitespace-nowrap text-texto-suave transition hover:border-marca hover:text-marca"
+              >
+                <Users aria-hidden size={13} />
+                Conheça nosso HUB de tutoras
+              </Link>
+            }
+          >
             <CartoesDaArea mentoradaId={mentorada.id} />
           </Bloco>
         </div>

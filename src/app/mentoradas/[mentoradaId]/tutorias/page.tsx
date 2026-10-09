@@ -1,22 +1,19 @@
 import Link from 'next/link';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
-import { tutorasDoHub } from '@/lib/notion/hub';
 import { pilaresDaMentorada } from '@/lib/notion/pilares';
 import { ciclosDoControle, ordenarAnos, sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { cicloAtual } from '@/lib/notion/config';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
-import { AvisoNotion } from '@/components/AvisoNotion';
-import { Bloco } from '@/components/area-mentorada/Bloco';
-import { GaleriaTutoras } from '@/components/area-mentorada/GaleriaTutoras';
 import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Página do cartão "Tutorias": a galeria "Tutorias do HUB" e os pilares, lidos
- * da página Tutorias desta mentorada no Notion. O que ela responde é gravado lá.
+ * Página do cartão "Tutorias": os pilares lidos da página Tutorias desta
+ * mentorada no Notion. O que ela responde é gravado lá. O HUB de tutoras tem
+ * página própria.
  */
 export default async function TutoriasPage({
   params,
@@ -30,8 +27,7 @@ export default async function TutoriasPage({
   const visitante = await exigirAcessoAMentorada(mentoradaId);
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [tutoras, pilares, dasSessoes, ciclos] = await Promise.all([
-    tutorasDoHub().catch((e) => e as Error),
+  const [pilares, dasSessoes, ciclos] = await Promise.all([
     pilaresDaMentorada(mentorada).catch(() => null),
     sessoesPorCiclo(mentorada).catch(() => null),
     ciclosDoControle().catch(() => [] as string[]),
@@ -73,14 +69,6 @@ export default async function TutoriasPage({
           mesmoComUm
         />
       </div>
-
-      <Bloco icone={Users} titulo="Tutorias do HUB">
-        {tutoras instanceof Error ? (
-          <AvisoNotion erro={tutoras} detalhar={visitante.admin} />
-        ) : (
-          <GaleriaTutoras tutoras={tutoras} />
-        )}
-      </Bloco>
 
       <div className="mt-4">
         {pilares === null ? (
