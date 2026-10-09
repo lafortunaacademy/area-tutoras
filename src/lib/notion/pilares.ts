@@ -154,8 +154,8 @@ export type RespostaDaPreSessao =
   | { acao: 'texto'; blocoId: string; texto: string }
   /** Pergunta ainda sem parágrafo de resposta: cria um dentro do callout. */
   | { acao: 'adicionar'; blocoId: string; texto: string }
-  /** Uma célula de uma tabela da página (carteira de investimentos…). */
-  | { acao: 'celula'; blocoId: string; coluna: number; texto: string }
+  /** Uma linha inteira de uma tabela da página (carteira de investimentos…). */
+  | { acao: 'linhaDaTabela'; blocoId: string; celulas: string[] }
   /** Mais uma linha vazia no fim de uma tabela. */
   | { acao: 'linha'; blocoId: string };
 
@@ -183,12 +183,13 @@ export async function responderPreSessao(
     await updateBlock(bloco.id, { paragraph: { rich_text: textoRico(resposta.texto) } });
     return bloco.id;
   }
-  if (resposta.acao === 'celula') {
+  if (resposta.acao === 'linhaDaTabela') {
     if (bloco.type !== 'table_row') return null;
-    const celulas = ((bloco.table_row as { cells?: unknown[][] })?.cells ?? []).map((c) => c);
-    if (resposta.coluna < 0 || resposta.coluna >= celulas.length) return null;
-    celulas[resposta.coluna] = textoRico(resposta.texto);
-    await updateBlock(bloco.id, { table_row: { cells: celulas } });
+    const atuais = ((bloco.table_row as { cells?: unknown[][] })?.cells ?? []).length;
+    if (resposta.celulas.length !== atuais) return null;
+    // A linha inteira vai junto: célula a célula, duas gravações ao mesmo tempo
+    // se atropelavam e só a última sobrevivia.
+    await updateBlock(bloco.id, { table_row: { cells: resposta.celulas.map((c) => textoRico(c)) } });
     return bloco.id;
   }
   if (resposta.acao === 'linha') {

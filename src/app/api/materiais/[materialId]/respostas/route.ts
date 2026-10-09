@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { materialId } = await params;
   const corpo = (await request.json().catch(() => null)) as
-    | ({ mentorada?: string; token?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; coluna: number }>)
+    | ({ mentorada?: string; token?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; celulas: string[] }>)
     | null;
   const resposta = validar(corpo);
   if (!corpo?.mentorada || !resposta) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 }
 
 function validar(
-  c: Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; coluna: number }> | null,
+  c: Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; celulas: string[] }> | null,
 ): RespostaDaPreSessao | null {
   if (!c || typeof c.blocoId !== 'string' || !c.blocoId) return null;
   const blocoId = normalizarId(c.blocoId);
@@ -39,8 +39,13 @@ function validar(
   if ((c.acao === 'texto' || c.acao === 'adicionar') && typeof c.texto === 'string' && c.texto.length <= 20_000) {
     return { acao: c.acao, blocoId, texto: c.texto };
   }
-  if (c.acao === 'celula' && typeof c.texto === 'string' && c.texto.length <= 2000 && Number.isInteger(c.coluna)) {
-    return { acao: 'celula', blocoId, coluna: c.coluna!, texto: c.texto };
+  if (
+    c.acao === 'linhaDaTabela' &&
+    Array.isArray(c.celulas) &&
+    c.celulas.length <= 30 &&
+    c.celulas.every((v) => typeof v === 'string' && v.length <= 2000)
+  ) {
+    return { acao: 'linhaDaTabela', blocoId, celulas: c.celulas };
   }
   if (c.acao === 'linha') return { acao: 'linha', blocoId };
   return null;
