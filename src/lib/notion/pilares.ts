@@ -153,7 +153,11 @@ export type RespostaDaPreSessao =
   | { acao: 'marcar'; blocoId: string; marcado: boolean }
   | { acao: 'texto'; blocoId: string; texto: string }
   /** Pergunta ainda sem parágrafo de resposta: cria um dentro do callout. */
-  | { acao: 'adicionar'; blocoId: string; texto: string };
+  | { acao: 'adicionar'; blocoId: string; texto: string }
+  /** Uma célula de uma tabela da página (carteira de investimentos…). */
+  | { acao: 'celula'; blocoId: string; coluna: number; texto: string }
+  /** Mais uma linha vazia no fim de uma tabela. */
+  | { acao: 'linha'; blocoId: string };
 
 /**
  * Grava uma resposta na pré-sessão, direto no Notion. Os IDs vêm do navegador:
@@ -179,6 +183,24 @@ export async function responderPreSessao(
     await updateBlock(bloco.id, { paragraph: { rich_text: textoRico(resposta.texto) } });
     return bloco.id;
   }
+  if (resposta.acao === 'celula') {
+    if (bloco.type !== 'table_row') return null;
+    const celulas = ((bloco.table_row as { cells?: unknown[][] })?.cells ?? []).map((c) => c);
+    if (resposta.coluna < 0 || resposta.coluna >= celulas.length) return null;
+    celulas[resposta.coluna] = textoRico(resposta.texto);
+    await updateBlock(bloco.id, { table_row: { cells: celulas } });
+    return bloco.id;
+  }
+  if (resposta.acao === 'linha') {
+    if (bloco.type !== 'table') return null;
+    const largura = Number((bloco.table as { table_width?: number })?.table_width ?? 0);
+    if (!largura) return null;
+    const [nova] = await appendChildren(bloco.id, [
+      { object: 'block', type: 'table_row', table_row: { cells: Array.from({ length: largura }, () => []) } },
+    ]);
+    return nova?.id ?? null;
+  }
+
   if (bloco.type !== 'callout') return null;
   const [novo] = await appendChildren(bloco.id, [
     { object: 'block', type: 'paragraph', paragraph: { rich_text: textoRico(resposta.texto) } },

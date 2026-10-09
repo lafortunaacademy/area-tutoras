@@ -1,13 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Loader2, Paperclip } from 'lucide-react';
+import { Check, Loader2, Paperclip, Plus } from 'lucide-react';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 
 type Anexar = (calloutId: string, arquivo: File) => Promise<BlocoSimples | 'grande' | null>;
 
-type Salvar = (corpo: { acao: 'marcar'; blocoId: string; marcado: boolean } | { acao: 'texto' | 'adicionar'; blocoId: string; texto: string }) => Promise<string | null>;
+type Salvar = (
+  corpo:
+    | { acao: 'marcar'; blocoId: string; marcado: boolean }
+    | { acao: 'texto' | 'adicionar'; blocoId: string; texto: string }
+    | { acao: 'celula'; blocoId: string; coluna: number; texto: string }
+    | { acao: 'linha'; blocoId: string },
+) => Promise<string | null>;
 
 /**
  * A pré-sessão como formulário: cada callout é uma pergunta; as opções (to-do)
@@ -89,6 +95,7 @@ function Bloco({
   if (bloco.tipo.startsWith('heading')) {
     return <h3 className="display pt-4 text-lg text-marca first:pt-0">{bloco.texto}</h3>;
   }
+  if (bloco.tipo === 'table') return <Tabela tabela={bloco} salvar={salvar} />;
   if (bloco.tipo !== 'callout') return <BlocosNotion blocos={[bloco]} base={base} />;
 
   const temResposta = bloco.filhos.some((f) => f.tipo === 'to_do' || (f.tipo === 'paragraph' && !ehPergunta(f.texto)));
@@ -248,5 +255,107 @@ function EnviarArquivo({ calloutId, anexar }: { calloutId: string; anexar: Anexa
       {estado === 'grande' ? <p className="text-xs text-parado">Cada arquivo pode ter até 4 MB.</p> : null}
       {estado === 'erro' ? <p className="text-xs text-parado">Não foi possível enviar agora. Tente de novo.</p> : null}
     </div>
+  );
+}
+
+/** Uma tabela do Notion (a carteira de investimentos, por exemplo), editável célula a célula. */
+function Tabela({ tabela, salvar }: { tabela: BlocoSimples; salvar: Salvar }) {
+  const [linhas, setLinhas] = useState(tabela.filhos);
+  const [criando, setCriando] = useState(false);
+  const cabecalho = tabela.cabecalho ? linhas[0] : null;
+  const corpo = cabecalho ? linhas.slice(1) : linhas;
+
+  const adicionar = async () => {
+    setCriando(true);
+    const id = await salvar({ acao: 'linha', blocoId: tabela.id });
+    setCriando(false);
+    if (!id) return;
+    const colunas = cabecalho?.celulas?.length ?? corpo[0]?.celulas?.length ?? 1;
+    setLinhas((l) => [...l, { id, tipo: 'table_row', texto: '', celulas: Array.from({ length: colunas }, () => ''), filhos: [] }]);
+  };
+
+  return (
+    <div>
+      <div className="overflow-x-auto rounded-lg border border-borda">
+        <table className="w-full text-xs">
+          {cabecalho ? (
+            <thead>
+              <tr className="border-b border-borda bg-superficie-2 text-left">
+                {(cabecalho.celulas ?? []).map((c, i) => (
+                  <th key={i} className="px-2 py-1.5 font-medium whitespace-nowrap text-texto-suave">
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          ) : null}
+          <tbody>
+            {corpo.map((linha) => (
+              <tr key={linha.id} className="border-b border-borda/60 last:border-0">
+                {(linha.celulas ?? []).map((c, i) => (
+                  <td key={i} className="p-0 align-top">
+                    <Celula linhaId={linha.id} coluna={i} inicial={c} salvar={salvar} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button
+        type="button"
+        onClick={adicionar}
+        disabled={criando}
+        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
+      >
+        {criando ? <Loader2 aria-hidden size={11} className="animate-spin" /> : <Plus aria-hidden size={11} />}
+        Nova linha
+      </button>
+    </div>
+  );
+}
+
+/** Célula da tabela: grava no Notion ao sair do campo. */
+function Celula({
+  linhaId,
+  coluna,
+  inicial,
+  salvar,
+}: {
+  linhaId: string;
+  coluna: number;
+  inicial: string;
+  salvar: Salvar;
+}) {
+  const [texto, setTexto] = useState(inicial);
+  const [salvo, setSalvo] = useState(inicial);
+  const [estado, setEstado] = useState<'parado' | 'salvando' | 'erro'>('parado');
+
+  const gravar = async () => {
+    if (texto === salvo) return;
+    setEstado('salvando');
+    const ok = await salvar({ acao: 'celula', blocoId: linhaId, coluna, texto });
+    if (!ok) {
+      setEstado('erro');
+      return;
+    }
+    setSalvo(texto);
+    setEstado('parado');
+  };
+
+  return (
+    <input
+      value={texto}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={gravar}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur();
+      }}
+      aria-label={`Coluna ${coluna + 1}`}
+      className={`w-full min-w-24 bg-transparent px-2 py-1.5 text-xs outline-none transition focus:bg-superficie-2 ${
+        estado === 'erro' ? 'text-parado' : ''
+      } ${estado === 'salvando' ? 'opacity-60' : ''}`}
+    />
   );
 }

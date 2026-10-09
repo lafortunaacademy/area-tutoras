@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { materialId } = await params;
   const corpo = (await request.json().catch(() => null)) as
-    | ({ mentorada?: string; token?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string }>)
+    | ({ mentorada?: string; token?: string } & Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; coluna: number }>)
     | null;
   const resposta = validar(corpo);
   if (!corpo?.mentorada || !resposta) {
@@ -30,12 +30,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-function validar(c: Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string }> | null): RespostaDaPreSessao | null {
+function validar(
+  c: Partial<{ acao: string; blocoId: string; marcado: boolean; texto: string; coluna: number }> | null,
+): RespostaDaPreSessao | null {
   if (!c || typeof c.blocoId !== 'string' || !c.blocoId) return null;
   const blocoId = normalizarId(c.blocoId);
   if (c.acao === 'marcar' && typeof c.marcado === 'boolean') return { acao: 'marcar', blocoId, marcado: c.marcado };
   if ((c.acao === 'texto' || c.acao === 'adicionar') && typeof c.texto === 'string' && c.texto.length <= 20_000) {
     return { acao: c.acao, blocoId, texto: c.texto };
   }
+  if (c.acao === 'celula' && typeof c.texto === 'string' && c.texto.length <= 2000 && Number.isInteger(c.coluna)) {
+    return { acao: 'celula', blocoId, coluna: c.coluna!, texto: c.texto };
+  }
+  if (c.acao === 'linha') return { acao: 'linha', blocoId };
   return null;
 }
