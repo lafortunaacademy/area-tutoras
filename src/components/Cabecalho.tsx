@@ -7,8 +7,8 @@ export type Area = 'admin' | 'tutoras' | 'mentoradas';
 
 const AREAS: { chave: Area; rotulo: string; nome: string; href: string }[] = [
   { chave: 'admin', rotulo: 'Administrativo', nome: 'Administrativo', href: '/admin' },
-  { chave: 'tutoras', rotulo: 'Tutoras', nome: 'Área das tutoras', href: '/painel/inicio' },
-  { chave: 'mentoradas', rotulo: 'Mentoradas', nome: 'Área das mentoradas', href: '/mentoradas' },
+  { chave: 'tutoras', rotulo: 'Área de tutorias', nome: 'Área das tutoras', href: '/painel/inicio' },
+  { chave: 'mentoradas', rotulo: 'Área das mentoradas', nome: 'Área das mentoradas', href: '/mentoradas' },
 ];
 
 /**
@@ -53,9 +53,11 @@ export function Cabecalho({
         </Link>
 
         <div className="flex min-w-0 items-center gap-3 text-sm sm:gap-4">
+          {/* O administrativo sai do seletor: ele é a casa de quem administra, e
+              fica no nome, ao lado. Aqui ficam só as duas áreas. */}
           {admin ? (
             <nav aria-label="Áreas" className="flex items-center gap-0.5 rounded-lg border border-borda p-0.5">
-              {AREAS.map((a) => (
+              {AREAS.filter((a) => a.chave !== 'admin').map((a) => (
                 <Link
                   key={a.chave}
                   href={a.href}
@@ -66,8 +68,8 @@ export function Cabecalho({
                       : 'text-texto-suave hover:text-texto'
                   }`}
                 >
-                  {/* No celular o cabeçalho não comporta os três nomes inteiros. */}
-                  <span className="sm:hidden">{a.chave === 'admin' ? 'Admin' : a.rotulo}</span>
+                  {/* No celular o cabeçalho não comporta os nomes inteiros. */}
+                  <span className="sm:hidden">{a.chave === 'tutoras' ? 'Tutorias' : 'Mentoradas'}</span>
                   <span className="hidden sm:inline">{a.rotulo}</span>
                 </Link>
               ))}
@@ -75,7 +77,20 @@ export function Cabecalho({
           ) : null}
 
           <BotaoTema />
-          <span className="hidden truncate text-texto-suave lg:inline">{nome}</span>
+          {admin ? (
+            <Link
+              href="/admin"
+              title="Administrativo"
+              aria-current={area === 'admin' ? 'page' : undefined}
+              className={`hidden truncate transition hover:text-marca lg:inline ${
+                area === 'admin' ? 'font-medium text-texto' : 'text-texto-suave'
+              }`}
+            >
+              {nome}
+            </Link>
+          ) : (
+            <span className="hidden truncate text-texto-suave lg:inline">{nome}</span>
+          )}
           <form action="/logout" method="post">
             <button type="submit" className="text-texto-suave transition hover:text-marca">
               Sair
