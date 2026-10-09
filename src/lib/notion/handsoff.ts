@@ -72,11 +72,11 @@ export async function criarHandsoff(
     parent: { database_id: dbId },
     icon: { type: 'icon', icon: HANDSOFF_ICONE },
     properties: {
-      // O título nomeia a TUTORA, nunca a mentorada: o registro já vive dentro
-      // da área dela, e repetir o nome da mentorada ali só ocupa espaço. Quem
-      // olha uma lista de hands-off quer saber quem atendeu.
+      // O título nomeia a MENTORADA: na base do Notion os hands-off de todas
+      // aparecem juntos, e quem olha quer saber de quem é. Quem escreveu está
+      // na relation "Feito pela tutora".
       [HANDSOFF.nome]: {
-        title: [{ type: 'text', text: { content: `Hands-off | Tutora: ${tutora.nome}` } }],
+        title: [{ type: 'text', text: { content: `Hands-off ${mentorada.nome}` } }],
       },
       [HANDSOFF.dataDaSessao]: { date: { start: dados.dataSessao } },
       [HANDSOFF.feitoPelaTutora]: { relation: [{ id: tutora.id }] },

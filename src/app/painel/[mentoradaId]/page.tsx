@@ -132,7 +132,7 @@ export default async function MentoradaPage({
           mentoradaId={mentorada.id}
           vazio="Nenhuma sessão registrada ainda."
           colunas={[
-            { nome: 'Nome' },
+            { nome: 'Hands-off' },
             { nome: 'Feito pela tutora', largura: 'w-52' },
             { nome: 'Data da sessão', largura: 'w-36' },
           ]}
