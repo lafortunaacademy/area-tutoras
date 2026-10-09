@@ -98,7 +98,10 @@ function Bloco({
   if (bloco.tipo === 'table') return <Tabela tabela={bloco} salvar={salvar} />;
   if (bloco.tipo !== 'callout') return <BlocosNotion blocos={[bloco]} base={base} />;
 
-  const temResposta = bloco.filhos.some((f) => f.tipo === 'to_do' || (f.tipo === 'paragraph' && !ehPergunta(f.texto)));
+  // Tabela já é o lugar de escrever: a pergunta não ganha campo de texto a mais.
+  const temResposta = bloco.filhos.some(
+    (f) => f.tipo === 'to_do' || f.tipo === 'table' || (f.tipo === 'paragraph' && !ehPergunta(f.texto)),
+  );
   const comArquivo = pedeArquivo(bloco);
 
   return (
@@ -108,6 +111,8 @@ function Bloco({
         {bloco.filhos.map((f) =>
           f.tipo === 'to_do' ? (
             <Opcao key={f.id} bloco={f} salvar={salvar} />
+          ) : f.tipo === 'table' ? (
+            <Tabela key={f.id} tabela={f} salvar={salvar} />
           ) : f.tipo === 'paragraph' && !ehPergunta(f.texto) ? (
             <Resposta key={f.id} blocoId={f.id} inicial={f.texto} salvar={salvar} />
           ) : (
