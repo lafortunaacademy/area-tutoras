@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import type { ItemPlanejamento } from '@/lib/notion/mentorada';
 import { Etiqueta } from './Etiqueta';
 
@@ -58,62 +61,64 @@ export function TabelaObjetivos({ objetivos }: { objetivos: ItemPlanejamento[] }
 }
 
 /**
- * Objetivos agrupados por ano: o ano corrente aberto, os anteriores recolhidos.
+ * Objetivos com um botão por ano: entra no ano corrente e troca num clique.
  *
- * O que se faz agora é o que interessa; o histórico existe para consulta, não
- * para ocupar a tela. `<details>` abre sem depender de JavaScript.
+ * A ordem dos botões segue a da casa: o ano atual primeiro, os outros em ordem
+ * decrescente, e "Sem ano" por último.
  */
 export function ObjetivosPorAno({ objetivos }: { objetivos: ItemPlanejamento[] }) {
   const anoAtual = String(new Date().getFullYear());
 
   const porAno = new Map<string, ItemPlanejamento[]>();
   for (const o of objetivos) {
-    const ano = o.ano?.trim() || 'Sem ano';
+    const ano = o.ano?.trim() || SEM_ANO;
     porAno.set(ano, [...(porAno.get(ano) ?? []), o]);
   }
 
-  const doAtual = porAno.get(anoAtual) ?? [];
-  const outros = [...porAno.entries()]
-    .filter(([ano]) => ano !== anoAtual)
-    // Anos decrescentes; "Sem ano" sempre por último.
-    .sort((a, b) => (a[0] === 'Sem ano' ? 1 : b[0] === 'Sem ano' ? -1 : b[0].localeCompare(a[0])));
+  const anos = [...porAno.keys()].sort((a, b) => {
+    if (a === anoAtual) return -1;
+    if (b === anoAtual) return 1;
+    if (a === SEM_ANO) return 1;
+    if (b === SEM_ANO) return -1;
+    return b.localeCompare(a);
+  });
+
+  const [escolhido, setEscolhido] = useState(anos[0]);
+  // O ano pode mudar quando a lista chega do Notion depois de um recarregamento.
+  const ano = anos.includes(escolhido) ? escolhido : anos[0];
+
+  if (anos.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
+        Nenhum objetivo cadastrado.
+      </p>
+    );
+  }
 
   return (
-    <div className="space-y-3">
-      {doAtual.length > 0 ? (
-        <div>
-          {/* O ano corrente também se nomeia: sem isso, a tabela de cima ficava
-              sem etiqueta ao lado dos toggles, que têm. */}
-          <p className="mb-1.5 flex items-center gap-2 px-1 text-sm">
-            <span className="font-medium">{anoAtual}</span>
-            <span className="text-xs text-destaque">
-              {doAtual.length} {doAtual.length === 1 ? 'objetivo' : 'objetivos'}
-            </span>
-          </p>
-          <TabelaObjetivos objetivos={doAtual} />
+    <div>
+      {anos.length > 1 ? (
+        <div role="tablist" aria-label="Filtrar objetivos por ano" className="mb-3 flex flex-wrap gap-1">
+          {anos.map((a) => (
+            <button
+              key={a}
+              type="button"
+              role="tab"
+              aria-selected={a === ano}
+              onClick={() => setEscolhido(a)}
+              className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                a === ano ? 'bg-marca font-medium text-marca-contraste' : 'text-texto-suave hover:bg-fundo hover:text-texto'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
         </div>
       ) : null}
 
-      {outros.map(([ano, lista]) => (
-        <details key={ano} className="group rounded-xl border border-borda bg-superficie">
-          <summary className="flex cursor-pointer items-center gap-2 px-4 py-2.5 text-sm text-texto-suave transition hover:text-texto">
-            <span className="transition-transform group-open:rotate-90">›</span>
-            <span className="font-medium">{ano}</span>
-            <span className="text-xs text-destaque">
-              {lista.length} {lista.length === 1 ? 'objetivo' : 'objetivos'}
-            </span>
-          </summary>
-          <div className="border-t border-borda">
-            <TabelaObjetivos objetivos={lista} />
-          </div>
-        </details>
-      ))}
-
-      {doAtual.length === 0 && outros.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
-          Nenhum objetivo cadastrado.
-        </p>
-      ) : null}
+      <TabelaObjetivos objetivos={porAno.get(ano) ?? []} />
     </div>
   );
 }
+
+const SEM_ANO = 'Sem ano';
