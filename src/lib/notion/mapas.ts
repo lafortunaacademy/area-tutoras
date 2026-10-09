@@ -6,6 +6,7 @@ import { MAPA } from './config';
 import { carteiraDaTutora, normalizarId } from './carteira';
 import { cadastrosDasClientes } from './clientes';
 import { texto, titulo } from './props';
+import { destinatariosDosAvisos, enviarEmail } from '@/lib/email';
 
 /**
  * As respostas do formulário "Mapa da cliente".
@@ -58,7 +59,33 @@ export async function ligarRespostasDoMapa(): Promise<ResultadoDaPonte> {
     ligadas.push({ resposta, mentoradaId: alvo.id, nome: alvo.nome, por: peloEmail ? 'e-mail' : 'nome' });
   }
 
+  await avisarDasSemDona(pendentes);
   return { ligadas, pendentes };
+}
+
+/**
+ * Avisa por e-mail quando uma resposta chega e o app não descobre de quem é.
+ *
+ * Só as recém-chegadas (última hora): a ponte roda várias vezes por dia e
+ * ninguém quer o mesmo aviso de novo a cada passagem.
+ */
+async function avisarDasSemDona(pendentes: RespostaDoMapa[]): Promise<void> {
+  const umaHora = Date.now() - 60 * 60 * 1000;
+  const novas = pendentes.filter((p) => p.criadaEm && new Date(p.criadaEm).getTime() > umaHora);
+  const para = destinatariosDosAvisos();
+  if (novas.length === 0 || para.length === 0) return;
+
+  const lista = novas.map((p) => `• ${p.nome || 'sem nome'} (${p.email || 'sem e-mail'})`).join('\n');
+  await enviarEmail({
+    para,
+    assunto: novas.length === 1 ? 'Mapa da cliente sem dona' : `${novas.length} mapas da cliente sem dona`,
+    texto:
+      `Chegou resposta do formulário do Mapa da cliente que o app não conseguiu ligar a ninguém:\n\n${lista}\n\n` +
+      'Para resolver: abra o Administrativo, seção "Mapas sem dona", e escolha a mentorada.\n' +
+      `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tutorias.lafortunaacademy.com.br'}/admin\n\n` +
+      'Isso acontece quando o e-mail respondido não está no cadastro da cliente (CRM clientes) e o nome ' +
+      'escrito no formulário não bate com o nome da área dela.',
+  });
 }
 
 /** Liga uma resposta a uma mentorada escolhida à mão, no administrativo. */

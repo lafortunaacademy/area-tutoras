@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Cabecalho } from '@/components/Cabecalho';
 import { verComo } from './actions';
 import { AcessoMentorada } from './AcessoMentorada';
+import { RespostasDoMapa } from './RespostasDoMapa';
+import { respostasSoltas } from '@/lib/notion/mapas';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { normalizarId } from '@/lib/notion/carteira';
 
@@ -13,10 +15,11 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPage() {
   const sessao = await exigirAdmin();
 
-  const [{ data: tutoras }, { data: acessos }, mentoradas] = await Promise.all([
+  const [{ data: tutoras }, { data: acessos }, mentoradas, semDono] = await Promise.all([
     supabaseAdmin().from('tutoras').select('*').order('nome').returns<Tutora[]>(),
     supabaseAdmin().from('mentoradas_acesso').select('id, email, notion_page_id').order('email'),
     mentoradasDoModeloNovo().catch(() => []),
+    respostasSoltas().catch(() => []),
   ]);
 
   return (
@@ -66,6 +69,19 @@ export default async function AdminPage() {
               Nenhuma mentorada no modelo novo ainda.
             </p>
           )}
+        </section>
+
+        <section className="mt-14">
+          <h2 className="rotulo text-[11px] text-texto-suave">Mapas sem dona</h2>
+          <p className="mt-1 mb-4 text-sm text-texto-suave">
+            Respostas do formulário do Mapa da cliente que o app não conseguiu ligar a ninguém — porque o
+            e-mail não está no cadastro e o nome não bateu. Escolha a mentorada e a resposta vai para a área dela.
+          </p>
+
+          <RespostasDoMapa
+            pendentes={semDono}
+            mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome }))}
+          />
         </section>
 
         <section className="mt-14">
