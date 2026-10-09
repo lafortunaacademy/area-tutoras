@@ -11,18 +11,30 @@ import { TabelaNotion } from '@/components/TabelaNotion';
 import { modeloDasTutorias } from '@/lib/tutorias/modelo';
 import { progressoDaMentorada, type Progresso } from '@/lib/tutorias/respostas';
 import { PilaresDoApp } from '@/components/tutorias/PilaresDoApp';
-import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
+import {
+  anoDaSessao,
+  ciclosDoControle,
+  ordenarAnos,
+  sessoesDosPilares,
+  sessoesPorCiclo,
+} from '@/lib/notion/sessoesDaMentorada';
+import { cicloAtual } from '@/lib/notion/config';
+import { ListaDeSessoes } from '@/components/area-mentorada/ListaDeSessoes';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { tutoriasDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MentoradaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ mentoradaId: string }>;
+  searchParams: Promise<{ ano?: string }>;
 }) {
   const sessao = await exigirSessao();
   const { mentoradaId } = await params;
+  const { ano: anoPedido } = await searchParams;
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
   // 404 se a mentorada não estiver na carteira desta tutora.
@@ -48,6 +60,16 @@ export default async function MentoradaPage({
     progressoDaMentorada(mentorada.id).catch(() => ({}) as Progresso),
   ]);
   const sessoesPorPilar = await (tutorias ? sessoesDosPilares(mentorada, tutorias).catch(() => null) : null);
+
+  // As sessões da mentoria, com um botão por ciclo (os mesmos do controle).
+  const [dasSessoes, ciclos] = await Promise.all([
+    sessoesPorCiclo(mentorada).catch(() => null),
+    ciclosDoControle().catch(() => [] as string[]),
+  ]);
+  const anoAtual = cicloAtual().match(/\d{4}/)![0];
+  const anos = ordenarAnos([...new Set([...ciclos, ...(dasSessoes?.anos ?? [])])]);
+  const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
+  const sessoesDoCiclo = (dasSessoes?.sessoes ?? []).filter((s) => anoDaSessao(s) === ano);
 
   return (
     <div>
@@ -146,6 +168,25 @@ export default async function MentoradaPage({
                 : undefined,
           }))}
         />
+      </Secao>
+
+      <Secao
+        titulo="Sessões"
+        acao={
+          <SeletorDeAno
+            anos={anos}
+            selecionado={ano}
+            caminho={`/painel/${mentorada.id}`}
+            rotulo={(a) => `Ciclo ${a}`}
+            mesmoComUm
+          />
+        }
+      >
+        {dasSessoes === null ? (
+          <Vazio>Não foi possível carregar as sessões agora.</Vazio>
+        ) : (
+          <ListaDeSessoes key={ano} mentoradaId={mentorada.id} sessoes={sessoesDoCiclo} />
+        )}
       </Secao>
 
       {/* Respostas da mentorada às tutorias (pré-sessões, 1:1…). A tutora só lê. */}
