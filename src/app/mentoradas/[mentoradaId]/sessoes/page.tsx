@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
-import { anoDaSessao, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { anoDaSessao, ciclosDoControle, ordenarAnos, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { cicloAtual } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
@@ -24,11 +24,16 @@ export default async function SessoesPage({
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const dados = await sessoesPorCiclo(mentorada).catch((e) => e as Error);
+  const [dados, ciclos] = await Promise.all([
+    sessoesPorCiclo(mentorada).catch((e) => e as Error),
+    ciclosDoControle().catch(() => [] as string[]),
+  ]);
 
   // Ciclo mostrado: o pedido no endereço; senão o atual; senão o mais recente em que ela teve sessões.
   const anoAtual = cicloAtual().match(/\d{4}/)![0];
-  const anos = dados instanceof Error ? [] : dados.anos;
+  // Todos os ciclos do controle viram botão, mesmo os sem sessão dela; os
+  // ciclos em que ela teve sessão entram junto, caso algum não exista mais na lista.
+  const anos = ordenarAnos([...new Set([...ciclos, ...(dados instanceof Error ? [] : dados.anos)])]);
   const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
   const sessoes = dados instanceof Error ? dados : dados.sessoes.filter((s) => anoDaSessao(s) === ano);
 

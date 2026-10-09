@@ -1,5 +1,5 @@
 import 'server-only';
-import { appendChildren, deleteBlock, enviarArquivo, getPage, queryDatabase, type NotionPage } from './client';
+import { appendChildren, deleteBlock, enviarArquivo, getDatabase, getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
 import { TEMAS_DE_TUTORIA, TUTORIA, cicloAtual } from './config';
@@ -115,6 +115,30 @@ export async function sessoesDosPilares(
 
 function semAcento(t: string): string {
   return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+}
+
+/**
+ * Todos os ciclos do controle, pelas opções da propriedade `Ciclo` no Notion —
+ * e não só aqueles em que a mentorada teve sessão. O ano corrente vem primeiro,
+ * depois os outros em ordem decrescente.
+ */
+export async function ciclosDoControle(): Promise<string[]> {
+  const schema = await resolverDatabaseId('tutorias').then(getDatabase);
+  const prop = Object.values(schema.properties).find((p) => p.name === TUTORIA.ciclo) as
+    | { select?: { options: { name: string }[] } }
+    | undefined;
+
+  const anos = (prop?.select?.options ?? [])
+    .map((o) => o.name.match(/\d{4}/)?.[0])
+    .filter((a): a is string => Boolean(a));
+
+  return ordenarAnos([...new Set(anos)]);
+}
+
+/** O ano corrente na frente; os outros do mais recente para o mais antigo. */
+export function ordenarAnos(anos: string[]): string[] {
+  const atual = cicloAtual().match(/\d{4}/)![0];
+  return [...anos].sort((a, b) => (a === atual ? -1 : b === atual ? 1 : b.localeCompare(a)));
 }
 
 /** "2026", tirado de "Ciclo 2026"; sem ciclo, o ano do ciclo atual. */
