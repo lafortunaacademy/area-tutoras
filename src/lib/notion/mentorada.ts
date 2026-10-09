@@ -11,7 +11,7 @@ import {
   ehLegenda,
 } from './config';
 import { arquivoUrl, data, formatarData, relationIds, texto, titulo } from './props';
-import type { Mentorada } from './carteira';
+import { normalizarId, type Mentorada } from './carteira';
 import { nomesDasTutoras } from './tutora';
 
 /**
@@ -82,10 +82,22 @@ export async function mapaDaCliente(mentorada: Mentorada): Promise<ItemMapa[]> {
   if (mentorada.areaDaClienteIds.length === 0) return [];
 
   const dbId = await resolverDatabaseId('mapas');
-  const linhas = await queryDatabase(dbId, {
-    filter: daMentorada(mentorada, MAPA.mentorada),
-    limite: 20,
-  });
+  const buscar = () =>
+    queryDatabase(dbId, {
+      filter: daMentorada(mentorada, MAPA.mentorada),
+      limite: 20,
+    });
+
+  let linhas = await buscar();
+
+  // Resposta do formulário cai sem saber de quem é. Se esta mentorada ainda não
+  // tem mapa, o app tenta ligar as soltas (pelo e-mail do cadastro ou pelo nome)
+  // e procura de novo — assim o mapa aparece sem ninguém ligar à mão.
+  if (linhas.length === 0) {
+    const { ligarRespostasDoMapa } = await import('./mapas');
+    const { ligadas } = await ligarRespostasDoMapa().catch(() => ({ ligadas: [] }));
+    if (ligadas.some((l) => normalizarId(l.mentoradaId) === normalizarId(mentorada.id))) linhas = await buscar();
+  }
 
   return linhas.map((p) => ({
     id: p.id,

@@ -23,6 +23,8 @@ export const DATABASES = {
   tutoras: 'Tutoras',
   areaDasTutoras: 'Área das tutoras',
   mapas: 'Mapas das clientes',
+  /** Cadastro das clientes: é dele que saem o e-mail e o vínculo com a área de membros. */
+  crm: 'CRM clientes',
   /** O título real é "Planejamento estratégico: objetivos". */
   planejamento: 'Planejamento estratégico: objetivos',
   /**
@@ -251,6 +253,14 @@ export const TUTORAS_ATIVAS: readonly string[] = ['Ativa'];
  * O mapa é um formulário, não uma página: o que interessa são os campos, não o
  * corpo. Por isso a tela mostra campo a campo em vez de um item para expandir.
  */
+/** Propriedades do cadastro, na base "CRM clientes". */
+export const CRM = {
+  nome: 'Nome completo',
+  titulo: 'Name',
+  email: 'E-mail',
+  areaDeMembros: 'Área de membros',
+} as const;
+
 export const MAPA = {
   titulo: 'Nome',
   mentorada: 'Mentorada',
