@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronRight, Loader2, X } from 'lucide-react';
+import { ChevronRight, Loader2, Plus, X } from 'lucide-react';
 import type { ItemDeMaterial } from '@/lib/notion/blocks';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { FormularioPreSessao } from './FormularioPreSessao';
@@ -34,19 +34,61 @@ export function MateriaisDaTutoria({
 }: {
   mentoradaId: string;
   itens: ItemDeMaterial[];
-  /** Só o administrativo vê o link de preenchimento. */
   admin: boolean;
 }) {
-  if (itens.length === 0) return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
+  const [novos, setNovos] = useState<ItemDeMaterial[]>([]);
+  const [criando, setCriando] = useState<string | null>(null);
+  const [erro, setErro] = useState(false);
+  const todos = [...itens, ...novos];
+
+  // Um botão por tipo de página que já existe aqui ("Nova pré-sessão", "Nova
+  // carteira de investimentos"…), como os botões do Notion.
+  const modelos = itens.filter((i, pos) => itens.findIndex((o) => o.titulo === i.titulo) === pos);
+
+  const criar = async (modelo: ItemDeMaterial) => {
+    setCriando(modelo.id);
+    setErro(false);
+    const r = await fetch(`/api/materiais/${modelo.id}/copias`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mentorada: mentoradaId }),
+    }).catch(() => null);
+    setCriando(null);
+    if (!r?.ok) return setErro(true);
+    const { pagina } = (await r.json()) as { pagina: ItemDeMaterial };
+    setNovos((l) => [...l, pagina]);
+  };
+
+  if (todos.length === 0) return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
 
   return (
-    <ul className="space-y-2">
-      {itens.map((i) => (
-        <li key={i.id}>
-          <Material item={i} mentoradaId={mentoradaId} admin={admin} />
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ul className="space-y-2">
+        {todos.map((i) => (
+          <li key={i.id}>
+            <Material item={i} mentoradaId={mentoradaId} admin={admin} />
+          </li>
+        ))}
+      </ul>
+
+      {modelos.length ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {modelos.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => void criar(m)}
+              disabled={criando !== null}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
+            >
+              {criando === m.id ? <Loader2 aria-hidden size={11} className="animate-spin" /> : <Plus aria-hidden size={11} />}
+              Nova {m.titulo.toLocaleLowerCase('pt-BR')}
+            </button>
+          ))}
+          {erro ? <span className="text-[11px] text-parado">Não deu para criar. Tente de novo.</span> : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

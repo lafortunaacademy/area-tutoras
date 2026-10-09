@@ -2,6 +2,7 @@ import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import {
   appendChildren,
+  createPage,
   getBlock,
   getBlockChildren,
   getDatabase,
@@ -11,6 +12,7 @@ import {
   enviarArquivo,
   updateBlock,
   type NotionBlock,
+  type NotionPage,
   type Pai,
 } from './client';
 import { lerBlocos, type BlocoSimples, type IconeNotion, type ItemDeMaterial } from './blocks';
@@ -232,6 +234,102 @@ export async function anexarNaPreSessao(
   const conteudo = novo[tipo] as { file?: { url: string } } | undefined;
   return { id: novo.id, tipo, texto: '', url: conteudo?.file?.url, legenda: arquivo.name, filhos: [] };
 }
+
+/**
+ * Cria uma página nova a partir de uma que já existe na mesma base — é o que os
+ * botões "Nova pré-sessão" e "Nova carteira de investimentos" fazem no Notion.
+ *
+ * A API não enxerga o modelo do botão de lá, então o modelo é a própria página:
+ * copiamos a estrutura (seções, perguntas, opções, tabela) com os mesmos ícones
+ * e cores, e deixamos tudo em branco — resposta escrita, opção marcada e linha
+ * preenchida não vão junto.
+ */
+export async function copiarPaginaDaTutoria(
+  mentoradaId: string,
+  modeloId: string,
+): Promise<{ id: string; titulo: string; icone: IconeNotion } | null> {
+  const [tutorias, modelo] = await Promise.all([paginaDeTutorias(mentoradaId), getPage(modeloId).catch(() => null)]);
+  if (!tutorias || !modelo || !(await desceDe(modelo.parent, tutorias))) return null;
+
+  const baseId = modelo.parent?.database_id;
+  if (!baseId) return null;
+
+  const nome = titulo(modelo);
+  const filhos = await emBranco(await getBlockChildren(modelo.id), 2);
+
+  const nova = await createPage({
+    parent: { database_id: baseId },
+    // Mesmo ícone do modelo: é o padrão que a Fernanda escolheu no Notion.
+    icon: modelo.icon,
+    properties: { [propriedadeDoTitulo(modelo)]: { title: [{ type: 'text', text: { content: nome } }] } },
+    children: filhos,
+  });
+
+  return { id: nova.id, titulo: nome, icone: iconeDe(nova.icon) };
+}
+
+/** O nome da propriedade de título da base (quase sempre "Nome"). */
+function propriedadeDoTitulo(pagina: NotionPage): string {
+  const achada = Object.entries(pagina.properties ?? {}).find(([, p]) => (p as { type?: string }).type === 'title');
+  return achada?.[0] ?? 'Nome';
+}
+
+const SO_LEITURA = new Set(['child_database', 'child_page', 'unsupported', 'link_to_page', 'template', 'synced_block']);
+
+/**
+ * Copia os blocos do modelo sem o que já foi respondido: parágrafo dentro de
+ * pergunta sai vazio, opção vem desmarcada e a tabela fica só com o cabeçalho
+ * e uma linha em branco.
+ */
+async function emBranco(blocos: NotionBlock[], profundidade: number): Promise<unknown[]> {
+  const copias: unknown[] = [];
+
+  for (const b of blocos) {
+    if (SO_LEITURA.has(b.type)) continue;
+    const corpo = conteudo(b) as Record<string, unknown>;
+
+    if (b.type === 'table') {
+      const linhas = b.has_children ? await getBlockChildren(b.id).catch(() => []) : [];
+      const largura = Number(corpo.table_width ?? linhas[0] ? ((linhas[0]?.table_row as { cells?: unknown[] })?.cells?.length ?? 0) : 0) || 1;
+      const cabecalho = corpo.has_column_header && linhas[0] ? [{ object: 'block', type: 'table_row', table_row: { cells: ((linhas[0].table_row as { cells?: unknown[][] }).cells ?? []) } }] : [];
+      copias.push({
+        object: 'block',
+        type: 'table',
+        table: {
+          table_width: largura,
+          has_column_header: Boolean(corpo.has_column_header),
+          has_row_header: Boolean(corpo.has_row_header),
+          children: [...cabecalho, { object: 'block', type: 'table_row', table_row: { cells: Array.from({ length: largura }, () => []) } }],
+        },
+      });
+      continue;
+    }
+
+    if (b.type === 'paragraph' && !ehPergunta(juntar(corpo.rich_text as RichText[] | undefined))) {
+      // Resposta antiga: entra vazia, para a pergunta nascer em branco.
+      copias.push({ object: 'block', type: 'paragraph', paragraph: { rich_text: [] } });
+      continue;
+    }
+
+    const novo: Record<string, unknown> = { rich_text: corpo.rich_text ?? [] };
+    if (corpo.icon) novo.icon = corpo.icon;
+    if (corpo.color) novo.color = corpo.color;
+    if (b.type === 'to_do') novo.checked = false;
+    if (b.type === 'code') novo.language = corpo.language ?? 'plain text';
+
+    if (b.has_children && profundidade > 0) {
+      const dentro = await emBranco(await getBlockChildren(b.id).catch(() => []), profundidade - 1);
+      if (dentro.length) novo.children = dentro;
+    }
+
+    copias.push({ object: 'block', type: b.type, [b.type]: novo });
+  }
+
+  return copias;
+}
+
+/** Parágrafo que termina em "?" ou ":" é parte da pergunta, não resposta. */
+const ehPergunta = (t: string) => /[?:]\s*$/.test(t.trim());
 
 /** O bloco, se ele mora numa página dentro da página Tutorias desta mentorada. */
 async function blocoDaPreSessao(mentoradaId: string, paginaId: string, blocoId: string) {

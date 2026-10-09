@@ -297,13 +297,15 @@ function Tabela({ tabela, salvar }: { tabela: BlocoSimples; salvar: Salvar }) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-lg border border-borda">
-        <table className="w-full text-xs">
+      <div className="rounded-lg border border-borda">
+        {/* `table-fixed`: as colunas dividem a largura por igual e o texto quebra
+            dentro da célula, em vez de a tabela sair rolando para o lado. */}
+        <table className="w-full table-fixed text-xs">
           {cabecalho ? (
             <thead>
               <tr className="border-b border-borda bg-superficie-2 text-left">
                 {cabecalho.celulas.map((c, i) => (
-                  <th key={i} className="px-2 py-1.5 font-medium whitespace-nowrap text-texto-suave">
+                  <th key={i} className="px-2 py-1.5 font-medium [overflow-wrap:anywhere] text-texto-suave">
                     {c}
                   </th>
                 ))}
@@ -315,15 +317,11 @@ function Tabela({ tabela, salvar }: { tabela: BlocoSimples; salvar: Salvar }) {
               <tr key={linha.id} className="border-b border-borda/60 last:border-0">
                 {linha.celulas.map((c, i) => (
                   <td key={i} className="p-0 align-top">
-                    <input
-                      value={c}
-                      onChange={(e) => mudar(linha.id, i, e.target.value)}
-                      onBlur={() => void gravar(linha.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') e.currentTarget.blur();
-                      }}
-                      aria-label={`${cabecalho?.celulas[i] ?? `Coluna ${i + 1}`}`}
-                      className="w-full min-w-24 bg-transparent px-2 py-1.5 text-xs outline-none transition focus:bg-superficie-2"
+                    <Celula
+                      valor={c}
+                      rotulo={cabecalho?.celulas[i] ?? `Coluna ${i + 1}`}
+                      aoMudar={(v) => mudar(linha.id, i, v)}
+                      aoSair={() => void gravar(linha.id)}
                     />
                   </td>
                 ))}
@@ -346,5 +344,39 @@ function Tabela({ tabela, salvar }: { tabela: BlocoSimples; salvar: Salvar }) {
         {erro ? <span className="text-[11px] text-parado">Não salvou. Tente de novo.</span> : null}
       </div>
     </div>
+  );
+}
+
+/** Célula da tabela: cresce em altura conforme o texto, sem rolagem lateral. */
+function Celula({
+  valor,
+  rotulo,
+  aoMudar,
+  aoSair,
+}: {
+  valor: string;
+  rotulo: string;
+  aoMudar: (v: string) => void;
+  aoSair: () => void;
+}) {
+  return (
+    <textarea
+      value={valor}
+      rows={1}
+      aria-label={rotulo}
+      onChange={(e) => {
+        aoMudar(e.target.value);
+        e.target.style.height = 'auto';
+        e.target.style.height = `${e.target.scrollHeight}px`;
+      }}
+      onBlur={aoSair}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+      }}
+      className="block w-full resize-none bg-transparent px-2 py-1.5 text-xs leading-snug [overflow-wrap:anywhere] outline-none transition focus:bg-superficie-2"
+    />
   );
 }
