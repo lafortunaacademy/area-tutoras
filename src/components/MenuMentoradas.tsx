@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, Home, Search, Users } from 'lucide-react';
@@ -140,8 +140,26 @@ export function MenuMentoradas({
 const ITEM = 'flex items-center gap-3 rounded-r-xl border-l-2 px-3 py-2.5 text-[15px] transition';
 const ITEM_ATIVO = 'border-destaque bg-marca-suave font-medium text-texto';
 const ITEM_INATIVO = 'border-transparent text-texto-suave hover:bg-superficie hover:text-texto';
-const SUB_ATIVO = 'border-destaque font-semibold text-texto';
-const SUB_INATIVO = 'border-transparent text-texto-suave hover:border-borda hover:text-texto';
+const SUB_ATIVO = 'rounded-r-lg border-destaque bg-marca-suave font-medium text-texto';
+const SUB_INATIVO = 'border-transparent text-texto-suave hover:rounded-r-lg hover:border-destaque hover:bg-superficie-2 hover:text-texto';
+
+/**
+ * A âncora do endereço (#tarefas), para marcar a seção aberta no menu. Vem de
+ * `useSyncExternalStore` porque o hash é estado do navegador, não do React —
+ * no servidor ele é vazio e o menu desenha igual.
+ */
+function ouvirHash(aoMudar: () => void) {
+  window.addEventListener('hashchange', aoMudar);
+  return () => window.removeEventListener('hashchange', aoMudar);
+}
+
+function useAncora(): string {
+  return useSyncExternalStore(
+    ouvirHash,
+    () => decodeURIComponent(window.location.hash.slice(1)),
+    () => '',
+  );
+}
 
 /** As seções da mentorada aberta; uma seção com `filhos` mostra as subpáginas logo abaixo, mais recuadas. */
 function ListaDeSecoes({
@@ -155,11 +173,15 @@ function ListaDeSecoes({
   caminho: string;
   className: string;
 }) {
+  const ancora = useAncora();
+
   return (
     <ul className={`space-y-px border-l border-borda ${className}`}>
       {secoes.map((s) => {
         const href = `${prefixo}${s.rota ? `/${s.rota}` : ''}${s.ancora ? `#${s.ancora}` : ''}`;
-        const naRota = s.rota ? caminho.startsWith(`${prefixo}/${s.rota}`) : false;
+        const naRota = s.rota
+          ? caminho.startsWith(`${prefixo}/${s.rota}`)
+          : Boolean(s.ancora) && s.ancora === ancora && caminho === prefixo;
         return (
           <li key={s.rotulo}>
             <Link
