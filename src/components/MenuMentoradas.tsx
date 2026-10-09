@@ -3,7 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Home, Search, Users } from 'lucide-react';
+import { Home, Search, Users } from 'lucide-react';
 import { iniciais } from '@/lib/iniciais';
 
 export type ItemMenu = { id: string; nome: string; foto: string | null };
@@ -40,10 +40,7 @@ export function MenuMentoradas({
   const caminho = usePathname();
 
   const noInicio = caminho === inicio.href;
-  // Numa página de mentorada a lista começa aberta; no início, fechada — a
-  // pessoa está ali para ver o resumo, não para escolher alguém.
   const naMentorada = !noInicio && caminho.startsWith(`${base}/`);
-  const [aberto, setAberto] = useState(naMentorada);
 
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -62,23 +59,13 @@ export function MenuMentoradas({
         {inicio.rotulo}
       </Link>
 
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        aria-expanded={aberto}
-        className={`mt-1 w-full ${ITEM} ${naMentorada ? ITEM_ATIVO : aberto ? 'border-transparent text-texto hover:bg-superficie' : ITEM_INATIVO}`}
-      >
+      {/* A lista fica sempre aberta: quem está aqui veio para escolher alguém. */}
+      <p className={`mt-1 ${ITEM} ${naMentorada ? ITEM_ATIVO : 'border-transparent text-texto'}`}>
         <Users aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
         <span className="flex-1 text-left">Mentoradas</span>
-        <ChevronDown
-          aria-hidden
-          size={15}
-          className={`shrink-0 text-texto-suave transition-transform ${aberto ? 'rotate-180' : ''}`}
-        />
-      </button>
+      </p>
 
-      {aberto ? (
-        <div className="mt-2 flex min-h-0 flex-1 flex-col">
+      <div className="mt-2 flex min-h-0 flex-1 flex-col">
           <div className="relative mb-2">
             <Search
               aria-hidden
@@ -128,8 +115,7 @@ export function MenuMentoradas({
               <li className="px-3 py-2 text-sm text-texto-suave">Ninguém com esse nome.</li>
             ) : null}
           </ul>
-        </div>
-      ) : null}
+      </div>
     </nav>
   );
 }
