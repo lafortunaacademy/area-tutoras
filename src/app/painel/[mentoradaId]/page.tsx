@@ -10,18 +10,23 @@ import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
 import { pilaresDaMentorada } from '@/lib/notion/pilares';
 import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
-import { sessoesDosPilares } from '@/lib/notion/sessoesDaMentorada';
+import { ciclosDoControle, ordenarAnos, sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { cicloAtual } from '@/lib/notion/config';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
 
 export default async function MentoradaPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ mentoradaId: string }>;
+  searchParams: Promise<{ ano?: string }>;
 }) {
   const sessao = await exigirSessao();
   const { mentoradaId } = await params;
+  const { ano: anoPedido } = await searchParams;
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
   // 404 se a mentorada não estiver na carteira desta tutora.
@@ -43,10 +48,20 @@ export default async function MentoradaPage({
       )
       .catch(() => null),
   ]);
+  // Ciclo mostrado nas tabelas de sessões de cada pilar.
+  const [dasSessoes, ciclos] = await Promise.all([
+    sessoesPorCiclo(mentorada).catch(() => null),
+    ciclosDoControle().catch(() => [] as string[]),
+  ]);
+  const anoAtual = cicloAtual().match(/\d{4}/)![0];
+  const anos = ordenarAnos([...new Set([...ciclos, ...(dasSessoes?.anos ?? [])])]);
+  const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
+
   const sessoesPorPilar = tutorias
     ? await sessoesDosPilares(
         mentorada,
         tutorias.map((p) => ({ id: p.id, tutorias: p.tutorias.map((t) => ({ nome: t.titulo })) })),
+        ano,
       ).catch(() => null)
     : null;
 
@@ -151,13 +166,25 @@ export default async function MentoradaPage({
       </Secao>
 
       {/* Respostas da mentorada às tutorias (pré-sessões, 1:1…). A tutora só lê. */}
-      <Secao titulo="Tutorias" ancora="tutorias">
+      <Secao
+        titulo="Tutorias"
+        ancora="tutorias"
+        acao={
+          <SeletorDeAno
+            anos={anos}
+            selecionado={ano}
+            caminho={`/painel/${mentorada.id}`}
+            rotulo={(a) => `Ciclo ${a}`}
+            mesmoComUm
+          />
+        }
+      >
         {tutorias === null ? (
           <Vazio>Não foi possível carregar as tutorias agora.</Vazio>
         ) : tutorias.length === 0 ? (
           <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
         ) : (
-          <PilaresDeTutoria pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
+          <PilaresDeTutoria key={ano} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
         )}
       </Secao>
     </div>

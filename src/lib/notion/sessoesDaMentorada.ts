@@ -83,16 +83,18 @@ export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: str
 }
 
 /**
- * As sessões do ciclo atual (as mesmas do progresso da mentoria) separadas por
+ * As sessões de um ciclo (por padrão o atual) separadas por
  * pilar, pelas tutorias de cada um. A sessão entra pelo tema (fórmula
  * "Tutoria"); sem tema reconhecido, pela especialidade das tutoras dela.
  */
 export async function sessoesDosPilares(
   mentorada: Mentorada,
   pilares: { id: string; tutorias: { nome: string }[] }[],
+  /** Ciclo mostrado; sem ele, o ciclo corrente. */
+  anoPedido?: string,
 ): Promise<Record<string, SessaoDaLista[]>> {
   const [{ sessoes }, especialidades] = await Promise.all([sessoesPorCiclo(mentorada), especialidadesDasTutoras()]);
-  const ano = cicloAtual().match(/\d{4}/)?.[0];
+  const ano = anoPedido ?? cicloAtual().match(/\d{4}/)?.[0];
   const doCiclo = sessoes.filter((s) => anoDaSessao(s) === ano);
 
   const temasDoPilar = (p: (typeof pilares)[number]) =>
