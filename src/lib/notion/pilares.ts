@@ -247,7 +247,7 @@ export async function anexarNaPreSessao(
 export async function copiarPaginaDaTutoria(
   mentoradaId: string,
   modeloId: string,
-): Promise<{ id: string; titulo: string; icone: IconeNotion } | null> {
+): Promise<ItemDeMaterial | null> {
   const [tutorias, modelo] = await Promise.all([paginaDeTutorias(mentoradaId), getPage(modeloId).catch(() => null)]);
   if (!tutorias || !modelo || !(await desceDe(modelo.parent, tutorias))) return null;
 
@@ -265,7 +265,7 @@ export async function copiarPaginaDaTutoria(
     children: filhos,
   });
 
-  return { id: nova.id, titulo: nome, icone: iconeDe(nova.icon) };
+  return { id: nova.id, titulo: nome, icone: iconeDe(nova.icon), criadaEm: nova.created_time ?? null };
 }
 
 /** O nome da propriedade de título da base (quase sempre "Nome"). */
@@ -373,7 +373,7 @@ async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[
 
       const linhas = await queryDatabase(b.id, { limite: 100 }).catch(() => null);
       const itens: ItemDeMaterial[] = (linhas ?? [])
-        .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon) }))
+        .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon), criadaEm: p.created_time ?? null }))
         .filter((i) => i.titulo)
         .sort((a, b2) => Number(!ehPreSessao(a.titulo)) - Number(!ehPreSessao(b2.titulo)) || a.titulo.localeCompare(b2.titulo, 'pt-BR'));
       return { ...b, filhos, itens };
@@ -431,7 +431,7 @@ async function lerTutoria(fonte: FonteDeTutoria, ctx: Contexto): Promise<Tutoria
         titulo: tituloDaParte,
         icone,
         itens: linhas
-          .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon) }))
+          .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon), criadaEm: p.created_time ?? null }))
           .filter((i) => i.titulo)
           // A pré-sessão vem antes de tudo, como no Notion; o resto em ordem alfabética.
           .sort((a, b) => Number(!ehPreSessao(a.titulo)) - Number(!ehPreSessao(b.titulo)) || a.titulo.localeCompare(b.titulo, 'pt-BR')),

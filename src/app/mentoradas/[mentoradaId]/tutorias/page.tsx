@@ -76,7 +76,7 @@ export default async function TutoriasPage({
             Não foi possível carregar as tutorias agora.
           </p>
         ) : pilares.length ? (
-          <PilaresDeTutoria key={ano} pilares={pilares} mentoradaId={mentorada.id} admin={visitante.admin} sessoes={sessoes} />
+          <PilaresDeTutoria key={ano} pilares={pilares} mentoradaId={mentorada.id} admin={visitante.admin} sessoes={sessoes} ciclo={ano} />
         ) : null}
       </div>
     </div>

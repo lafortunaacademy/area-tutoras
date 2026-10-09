@@ -11,7 +11,8 @@ import { getBlockChildren, type NotionBlock } from './client';
 export type IconeNotion = { tipo: 'url'; url: string } | { tipo: 'emoji'; emoji: string } | null;
 
 /** Uma página de uma base do Notion (um material de tutoria, por exemplo). */
-export type ItemDeMaterial = { id: string; titulo: string; icone: IconeNotion };
+/** Uma página dentro da tutoria (Pré-sessão, Carteira…). `criadaEm` é a data de criação no Notion. */
+export type ItemDeMaterial = { id: string; titulo: string; icone: IconeNotion; criadaEm: string | null };
 
 export type BlocoSimples = {
   id: string;

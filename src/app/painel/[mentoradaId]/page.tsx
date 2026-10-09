@@ -184,7 +184,7 @@ export default async function MentoradaPage({
         ) : tutorias.length === 0 ? (
           <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
         ) : (
-          <PilaresDeTutoria key={ano} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
+          <PilaresDeTutoria key={ano} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} ciclo={ano} />
         )}
       </Secao>
     </div>

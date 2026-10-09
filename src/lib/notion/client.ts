@@ -91,6 +91,7 @@ export type NotionPage = {
   cover: unknown;
   parent: { type: string; database_id?: string; page_id?: string };
   properties: Record<string, NotionProperty>;
+  created_time: string;
   last_edited_time: string;
 };
 

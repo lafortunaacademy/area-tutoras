@@ -31,15 +31,20 @@ export function MateriaisDaTutoria({
   mentoradaId,
   itens,
   admin,
+  ciclo,
 }: {
   mentoradaId: string;
   itens: ItemDeMaterial[];
   admin: boolean;
+  /** Ano do ciclo escolhido na página; mostra só as páginas criadas nele. */
+  ciclo?: string;
 }) {
   const [novos, setNovos] = useState<ItemDeMaterial[]>([]);
   const [criando, setCriando] = useState<string | null>(null);
   const [erro, setErro] = useState(false);
-  const todos = [...itens, ...novos];
+  // Página sem data (as antigas) aparece em qualquer ciclo.
+  const doCiclo = (i: ItemDeMaterial) => !ciclo || !i.criadaEm || i.criadaEm.slice(0, 4) === ciclo;
+  const todos = [...itens, ...novos].filter(doCiclo);
 
   // Um botão por tipo de página que já existe aqui ("Nova pré-sessão", "Nova
   // carteira de investimentos"…), como os botões do Notion.
@@ -59,17 +64,23 @@ export function MateriaisDaTutoria({
     setNovos((l) => [...l, pagina]);
   };
 
-  if (todos.length === 0) return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
+  if (todos.length === 0 && modelos.length === 0) {
+    return <p className="text-sm text-texto-suave">Nenhum material ainda.</p>;
+  }
 
   return (
     <div>
-      <ul className="space-y-2">
-        {todos.map((i) => (
-          <li key={i.id}>
-            <Material item={i} mentoradaId={mentoradaId} admin={admin} />
-          </li>
-        ))}
-      </ul>
+      {todos.length ? (
+        <ul className="space-y-2">
+          {todos.map((i) => (
+            <li key={i.id}>
+              <Material item={i} mentoradaId={mentoradaId} admin={admin} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-texto-suave">Nada criado neste ciclo ainda.</p>
+      )}
 
       {modelos.length ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -122,6 +133,11 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
       >
         <Icone icone={item.icone} tamanho={16} />
         <span className="min-w-0 flex-1 leading-snug">{item.titulo}</span>
+        {item.criadaEm ? (
+          <span className="shrink-0 text-[11px] font-normal whitespace-nowrap text-texto-suave tabular-nums">
+            {dataCurta(item.criadaEm)}
+          </span>
+        ) : null}
         <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave" />
       </button>
 
@@ -185,4 +201,9 @@ function Tela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => 
       </div>
     </div>
   );
+}
+
+/** "2026-10-13T…" -> "13/10/2026". */
+function dataCurta(iso: string): string {
+  return iso.slice(0, 10).split('-').reverse().join('/');
 }
