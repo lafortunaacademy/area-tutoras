@@ -17,8 +17,12 @@ export type ItemDeMaterial = {
   titulo: string;
   icone: IconeNotion;
   criadaEm: string | null;
-  /** Capa da página, quando tem — é ela que faz a base virar galeria (os looks do teste de estilo). */
+  /** Capa da página, quando tem — é ela que faz a base virar galeria. */
   capa?: string;
+  /** Caixa de seleção da linha, quando a base tem uma (as opções do teste de estilo). */
+  marcado?: boolean;
+  /** Número da pergunta a que a linha responde ("Pergunta n°"), quando existe. */
+  pergunta?: number;
 };
 
 export type BlocoSimples = {

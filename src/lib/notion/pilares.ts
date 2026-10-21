@@ -365,13 +365,24 @@ async function blocoDaPagina(pai: Pai | undefined, paginaId: string): Promise<bo
  * bloco, então cada uma é consultada aqui — visualização vinculada não abre e
  * fica de fora.
  */
-export async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[]> {
+export async function comAsBasesDeDentro(
+  blocos: BlocoSimples[],
+  /**
+   * Tirar da página o callout que só tem visualização vinculada dentro. Nos
+   * materiais sim (ficaria um quadro vazio); num questionário não, porque é
+   * assim que cada pergunta do teste de estilo mostra as opções dela — quem
+   * preenche depois é `porPergunta`.
+   */
+  tirarVazios = true,
+): Promise<BlocoSimples[]> {
   const lidos = await Promise.all(
     blocos.map(async (b) => {
-      const filhos = await comAsBasesDeDentro(b.filhos);
+      const filhos = await comAsBasesDeDentro(b.filhos, tirarVazios);
       if (b.tipo !== 'child_database') return { ...b, filhos };
 
-      const linhas = await queryDatabase(b.id, { limite: 100 }).catch(() => null);
+      // 300 porque um questionário inteiro mora numa base só: o teste de
+      // estilo tem sete opções para cada uma das dezesseis perguntas.
+      const linhas = await queryDatabase(b.id, { limite: 300 }).catch(() => null);
       const itens: ItemDeMaterial[] = (linhas ?? [])
         .map((p) => ({
           id: p.id,
@@ -379,6 +390,7 @@ export async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoS
           icone: iconeDe(p.icon),
           criadaEm: p.created_time ?? null,
           capa: capaDe(p.cover),
+          ...escolha(p),
         }))
         .filter((i) => i.titulo)
         .sort((a, b2) => Number(!ehPreSessao(a.titulo)) - Number(!ehPreSessao(b2.titulo)) || a.titulo.localeCompare(b2.titulo, 'pt-BR'));
@@ -389,6 +401,7 @@ export async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoS
   // tutoria, que já estão na página Sessões) ficaria vazio: sai.
   const vazio = (b: BlocoSimples) =>
     b.tipo === 'unsupported' || (b.tipo === 'child_database' && !b.itens?.length);
+  if (!tirarVazios) return lidos;
   return lidos.filter((b) => !(b.tipo === 'callout' && b.filhos.length > 0 && b.filhos.every(vazio)));
 }
 
@@ -550,4 +563,17 @@ async function paginaDeTutorias(mentoradaId: string, redescobrir = false): Promi
 function capaDe(cover: unknown): string | undefined {
   const c = cover as { file?: { url: string }; external?: { url: string } } | null | undefined;
   return c?.file?.url ?? c?.external?.url;
+}
+
+/**
+ * O que faz uma linha ser uma opção de resposta: uma caixa de seleção e o
+ * número da pergunta. É assim que o teste de estilo guarda as escolhas — cada
+ * look é uma linha da base, e marcar a caixa é responder.
+ */
+function escolha(p: NotionPage): { marcado?: boolean; pergunta?: number } {
+  const props = Object.values(p.properties ?? {});
+  const caixa = props.find((x) => x.type === 'checkbox') as { checkbox?: boolean } | undefined;
+  const numero = props.find((x) => x.type === 'number') as { number?: number | null } | undefined;
+  if (!caixa) return {};
+  return { marcado: Boolean(caixa.checkbox), pergunta: numero?.number ?? undefined };
 }

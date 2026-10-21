@@ -7,6 +7,7 @@ import {
   getDatabase,
   getPage,
   queryDatabase,
+  updatePage,
   type NotionPage,
   type Pai,
 } from './client';
@@ -196,6 +197,58 @@ export async function conteudoDaSessao(
 }
 
 /**
+ * Marca (ou desmarca) uma opção de resposta — uma linha de uma base de dentro
+ * da sessão, como cada look do teste de estilo. `false` quando a linha não é
+ * de lá ou não tem caixa de seleção.
+ */
+export async function marcarOpcaoDaSessao(
+  mentoradaId: string,
+  sessaoId: string,
+  linhaId: string,
+  marcado: boolean,
+): Promise<boolean> {
+  const sessao = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!sessao) return false;
+
+  const linha = await getPage(linhaId).catch(() => null);
+  if (!linha || !(await moraNaPagina(linha.parent, sessao.id))) return false;
+
+  const caixa = Object.entries(linha.properties).find(([, p]) => p.type === 'checkbox')?.[0];
+  if (caixa === undefined) return false;
+
+  await updatePage(linha.id, { [caixa]: { checkbox: marcado } });
+  return true;
+}
+
+/**
+ * Divide as opções de um questionário entre as perguntas dele.
+ *
+ * No teste de estilo cada pergunta mostra a mesma base, numa visualização
+ * vinculada filtrada por "Pergunta n°" — e a API não lê visualização vinculada
+ * nem o filtro dela. Então o app faz a mesma conta: a base que respondeu fica
+ * com as linhas da pergunta 1, a segunda visualização com as da 2, e assim por
+ * diante, na ordem em que elas aparecem na página.
+ */
+function porPergunta(blocos: BlocoSimples[]): BlocoSimples[] {
+  const bases: BlocoSimples[] = [];
+  const procurar = (lista: BlocoSimples[]) => {
+    for (const b of lista) {
+      if (b.tipo === 'child_database') bases.push(b);
+      procurar(b.filhos);
+    }
+  };
+  procurar(blocos);
+
+  const opcoes = bases.find((b) => b.itens?.some((i) => i.pergunta))?.itens;
+  if (!opcoes || bases.length < 2) return blocos;
+
+  bases.forEach((b, i) => {
+    b.itens = opcoes.filter((o) => o.pergunta === i + 1);
+  });
+  return blocos;
+}
+
+/**
  * Um bloco de dentro da página de uma sessão desta mentorada — a conferência
  * que toda escrita faz antes de gravar. `null` quando o bloco não é de lá.
  */
@@ -215,6 +268,13 @@ export async function blocoDaSessao(mentoradaId: string, sessaoId: string, bloco
  */
 async function moraNaPagina(pai: Pai | undefined, paginaId: string): Promise<boolean> {
   for (let salto = 0; pai && salto < 12; salto++) {
+    // Linha de uma base de dentro da página (uma opção do teste de estilo):
+    // sobe pela base até onde ela mora.
+    if (pai.type === 'database_id') {
+      if (!pai.database_id) return false;
+      pai = (await getDatabase(pai.database_id).catch(() => null))?.parent;
+      continue;
+    }
     if (pai.type === 'page_id') {
       if (!pai.page_id) return false;
       if (normalizarId(pai.page_id) === normalizarId(paginaId)) return true;
@@ -244,7 +304,8 @@ export async function paginaDaSessao(
 
   // As bases de dentro (as galerias do teste de estilo) vêm com as páginas
   // delas: a API não devolve as linhas junto com os blocos.
-  return { titulo: titulo(pagina), blocos: await comAsBasesDeDentro(await lerBlocos(pagina.id, 3)) };
+  const blocos = porPergunta(await comAsBasesDeDentro(await lerBlocos(pagina.id, 3), false));
+  return { titulo: titulo(pagina), blocos };
 }
 
 /** A página da sessão, só se ela for da base de sessões e estiver ligada a esta mentorada. */

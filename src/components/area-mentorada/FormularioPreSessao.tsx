@@ -121,11 +121,14 @@ function Bloco({
   if (bloco.tipo !== 'callout') return <BlocosNotion blocos={[bloco]} base={base} />;
 
   // Tabela já é o lugar de escrever: a pergunta não ganha campo de texto a mais.
+  // Pergunta que já tem como responder — inclusive a galeria de opções de um
+  // teste, em que responder é marcar uma delas — não ganha campo de texto.
   const temResposta = bloco.filhos.some(
     (f) =>
       f.tipo === 'to_do' ||
       f.tipo === 'table' ||
       f.tipo === 'child_page' ||
+      (f.tipo === 'child_database' && Boolean(f.itens?.length)) ||
       (f.tipo === 'paragraph' && !ehPergunta(f.texto)),
   );
   const comArquivo = pedeArquivo(bloco);
@@ -144,7 +147,9 @@ function Bloco({
           ) : f.tipo === 'child_page' && pagina ? (
             <div key={f.id}>{pagina(f)}</div>
           ) : (
-            <BlocosNotion key={f.id} blocos={[f]} />
+            // `base` também aqui: é dentro da pergunta que mora a galeria de
+            // opções do teste de estilo.
+            <BlocosNotion key={f.id} blocos={[f]} base={base} />
           ),
         )}
         {temResposta || (comArquivo && anexar) ? null : <Resposta calloutId={bloco.id} inicial="" salvar={salvar} />}

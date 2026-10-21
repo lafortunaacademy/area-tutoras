@@ -48,6 +48,22 @@ export function NomeDaSessao({ sessao }: { sessao: SessaoDaLista }) {
   );
 }
 
+/** O conteúdo de cada página de dentro, buscado uma vez por página aberta. */
+type PaginaDeDentro = { titulo: string; blocos: BlocoSimples[] };
+const paginas = new Map<string, Promise<PaginaDeDentro>>();
+function buscarPagina(sessaoId: string, paginaId: string, mentoradaId: string): Promise<PaginaDeDentro> {
+  const chave = `${mentoradaId}:${paginaId}`;
+  let busca = paginas.get(chave);
+  if (!busca) {
+    busca = fetch(`/api/sessoes/${sessaoId}/paginas/${paginaId}?mentorada=${encodeURIComponent(mentoradaId)}`).then((r) =>
+      r.ok ? (r.json() as Promise<PaginaDeDentro>) : Promise.reject(new Error('falhou')),
+    );
+    busca.catch(() => paginas.delete(chave));
+    paginas.set(chave, busca);
+  }
+  return busca;
+}
+
 /** Os IDs do Notion andam com e sem traço; aqui todos viram a mesma coisa. */
 const mesmoId = (a?: string | null, b?: string | null) =>
   Boolean(a && b) && a!.replace(/-/g, '') === b!.replace(/-/g, '');
@@ -549,17 +565,22 @@ function PaginaDaSessao({
   comecaAberta?: boolean;
 }) {
   const [aberta, setAberta] = useState(Boolean(comecaAberta));
-  const [dados, setDados] = useState<{ titulo: string; blocos: BlocoSimples[] } | null>(null);
+  const [dados, setDados] = useState<PaginaDeDentro | null>(null);
   const [erro, setErro] = useState(false);
 
-  const carregar = () => {
-    if (dados) return;
-    setErro(false);
-    fetch(`/api/sessoes/${sessaoId}/paginas/${bloco.id}?mentorada=${encodeURIComponent(mentoradaId)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('falhou'))))
-      .then(setDados)
-      .catch(() => setErro(true));
-  };
+  const carregar = () => void buscarPagina(sessaoId, bloco.id, mentoradaId).catch(() => {});
+
+  // Busca quando abre — inclusive quando já abre pelo link direto.
+  useEffect(() => {
+    if (!aberta) return;
+    let vivo = true;
+    buscarPagina(sessaoId, bloco.id, mentoradaId)
+      .then((d) => vivo && setDados(d))
+      .catch(() => vivo && setErro(true));
+    return () => {
+      vivo = false;
+    };
+  }, [aberta, sessaoId, bloco.id, mentoradaId]);
 
   return (
     <>
@@ -598,7 +619,15 @@ function PaginaDaSessao({
                 mentoradaId={mentoradaId}
                 aoSalvar={() => {}}
                 endereco={{ url: endereco, metodo: 'PATCH' }}
-                base={(b) => <Opcoes itens={b.itens ?? []} />}
+                base={(b) => (
+                  <Opcoes
+                    itens={b.itens ?? []}
+                    mentoradaId={mentoradaId}
+                    sessaoId={sessaoId}
+                    paginaId={bloco.id}
+                    podeEditar={podeEditar}
+                  />
+                )}
               />
             ) : (
               <BlocosNotion blocos={dados.blocos} />
@@ -611,26 +640,92 @@ function PaginaDaSessao({
 }
 
 /**
- * As opções de uma base de dentro da página — os looks do teste de estilo.
+ * As opções de uma base de dentro da página — as respostas do teste de estilo.
  *
- * No Notion elas são uma galeria: aqui ficam as capas com o nome embaixo, só
- * para ver. A escolha a mentorada escreve na resposta da pergunta.
+ * Cada opção é uma linha da base, e responder é marcar a caixa dela: é assim
+ * que o Notion conta o resultado do teste. Marcar aqui marca lá.
  */
-function Opcoes({ itens }: { itens: { id: string; titulo: string; capa?: string }[] }) {
+function Opcoes({
+  itens,
+  mentoradaId,
+  sessaoId,
+  paginaId,
+  podeEditar,
+}: {
+  itens: { id: string; titulo: string; capa?: string; marcado?: boolean }[];
+  mentoradaId: string;
+  sessaoId: string;
+  paginaId: string;
+  podeEditar: boolean;
+}) {
+  const [marcadas, setMarcadas] = useState(() => new Set(itens.filter((i) => i.marcado).map((i) => i.id)));
+  const [erro, setErro] = useState(false);
+
   if (itens.length === 0) return null;
 
+  const alternar = async (id: string) => {
+    const marcar = !marcadas.has(id);
+    setMarcadas((atual) => {
+      const novo = new Set(atual);
+      if (marcar) novo.add(id);
+      else novo.delete(id);
+      return novo;
+    });
+    setErro(false);
+
+    const r = await fetch(`/api/sessoes/${sessaoId}/paginas/${paginaId}?mentorada=${encodeURIComponent(mentoradaId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linha: id, marcado: marcar }),
+    }).catch(() => null);
+
+    if (!r?.ok) {
+      setErro(true);
+      setMarcadas((atual) => {
+        const novo = new Set(atual);
+        if (marcar) novo.delete(id);
+        else novo.add(id);
+        return novo;
+      });
+    }
+  };
+
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {itens.map((i) => (
-        <li key={i.id} className="overflow-hidden rounded-lg border border-borda bg-superficie">
-          {i.capa ? (
-            // eslint-disable-next-line @next/next/no-img-element -- imagem do Notion, com endereço temporário
-            <img src={i.capa} alt="" loading="lazy" decoding="async" className="h-28 w-full object-cover" />
-          ) : null}
-          <p className="px-2 py-1.5 text-[11px] leading-snug">{i.titulo}</p>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ul className="space-y-1.5">
+        {itens.map((i) => {
+          const marcada = marcadas.has(i.id);
+          return (
+            <li key={i.id}>
+              <button
+                type="button"
+                disabled={!podeEditar}
+                onClick={() => void alternar(i.id)}
+                aria-pressed={marcada}
+                className={`flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition disabled:cursor-default ${
+                  marcada ? 'border-marca bg-marca-suave' : 'border-borda bg-superficie hover:border-marca/60'
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`flex size-4 shrink-0 items-center justify-center rounded border transition ${
+                    marcada ? 'border-marca bg-marca text-marca-contraste' : 'border-borda'
+                  }`}
+                >
+                  {marcada ? <Check size={11} strokeWidth={3} /> : null}
+                </span>
+                {i.capa ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- imagem do Notion, com endereço temporário
+                  <img src={i.capa} alt="" loading="lazy" decoding="async" className="size-10 shrink-0 rounded object-cover" />
+                ) : null}
+                <span className="min-w-0 flex-1 leading-snug">{i.titulo}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {erro ? <p className="mt-1 text-[11px] text-parado">Não deu para salvar essa escolha. Tente de novo.</p> : null}
+    </div>
   );
 }
 
