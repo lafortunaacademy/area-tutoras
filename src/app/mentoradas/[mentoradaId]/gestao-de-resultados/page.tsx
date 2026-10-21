@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, CalendarDays, CalendarRange, Flag, Wallet } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CalendarRange, Wallet } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
 import {
@@ -11,7 +11,6 @@ import {
 import { percentual, reais } from '@/lib/formato';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
-import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
 import { TabelaFinanceira } from '@/components/area-mentorada/TabelaFinanceira';
 import { VisaoMensal, type GrupoMensal } from '@/components/area-mentorada/VisaoMensal';
 import { anoSelecionado, anosDisponiveis } from '@/components/area-mentorada/financeiro';
@@ -79,12 +78,6 @@ function Conteudo({
 
   return (
     <>
-      <Grupo titulo="Marcos & Conquistas">
-        <Bloco icone={Flag} titulo="Linha do tempo">
-          <LinhaDoTempo marcos={gestao.marcos} />
-        </Bloco>
-      </Grupo>
-
       <Grupo titulo="Resultados financeiros">
         <SeletorDeAno anos={disponiveis} selecionado={selecionado} caminho={`/mentoradas/${mentoradaId}/gestao-de-resultados`} />
 
