@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import { ListaDeSessoes } from './ListaDeSessoes';
 
@@ -32,7 +33,11 @@ export function SessoesEmAbas({
     { chave: 'tutoras' as const, rotulo: 'Tutorias', lista: dasTutoras },
   ];
 
-  const [aba, setAba] = useState<'dona' | 'tutoras'>('dona');
+  // Link direto para uma sessão: abre já na aba em que ela está.
+  const pedida = useSearchParams().get('sessao')?.replace(/-/g, '');
+  const [aba, setAba] = useState<'dona' | 'tutoras'>(
+    dasTutoras.some((s) => s.id.replace(/-/g, '') === pedida) ? 'tutoras' : 'dona',
+  );
   const atual = ABAS.find((a) => a.chave === aba)!;
 
   return (

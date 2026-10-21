@@ -365,7 +365,7 @@ async function blocoDaPagina(pai: Pai | undefined, paginaId: string): Promise<bo
  * bloco, então cada uma é consultada aqui — visualização vinculada não abre e
  * fica de fora.
  */
-async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[]> {
+export async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[]> {
   const lidos = await Promise.all(
     blocos.map(async (b) => {
       const filhos = await comAsBasesDeDentro(b.filhos);
@@ -373,7 +373,13 @@ async function comAsBasesDeDentro(blocos: BlocoSimples[]): Promise<BlocoSimples[
 
       const linhas = await queryDatabase(b.id, { limite: 100 }).catch(() => null);
       const itens: ItemDeMaterial[] = (linhas ?? [])
-        .map((p) => ({ id: p.id, titulo: titulo(p).split('|')[0].trim(), icone: iconeDe(p.icon), criadaEm: p.created_time ?? null }))
+        .map((p) => ({
+          id: p.id,
+          titulo: titulo(p).split('|')[0].trim(),
+          icone: iconeDe(p.icon),
+          criadaEm: p.created_time ?? null,
+          capa: capaDe(p.cover),
+        }))
         .filter((i) => i.titulo)
         .sort((a, b2) => Number(!ehPreSessao(a.titulo)) - Number(!ehPreSessao(b2.titulo)) || a.titulo.localeCompare(b2.titulo, 'pt-BR'));
       return { ...b, filhos, itens };
@@ -538,4 +544,10 @@ async function paginaDeTutorias(mentoradaId: string, redescobrir = false): Promi
     .from('notion_resolved_ids')
     .upsert({ section_key: chave(mentoradaId), notion_id: tutorias.id, resolved_at: new Date().toISOString() });
   return tutorias.id;
+}
+
+/** A imagem de capa de uma página da base, quando ela tem uma. */
+function capaDe(cover: unknown): string | undefined {
+  const c = cover as { file?: { url: string }; external?: { url: string } } | null | undefined;
+  return c?.file?.url ?? c?.external?.url;
 }

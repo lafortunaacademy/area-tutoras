@@ -12,7 +12,14 @@ export type IconeNotion = { tipo: 'url'; url: string } | { tipo: 'emoji'; emoji:
 
 /** Uma página de uma base do Notion (um material de tutoria, por exemplo). */
 /** Uma página dentro da tutoria (Pré-sessão, Carteira…). `criadaEm` é a data de criação no Notion. */
-export type ItemDeMaterial = { id: string; titulo: string; icone: IconeNotion; criadaEm: string | null };
+export type ItemDeMaterial = {
+  id: string;
+  titulo: string;
+  icone: IconeNotion;
+  criadaEm: string | null;
+  /** Capa da página, quando tem — é ela que faz a base virar galeria (os looks do teste de estilo). */
+  capa?: string;
+};
 
 export type BlocoSimples = {
   id: string;
@@ -79,6 +86,12 @@ async function converter(bloco: NotionBlock, profundidade: number): Promise<Bloc
   }
   if (bloco.type === 'table') simples.cabecalho = Boolean(conteudo?.has_column_header);
 
+  // Página dentro da página (a pré-sessão de uma tutoria, por exemplo): só o
+  // nome. O conteúdo dela é lido quando alguém abre, como no Notion.
+  if (bloco.type === 'child_page' || bloco.type === 'child_database') {
+    simples.texto = String(conteudo?.title ?? '').trim();
+  }
+
   if (bloco.type === 'bookmark' || bloco.type === 'embed' || bloco.type === 'link_preview') {
     simples.url = conteudo?.url as string | undefined;
   }
@@ -86,7 +99,12 @@ async function converter(bloco: NotionBlock, profundidade: number): Promise<Bloc
   // `child_database` aqui é quase sempre uma visualização vinculada; a API não
   // devolve as linhas dela. As bases de verdade são lidas pelo resolver.
   // As linhas de uma tabela vêm sempre, mesmo no limite de profundidade: sem elas a tabela some.
-  if (bloco.has_children && (profundidade > 0 || bloco.type === 'table') && bloco.type !== 'child_database') {
+  if (
+    bloco.has_children &&
+    (profundidade > 0 || bloco.type === 'table') &&
+    bloco.type !== 'child_database' &&
+    bloco.type !== 'child_page'
+  ) {
     const filhos = await getBlockChildren(bloco.id).catch(() => []);
     simples.filhos = await Promise.all(filhos.map((f) => converter(f, Math.max(profundidade - 1, 0))));
   }

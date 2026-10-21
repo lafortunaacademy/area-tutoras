@@ -159,7 +159,7 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
 }
 
 /** A tela que abre por cima da página, centralizada, com o conteúdo do material. */
-function Tela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => void; children: React.ReactNode }) {
+export function Tela({ titulo, aoFechar, children }: { titulo: string; aoFechar: () => void; children: React.ReactNode }) {
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') aoFechar();

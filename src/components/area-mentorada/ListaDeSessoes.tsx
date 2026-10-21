@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, Info, Loader2, Upload, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Check, ChevronRight, FileText, Info, Link2, Loader2, Upload, X } from 'lucide-react';
 import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { EtiquetaSessao } from './EtiquetaSessao';
 import { ProximosPassos, buscarTarefas } from '@/components/tutorias/FormularioDoApp';
+import { Tela } from './MateriaisDaTutoria';
 import { FormularioPreSessao } from './FormularioPreSessao';
 import { TutorasDaSessao } from './FotoDaTutora';
 
@@ -46,12 +48,24 @@ export function NomeDaSessao({ sessao }: { sessao: SessaoDaLista }) {
   );
 }
 
+/** Os IDs do Notion andam com e sem traço; aqui todos viram a mesma coisa. */
+const mesmoId = (a?: string | null, b?: string | null) =>
+  Boolean(a && b) && a!.replace(/-/g, '') === b!.replace(/-/g, '');
+
 export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
 
 
 /** Lista das sessões, só para ver; cada sessão abre num cartão por cima da página. */
 export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; sessoes: SessaoDaLista[] }) {
-  const [aberta, setAberta] = useState<SessaoDaLista | null>(null);
+  // Link direto (?sessao=…&pagina=…): a sessão já abre, e a página de dentro
+  // junto — é o link que a equipe manda para a mentorada preencher.
+  const endereco = useSearchParams();
+  const pedida = endereco.get('sessao');
+  const paginaPedida = endereco.get('pagina');
+
+  const [aberta, setAberta] = useState<SessaoDaLista | null>(
+    () => sessoes.find((s) => mesmoId(s.id, pedida)) ?? null,
+  );
 
   // Sem filtro de status: a etiqueta de cada linha já diz o que foi realizado.
   const visiveis = sessoes;
@@ -136,7 +150,14 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
         </table>
       </div>
 
-      {aberta ? <CartaoSessao sessao={aberta} mentoradaId={mentoradaId} aoFechar={() => setAberta(null)} /> : null}
+      {aberta ? (
+        <CartaoSessao
+          sessao={aberta}
+          mentoradaId={mentoradaId}
+          paginaAberta={mesmoId(aberta.id, pedida) ? paginaPedida : null}
+          aoFechar={() => setAberta(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -144,10 +165,13 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
 export function CartaoSessao({
   sessao,
   mentoradaId,
+  paginaAberta,
   aoFechar,
 }: {
   sessao: SessaoDaLista;
   mentoradaId: string;
+  /** Página de dentro que já abre junto (o link direto da pré-sessão). */
+  paginaAberta?: string | null;
   aoFechar: () => void;
 }) {
   const [detalhe, setDetalhe] = useState<Detalhe | null>(null);
@@ -256,6 +280,8 @@ export function CartaoSessao({
             <ConteudoDaSessao
               detalhe={detalhe}
               mentoradaId={mentoradaId}
+              sessaoId={sessao.id}
+              paginaAberta={paginaAberta}
               endereco={endereco}
               aoSalvar={esquecer}
               salvarGravacao={salvarGravacao}
@@ -283,12 +309,16 @@ const ehGravacao = (b: BlocoSimples) => /^grava[çc][ãa]o/i.test(b.texto.trim()
 function ConteudoDaSessao({
   detalhe,
   mentoradaId,
+  sessaoId,
+  paginaAberta,
   endereco,
   aoSalvar,
   salvarGravacao,
 }: {
   detalhe: Detalhe;
   mentoradaId: string;
+  sessaoId: string;
+  paginaAberta?: string | null;
   endereco: string;
   aoSalvar: () => void;
   salvarGravacao: (valor: string | File) => Promise<string | null>;
@@ -316,6 +346,19 @@ function ConteudoDaSessao({
 
   const proprio = (b: BlocoSimples) => (ehTarefas(b) ? tarefas(b) : ehGravacao(b) ? gravacao(b) : undefined);
 
+  const paginaFilha = (b: BlocoSimples) => (
+    <PaginaDaSessao
+      key={b.id}
+      bloco={b}
+      mentoradaId={mentoradaId}
+      sessaoId={sessaoId}
+      endereco={endereco}
+      podeEditar={podeEditar}
+      ciclo={detalhe.sessao.ciclo}
+      comecaAberta={mesmoId(b.id, paginaAberta)}
+    />
+  );
+
   const temTarefas = detalhe.blocos.some(ehTarefas);
   const temGravacao = detalhe.blocos.some(ehGravacao) || Boolean(acharVideo(detalhe.blocos));
 
@@ -329,9 +372,12 @@ function ConteudoDaSessao({
           aoSalvar={aoSalvar}
           endereco={{ url: endereco, metodo: 'PATCH' }}
           pergunta={proprio}
+          paginaFilha={paginaFilha}
         />
       ) : (
-        detalhe.blocos.map((b) => proprio(b) ?? <BlocosNotion key={b.id} blocos={[b]} />)
+        detalhe.blocos.map(
+          (b) => proprio(b) ?? (b.tipo === 'child_page' ? paginaFilha(b) : <BlocosNotion key={b.id} blocos={[b]} />),
+        )
       )}
 
       {detalhe.blocos.length === 0 ? (
@@ -475,5 +521,155 @@ function Gravacao({ url }: { url: string | null }) {
     <a href={url} target="_blank" rel="noreferrer" className="text-sm text-marca underline underline-offset-2">
       Abrir gravação
     </a>
+  );
+}
+
+/**
+ * Uma página de dentro da sessão — a pré-sessão, o teste de estilo. Aparece
+ * fechada, como no Notion, e abre centralizada com o conteúdo para preencher.
+ */
+function PaginaDaSessao({
+  bloco,
+  mentoradaId,
+  sessaoId,
+  endereco,
+  podeEditar,
+  ciclo,
+  comecaAberta,
+}: {
+  bloco: BlocoSimples;
+  mentoradaId: string;
+  sessaoId: string;
+  /** A rota da sessão, que é por onde as respostas desta página são gravadas. */
+  endereco: string;
+  podeEditar: boolean;
+  /** Ciclo da sessão, para o link abrir na lista certa. */
+  ciclo: string;
+  /** Veio pelo link direto: já abre. */
+  comecaAberta?: boolean;
+}) {
+  const [aberta, setAberta] = useState(Boolean(comecaAberta));
+  const [dados, setDados] = useState<{ titulo: string; blocos: BlocoSimples[] } | null>(null);
+  const [erro, setErro] = useState(false);
+
+  const carregar = () => {
+    if (dados) return;
+    setErro(false);
+    fetch(`/api/sessoes/${sessaoId}/paginas/${bloco.id}?mentorada=${encodeURIComponent(mentoradaId)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('falhou'))))
+      .then(setDados)
+      .catch(() => setErro(true));
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onMouseEnter={carregar}
+          onFocus={carregar}
+          onClick={() => {
+            carregar();
+            setAberta(true);
+          }}
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-marca/40 bg-marca-suave/40 px-3 py-2.5 text-left text-sm font-medium text-marca transition hover:border-marca"
+        >
+          <FileText aria-hidden size={15} className="shrink-0" />
+          <span className="min-w-0 flex-1 leading-snug">{bloco.texto || 'Página'}</span>
+          <ChevronRight aria-hidden size={14} className="shrink-0" />
+        </button>
+        <CopiarLink mentoradaId={mentoradaId} sessaoId={sessaoId} paginaId={bloco.id} ciclo={ciclo} />
+      </div>
+
+      {aberta ? (
+        <Tela titulo={dados?.titulo || bloco.texto} aoFechar={() => setAberta(false)}>
+          {!dados && !erro ? (
+            <p className="flex items-center gap-2 text-sm text-texto-suave">
+              <Loader2 aria-hidden size={14} className="animate-spin" />
+              Carregando…
+            </p>
+          ) : null}
+          {erro ? <p className="text-sm text-parado">Não foi possível carregar agora.</p> : null}
+          {dados ? (
+            podeEditar ? (
+              <FormularioPreSessao
+                blocos={dados.blocos}
+                materialId=""
+                mentoradaId={mentoradaId}
+                aoSalvar={() => {}}
+                endereco={{ url: endereco, metodo: 'PATCH' }}
+                base={(b) => <Opcoes itens={b.itens ?? []} />}
+              />
+            ) : (
+              <BlocosNotion blocos={dados.blocos} />
+            )
+          ) : null}
+        </Tela>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * As opções de uma base de dentro da página — os looks do teste de estilo.
+ *
+ * No Notion elas são uma galeria: aqui ficam as capas com o nome embaixo, só
+ * para ver. A escolha a mentorada escreve na resposta da pergunta.
+ */
+function Opcoes({ itens }: { itens: { id: string; titulo: string; capa?: string }[] }) {
+  if (itens.length === 0) return null;
+
+  return (
+    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {itens.map((i) => (
+        <li key={i.id} className="overflow-hidden rounded-lg border border-borda bg-superficie">
+          {i.capa ? (
+            // eslint-disable-next-line @next/next/no-img-element -- imagem do Notion, com endereço temporário
+            <img src={i.capa} alt="" loading="lazy" decoding="async" className="h-28 w-full object-cover" />
+          ) : null}
+          <p className="px-2 py-1.5 text-[11px] leading-snug">{i.titulo}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * O link para mandar à mentorada: abre a área dela já com esta página aberta
+ * para preencher. Quem entra sem estar logada passa pelo acesso por e-mail e
+ * volta para cá.
+ */
+function CopiarLink({
+  mentoradaId,
+  sessaoId,
+  paginaId,
+  ciclo,
+}: {
+  mentoradaId: string;
+  sessaoId: string;
+  paginaId: string;
+  ciclo: string;
+}) {
+  const [copiado, setCopiado] = useState(false);
+
+  const copiar = async () => {
+    const busca = new URLSearchParams({ sessao: sessaoId, pagina: paginaId });
+    if (ciclo) busca.set('ciclo', ciclo);
+    const endereco = `${window.location.origin}/mentoradas/${mentoradaId}?${busca}#sessoes`;
+    await navigator.clipboard.writeText(endereco).catch(() => {});
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void copiar()}
+      title="Copiar o link desta página para a mentorada"
+      className="shrink-0 rounded-lg border border-borda px-2 py-2 text-texto-suave transition hover:border-marca hover:text-marca"
+    >
+      {copiado ? <Check aria-hidden size={14} /> : <Link2 aria-hidden size={14} />}
+      <span className="sr-only">Copiar link para a mentorada</span>
+    </button>
   );
 }

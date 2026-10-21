@@ -17,6 +17,7 @@ import { corDaOpcao, data, relationIds, texto, titulo } from './props';
 import { nomesDasTutoras } from './tutora';
 import { lerBlocos, type BlocoSimples } from './blocks';
 import { especialidadesDasTutoras } from './hub';
+import { comAsBasesDeDentro } from './pilares';
 import { guardado } from './cache';
 
 /**
@@ -207,14 +208,43 @@ export async function blocoDaSessao(mentoradaId: string, sessaoId: string, bloco
   return (await moraNaPagina(bloco.parent, pagina.id)) ? bloco : null;
 }
 
-/** O bloco pendura nessa página (passando por callouts, colunas, toggles)? */
+/**
+ * O bloco pendura nessa página — passando por callouts, colunas, toggles e
+ * também por páginas de dentro dela (a pré-sessão de uma tutoria é uma página
+ * filha, e o que a mentorada escreve lá mora nela, não na sessão).
+ */
 async function moraNaPagina(pai: Pai | undefined, paginaId: string): Promise<boolean> {
-  for (let salto = 0; pai && salto < 8; salto++) {
-    if (pai.type === 'page_id') return Boolean(pai.page_id) && normalizarId(pai.page_id!) === normalizarId(paginaId);
+  for (let salto = 0; pai && salto < 12; salto++) {
+    if (pai.type === 'page_id') {
+      if (!pai.page_id) return false;
+      if (normalizarId(pai.page_id) === normalizarId(paginaId)) return true;
+      pai = (await getPage(pai.page_id).catch(() => null))?.parent;
+      continue;
+    }
     if (pai.type !== 'block_id' || !pai.block_id) return false;
     pai = (await getBlock(pai.block_id).catch(() => null))?.parent;
   }
   return false;
+}
+
+/**
+ * Uma página de dentro da sessão (a pré-sessão, o teste de estilo…), lida só
+ * quando alguém abre. `null` quando a página não é de lá.
+ */
+export async function paginaDaSessao(
+  mentoradaId: string,
+  sessaoId: string,
+  paginaId: string,
+): Promise<{ titulo: string; blocos: BlocoSimples[] } | null> {
+  const sessao = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!sessao) return null;
+
+  const pagina = await getPage(paginaId).catch(() => null);
+  if (!pagina || !(await moraNaPagina(pagina.parent, sessao.id))) return null;
+
+  // As bases de dentro (as galerias do teste de estilo) vêm com as páginas
+  // delas: a API não devolve as linhas junto com os blocos.
+  return { titulo: titulo(pagina), blocos: await comAsBasesDeDentro(await lerBlocos(pagina.id, 3)) };
 }
 
 /** A página da sessão, só se ela for da base de sessões e estiver ligada a esta mentorada. */

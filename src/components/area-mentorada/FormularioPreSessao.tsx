@@ -30,6 +30,7 @@ export function FormularioPreSessao({
   base,
   endereco,
   pergunta,
+  paginaFilha,
 }: {
   blocos: BlocoSimples[];
   materialId: string;
@@ -47,6 +48,8 @@ export function FormularioPreSessao({
   endereco?: { url: string; metodo: 'POST' | 'PATCH' };
   /** Desenho próprio para uma pergunta (as Tarefas, por exemplo). */
   pergunta?: (b: BlocoSimples) => React.ReactNode;
+  /** Como desenhar uma página de dentro desta (a pré-sessão de uma tutoria). */
+  paginaFilha?: (b: BlocoSimples) => React.ReactNode;
 }) {
   const destino = endereco ?? { url: `/api/materiais/${materialId}/respostas`, metodo: 'POST' as const };
 
@@ -82,7 +85,10 @@ export function FormularioPreSessao({
       <p className="rounded-lg bg-superficie-2 px-3 py-2 text-xs text-texto-suave">
         As respostas são salvas sozinhas: as opções na hora, os textos quando você sai do campo.
       </p>
-      {blocos.map((b) => pergunta?.(b) ?? <Bloco key={b.id} bloco={b} salvar={salvar} anexar={anexar} base={base} />)}
+      {blocos.map(
+        (b) =>
+          pergunta?.(b) ?? <Bloco key={b.id} bloco={b} salvar={salvar} anexar={anexar} base={base} pagina={paginaFilha} />,
+      )}
     </div>
   );
 }
@@ -99,12 +105,15 @@ function Bloco({
   salvar,
   anexar,
   base,
+  pagina,
 }: {
   bloco: BlocoSimples;
   salvar: Salvar;
   anexar?: Anexar;
   base?: (b: BlocoSimples) => React.ReactNode;
+  pagina?: (b: BlocoSimples) => React.ReactNode;
 }) {
+  if (bloco.tipo === 'child_page' && pagina) return <>{pagina(bloco)}</>;
   if (bloco.tipo.startsWith('heading')) {
     return <h3 className="display pt-4 text-lg text-marca first:pt-0">{bloco.texto}</h3>;
   }
@@ -113,7 +122,11 @@ function Bloco({
 
   // Tabela já é o lugar de escrever: a pergunta não ganha campo de texto a mais.
   const temResposta = bloco.filhos.some(
-    (f) => f.tipo === 'to_do' || f.tipo === 'table' || (f.tipo === 'paragraph' && !ehPergunta(f.texto)),
+    (f) =>
+      f.tipo === 'to_do' ||
+      f.tipo === 'table' ||
+      f.tipo === 'child_page' ||
+      (f.tipo === 'paragraph' && !ehPergunta(f.texto)),
   );
   const comArquivo = pedeArquivo(bloco);
 
@@ -128,6 +141,8 @@ function Bloco({
             <Tabela key={f.id} tabela={f} salvar={salvar} />
           ) : f.tipo === 'paragraph' && !ehPergunta(f.texto) ? (
             <Resposta key={f.id} blocoId={f.id} inicial={f.texto} salvar={salvar} />
+          ) : f.tipo === 'child_page' && pagina ? (
+            <div key={f.id}>{pagina(f)}</div>
           ) : (
             <BlocosNotion key={f.id} blocos={[f]} />
           ),
