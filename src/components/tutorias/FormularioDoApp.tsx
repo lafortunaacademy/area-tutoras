@@ -412,26 +412,46 @@ function nomeDoLink(url: string): string {
 }
 
 /** Próximos passos: as Tarefas da mentoria, da mesma base da página da mentorada. */
+type TarefasDaMentorada = { tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean };
+
+/**
+ * As tarefas de cada mentorada, guardadas enquanto a página está aberta.
+ *
+ * A lista é a mesma em toda sessão e na área dela: sem isso, cada cartão
+ * aberto ia buscar tudo no Notion de novo e ficava segundos em "Carregando
+ * tarefas…".
+ */
+const tarefasGuardadas = new Map<string, Promise<TarefasDaMentorada>>();
+
+export function buscarTarefas(mentoradaId: string, denovo = false): Promise<TarefasDaMentorada> {
+  let busca = denovo ? undefined : tarefasGuardadas.get(mentoradaId);
+  if (!busca) {
+    busca = fetch(`/api/tutorias/tarefas?mentorada=${encodeURIComponent(mentoradaId)}`).then((r) => {
+      if (!r.ok) throw new Error('falhou');
+      return r.json() as Promise<TarefasDaMentorada>;
+    });
+    busca.catch(() => tarefasGuardadas.delete(mentoradaId));
+    tarefasGuardadas.set(mentoradaId, busca);
+  }
+  return busca;
+}
+
 export function ProximosPassos({ mentoradaId, previa, lendo }: { mentoradaId: string; previa: boolean; lendo: boolean }) {
-  const [dados, setDados] = useState<{ tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean } | null>(null);
+  const [dados, setDados] = useState<TarefasDaMentorada | null>(null);
   const [erro, setErro] = useState(false);
 
-  const buscar = useCallback(async () => {
-    const r = await fetch(`/api/tutorias/tarefas?mentorada=${encodeURIComponent(mentoradaId)}`);
-    if (!r.ok) throw new Error('falhou');
-    return (await r.json()) as { tarefas: Tarefa[] | null; podeMexer: boolean; podeAdicionar: boolean };
-  }, [mentoradaId]);
+  const buscar = useCallback(() => buscarTarefas(mentoradaId, true), [mentoradaId]);
 
   useEffect(() => {
     if (previa) return;
     let vivo = true;
-    buscar()
+    buscarTarefas(mentoradaId)
       .then((d) => vivo && setDados(d))
       .catch(() => vivo && setErro(true));
     return () => {
       vivo = false;
     };
-  }, [buscar, previa]);
+  }, [mentoradaId, previa]);
 
   if (previa) return <p className="text-texto-suave">Aqui aparecem as Tarefas da mentoria de cada mentorada.</p>;
   if (erro) return <p className="text-parado">Não foi possível carregar as tarefas agora.</p>;

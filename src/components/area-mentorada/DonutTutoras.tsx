@@ -27,7 +27,7 @@ export function DonutTutoras({
 }) {
   const [ativa, setAtiva] = useState<string | null>(null);
   const total = fatias.reduce((s, f) => s + f.total, 0);
-  const destaque = fatias.find((f) => f.tutora === ativa);
+  const destaque = fatias.find((f) => f.rotulo === ativa);
 
   let inicio = 0;
   const arcos = fatias.map((f) => {
@@ -50,7 +50,7 @@ export function DonutTutoras({
         <svg viewBox="0 0 128 128" className="size-full -rotate-90" aria-hidden>
           <circle cx="64" cy="64" r={RAIO} fill="none" stroke="var(--superficie-2)" strokeWidth="12" />
           {arcos.map((a) => (
-            <g key={a.tutora}>
+            <g key={a.rotulo}>
               <circle
                 cx="64"
                 cy="64"
@@ -61,7 +61,7 @@ export function DonutTutoras({
                 strokeDasharray={`${Math.max(a.comprimento - folga, 0.5)} ${VOLTA}`}
                 strokeDashoffset={-a.inicio}
                 className="transition-opacity duration-200"
-                style={{ opacity: ativa && ativa !== a.tutora ? 0.3 : 1 }}
+                style={{ opacity: ativa && ativa !== a.rotulo ? 0.3 : 1 }}
               />
               {/* Alvo do mouse mais largo que a fatia visível. */}
               <circle
@@ -73,7 +73,7 @@ export function DonutTutoras({
                 strokeWidth="22"
                 strokeDasharray={`${a.comprimento} ${VOLTA}`}
                 strokeDashoffset={-a.inicio}
-                onMouseEnter={() => setAtiva(a.tutora)}
+                onMouseEnter={() => setAtiva(a.rotulo)}
                 style={{ pointerEvents: 'stroke' }}
               />
             </g>
@@ -86,7 +86,7 @@ export function DonutTutoras({
           ) : destaque ? (
             <>
               <span className="display text-4xl leading-none">{destaque.total}</span>
-              <span className="mt-1 line-clamp-2 text-[11px] leading-tight text-texto-suave">{destaque.tutora}</span>
+              <span className="mt-1 line-clamp-2 text-[11px] leading-tight text-texto-suave">{destaque.rotulo}</span>
             </>
           ) : (
             <>
@@ -103,17 +103,17 @@ export function DonutTutoras({
         <ul className={`flex w-full max-w-xs flex-col sm:w-auto ${fatias.length > 6 ? 'gap-0.5' : 'gap-1.5'}`}>
           {fatias.map((f) => (
             <li
-              key={f.tutora}
+              key={f.rotulo}
               tabIndex={0}
-              onMouseEnter={() => setAtiva(f.tutora)}
+              onMouseEnter={() => setAtiva(f.rotulo)}
               onMouseLeave={() => setAtiva(null)}
-              onFocus={() => setAtiva(f.tutora)}
+              onFocus={() => setAtiva(f.rotulo)}
               onBlur={() => setAtiva(null)}
               className="flex min-w-0 cursor-default items-center gap-1.5 rounded text-[10.5px] leading-tight outline-none focus-visible:ring-2 focus-visible:ring-marca/30"
             >
               <span aria-hidden className="size-2 shrink-0 rounded-sm" style={{ background: f.cor }} />
               <span className="min-w-0 flex-1 text-texto">
-                {f.tutora}
+                {f.rotulo}
               </span>
               <span className="text-texto-suave tabular-nums">{f.total}</span>
             </li>

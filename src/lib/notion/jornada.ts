@@ -20,12 +20,20 @@ import type { Mentorada } from './carteira';
 
 export type TutoriasPorTutora = { tutora: string; total: number }[];
 
+/** Contagem pela propriedade "Sessão " (Check-in, Tutoria, Planejamento, Call SOS). */
+export type SessoesPorTipo = { tipo: string; total: number }[];
+
+/** Sessão sem o tipo preenchido no Notion. */
+export const SEM_TIPO = 'Sem tipo';
+
 export type ProgressoDaMentoria = {
   ciclo: string;
   realizadas: number;
   aRealizar: number;
   /** Quantas sessões de cada tutora, como os gráficos do Notion agrupam. */
   porTutora: { realizadas: TutoriasPorTutora; aRealizar: TutoriasPorTutora };
+  /** As que faltam, agrupadas por tipo de sessão — é assim que a rosca mostra. */
+  porTipo: { aRealizar: SessoesPorTipo };
   proxima: { sessao: string; data: string } | null;
 };
 
@@ -41,6 +49,7 @@ export async function progressoDaMentoria(
     realizadas: 0,
     aRealizar: 0,
     porTutora: { realizadas: [], aRealizar: [] },
+    porTipo: { aRealizar: [] },
     proxima: null,
   };
   if (mentorada.areaDaClienteIds.length === 0) return vazio;
@@ -86,6 +95,7 @@ export async function progressoDaMentoria(
       realizadas: contarPorTutora(realizadas, nomes),
       aRealizar: contarPorTutora(futuras, nomes),
     },
+    porTipo: { aRealizar: contarPorTipo(futuras) },
     proxima: proxima ? { sessao: proxima.sessao, data: diaMesAno(proxima.data) } : null,
   };
 }
@@ -109,6 +119,18 @@ function contarPorTutora(paginas: NotionPage[], nomesPorId: Map<string, string>)
   return [...contagem.entries()]
     .map(([tutora, total]) => ({ tutora, total }))
     .sort((a, b) => b.total - a.total || a.tutora.localeCompare(b.tutora));
+}
+
+/** As sessões que faltam, contadas por tipo ("Sessão "), da maior para a menor. */
+function contarPorTipo(paginas: NotionPage[]): SessoesPorTipo {
+  const contagem = new Map<string, number>();
+  for (const p of paginas) {
+    const tipo = texto(p, TUTORIA.tipo).trim() || SEM_TIPO;
+    contagem.set(tipo, (contagem.get(tipo) ?? 0) + 1);
+  }
+  return [...contagem.entries()]
+    .map(([tipo, total]) => ({ tipo, total }))
+    .sort((a, b) => b.total - a.total || a.tipo.localeCompare(b.tipo));
 }
 
 /**

@@ -50,7 +50,7 @@ export function TutoriasPorMes({ meses }: { meses: MesDeTutorias[] }) {
               >
                 {m.porTutora.map((f) => (
                   <div
-                    key={f.tutora}
+                    key={f.rotulo}
                     className="w-full shrink-0 border-t-2 border-superficie first:border-t-0"
                     style={{ height: `${(f.total / soma) * 100}%`, backgroundColor: f.cor }}
                   />
@@ -62,9 +62,9 @@ export function TutoriasPorMes({ meses }: { meses: MesDeTutorias[] }) {
                   <p className="text-[11px] text-texto-suave">{m.rotulo}</p>
                   <ul className="mt-1 space-y-0.5">
                     {m.porTutora.map((f) => (
-                      <li key={f.tutora} className="flex items-center gap-1.5 text-[11px]">
+                      <li key={f.rotulo} className="flex items-center gap-1.5 text-[11px]">
                         <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: f.cor }} />
-                        {f.tutora}: {f.total}
+                        {f.rotulo}: {f.total}
                       </li>
                     ))}
                   </ul>

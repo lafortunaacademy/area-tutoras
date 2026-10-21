@@ -31,7 +31,7 @@ import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
 import { DonutTutoras } from '@/components/area-mentorada/DonutTutoras';
-import { montarFatias } from '@/components/area-mentorada/fatias';
+import { fatiasPorTipo, montarFatias } from '@/components/area-mentorada/fatias';
 import { TutoriasPorMes } from '@/components/area-mentorada/TutoriasPorMes';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
@@ -218,7 +218,8 @@ async function SecaoProgresso({ mentorada, cicloPedido }: { mentorada: Mentorada
           <div className="grid gap-10 py-2 lg:grid-cols-3">
             {/* A legenda sai daqui: a cor de cada tutora é a mesma nas duas roscas. */}
             <DonutTutoras rotulo="Realizadas" fatias={fatias.realizadas} legenda={false} />
-            <DonutTutoras rotulo="A realizar" fatias={fatias.aRealizar} />
+            {/* "A realizar" agrupa por tipo de sessão (a propriedade "Sessão "). */}
+            <DonutTutoras rotulo="A realizar" fatias={fatiasPorTipo(progresso.porTipo.aRealizar)} />
             <div>
               <p className="mb-3 w-fit rounded-full bg-marca-suave px-3 py-1 text-xs font-medium text-marca">
                 Tutorias realizadas
@@ -281,9 +282,9 @@ const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 's
 function realizadasPorMes(
   sessoes: { ciclo: string; realizada: boolean; dataRealizada: string | null; tutoras: string[] }[],
   ciclo: string,
-  fatias: { tutora: string; cor: string }[],
+  fatias: { rotulo: string; cor: string }[],
 ) {
-  const cor = new Map(fatias.map((f) => [f.tutora, f.cor]));
+  const cor = new Map(fatias.map((f) => [f.rotulo, f.cor]));
   const porMes = new Map<string, Map<string, number>>();
 
   for (const s of sessoes) {
@@ -300,8 +301,8 @@ function realizadasPorMes(
     .map(([mes, tutoras]) => ({
       rotulo: `${MESES_CURTOS[Number(mes.slice(5, 7)) - 1]}/${mes.slice(2, 4)}`,
       porTutora: [...tutoras.entries()]
-        .map(([tutora, total]) => ({ tutora, total, cor: cor.get(tutora) ?? 'var(--serie-sem)' }))
-        .sort((a, b) => b.total - a.total || a.tutora.localeCompare(b.tutora)),
+        .map(([tutora, total]) => ({ rotulo: tutora, total, cor: cor.get(tutora) ?? 'var(--serie-sem)' }))
+        .sort((a, b) => b.total - a.total || a.rotulo.localeCompare(b.rotulo)),
     }));
 }
 

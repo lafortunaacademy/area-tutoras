@@ -1,8 +1,8 @@
-import type { TutoriasPorTutora } from '@/lib/notion/jornada';
+import { SEM_TIPO, type SessoesPorTipo, type TutoriasPorTutora } from '@/lib/notion/jornada';
 import { SEM_TUTORA } from '@/lib/notion/config';
 
 /** `cor` já é um valor de CSS pronto para usar no gráfico. */
-export type Fatia = { tutora: string; total: number; cor: string };
+export type Fatia = { rotulo: string; total: number; cor: string };
 
 /** Quantas cores fixas existem em globals.css (--serie-1 … --serie-9). */
 const CORES_FIXAS = 9;
@@ -52,8 +52,22 @@ export function montarFatias(
 
   const montar = (lista: TutoriasPorTutora): Fatia[] =>
     lista
-      .map(({ tutora, total }) => ({ tutora, total, cor: cores.get(tutora) ?? 'var(--serie-sem)' }))
-      .sort((a, b) => ordem(a.tutora) - ordem(b.tutora));
+      .map(({ tutora, total }) => ({ rotulo: tutora, total, cor: cores.get(tutora) ?? 'var(--serie-sem)' }))
+      .sort((a, b) => ordem(a.rotulo) - ordem(b.rotulo));
 
   return { realizadas: montar(realizadas), aRealizar: montar(aRealizar) };
+}
+
+/**
+ * A rosca "A realizar" agrupa por tipo de sessão, não por tutora: é o que
+ * interessa ali — quantos check-ins, quantas tutorias ainda vêm.
+ *
+ * A lista já chega da maior para a menor, então a cor segue essa ordem.
+ */
+export function fatiasPorTipo(lista: SessoesPorTipo): Fatia[] {
+  return lista.map(({ tipo, total }, i) => ({
+    rotulo: tipo,
+    total,
+    cor: tipo === SEM_TIPO ? 'var(--serie-sem)' : corDaPosicao(i),
+  }));
 }

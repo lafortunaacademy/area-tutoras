@@ -6,7 +6,7 @@ import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
-import { ProximosPassos } from '@/components/tutorias/FormularioDoApp';
+import { ProximosPassos, buscarTarefas } from '@/components/tutorias/FormularioDoApp';
 import { FormularioPreSessao } from './FormularioPreSessao';
 import { TutorasDaSessao } from './FotoDaTutora';
 
@@ -163,6 +163,9 @@ export function CartaoSessao({
 
   useEffect(() => {
     let vivo = true;
+    // As tarefas são sempre as mesmas da mentorada: busca junto, não depois
+    // que a sessão chega — assim as duas esperas acontecem ao mesmo tempo.
+    void buscarTarefas(mentoradaId).catch(() => {});
     buscarSessao(sessao.id, mentoradaId)
       .then((d) => vivo && setDetalhe(d))
       .catch(() => vivo && setErro(true));
