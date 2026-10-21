@@ -24,7 +24,7 @@ import { cartoesDeCenario } from '@/lib/notion/cenarios';
 import { CartoesCenario } from '@/components/area-mentorada/CartoesCenario';
 import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
-import { ciclosDoControle, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { ordenarCiclos, SEM_TUTORA } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
@@ -306,15 +306,18 @@ function realizadasPorMes(
     }));
 }
 
-/** Os ciclos que viram botão (todos os do controle) e os que ela de fato teve. */
+/**
+ * Os ciclos que viram botão: só os que estão marcados no Notion nas sessões
+ * dela. Ciclo que ninguém marcou ainda não aparece — o botão abriria uma tela
+ * vazia.
+ */
 async function ciclos(mentorada: Mentorada): Promise<{ todos: string[]; dela: string[] }> {
-  const [doControle, dela] = await Promise.all([
-    ciclosDoControle().catch(() => [] as string[]),
-    sessoesPorCiclo(mentorada)
+  const dela = ordenarCiclos(
+    await sessoesPorCiclo(mentorada)
       .then((d) => d.ciclos)
       .catch(() => [] as string[]),
-  ]);
-  return { todos: ordenarCiclos([...new Set([...doControle, ...dela])]), dela: ordenarCiclos(dela) };
+  );
+  return { todos: dela, dela };
 }
 
 /**

@@ -10,7 +10,7 @@ import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
 import { pilaresDaMentorada } from '@/lib/notion/pilares';
 import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
-import { ciclosDoControle, sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { ordenarCiclos } from '@/lib/notion/config';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
@@ -49,13 +49,10 @@ export default async function MentoradaPage({
       .catch(() => null),
   ]);
   // Ciclo mostrado nas tabelas de sessões de cada pilar.
-  const [dasSessoes, ciclos] = await Promise.all([
-    sessoesPorCiclo(mentorada).catch(() => null),
-    ciclosDoControle().catch(() => [] as string[]),
-  ]);
-  const todos = ordenarCiclos([...new Set([...ciclos, ...(dasSessoes?.ciclos ?? [])])]);
-  const dela = dasSessoes?.ciclos ?? [];
-  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (dela[0] ?? todos[0] ?? '');
+  const dasSessoes = await sessoesPorCiclo(mentorada).catch(() => null);
+  // Só os ciclos marcados no Notion nas sessões dela viram botão.
+  const todos = ordenarCiclos(dasSessoes?.ciclos ?? []);
+  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (todos[0] ?? '');
 
   const sessoesPorPilar = tutorias
     ? await sessoesDosPilares(

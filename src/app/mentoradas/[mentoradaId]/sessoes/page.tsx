@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
-import { ciclosDoControle, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { ordenarCiclos } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
@@ -24,16 +24,11 @@ export default async function SessoesPage({
   const { ano: anoPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
-  const [dados, ciclos] = await Promise.all([
-    sessoesPorCiclo(mentorada).catch((e) => e as Error),
-    ciclosDoControle().catch(() => [] as string[]),
-  ]);
+  const dados = await sessoesPorCiclo(mentorada).catch((e) => e as Error);
 
-  // Todos os ciclos do controle viram botão, mesmo os sem sessão dela; os
-  // ciclos em que ela teve sessão entram junto, caso algum não exista mais na lista.
-  const todos = ordenarCiclos([...new Set([...ciclos, ...(dados instanceof Error ? [] : dados.ciclos)])]);
-  const dela = dados instanceof Error ? [] : dados.ciclos;
-  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (dela[0] ?? todos[0] ?? '');
+  // Só os ciclos marcados no Notion nas sessões dela viram botão.
+  const todos = ordenarCiclos(dados instanceof Error ? [] : dados.ciclos);
+  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (todos[0] ?? '');
   const sessoes = dados instanceof Error ? dados : dados.sessoes.filter((s) => s.ciclo === ciclo);
 
   return (

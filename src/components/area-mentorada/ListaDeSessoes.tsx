@@ -27,6 +27,9 @@ function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
   return busca;
 }
 
+/** O nome da sessão; sem título na página, vale a propriedade "Sessão " (o tipo). */
+const nomeDaSessao = (s: SessaoDaLista) => s.sessao || s.tipo || '—';
+
 export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
 
 const FILTROS = [
@@ -81,7 +84,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                 className="flex w-full items-start gap-3 rounded-xl border border-borda bg-superficie px-4 py-3 text-left transition active:bg-fundo"
               >
                 <span className="min-w-0 flex-1 space-y-1.5">
-                  <span className="block text-sm leading-snug font-medium">{s.sessao}</span>
+                  <span className="block text-sm leading-snug font-medium">{nomeDaSessao(s)}</span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-texto-suave">
                     {s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}
                     <span className="tabular-nums">{dataCurta(s.data)}</span>
@@ -126,7 +129,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   <td className="px-4 py-1 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
                   <td className="px-4 py-1 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
-                      {s.sessao}
+                      {nomeDaSessao(s)}
                     </button>
                   </td>
                   <td className="px-4 py-1 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>
@@ -219,7 +222,7 @@ export function CartaoSessao({
   }, [aoFechar]);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={sessao.sessao} className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-8">
+    <div role="dialog" aria-modal="true" aria-label={nomeDaSessao(sessao)} className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-8">
       <button type="button" aria-label="Fechar" onClick={aoFechar} className="absolute inset-0 cursor-default bg-texto/35 backdrop-blur-[2px]" />
 
       <div
@@ -229,7 +232,7 @@ export function CartaoSessao({
       >
         <div className="flex items-start gap-4 border-b border-borda px-6 py-4">
           <div className="min-w-0 flex-1">
-            <p className="display text-xl leading-tight">{sessao.sessao}</p>
+            <p className="display text-xl leading-tight">{nomeDaSessao(sessao)}</p>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-texto-suave">
               {sessao.status ? <EtiquetaNotion texto={sessao.status} cor={sessao.corStatus} /> : null}
               <span className="tabular-nums">{dataCurta(sessao.data)}</span>

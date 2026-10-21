@@ -43,6 +43,8 @@ export type SessaoDaLista = {
   /** Cada tutora com o id, para a foto (`/api/fotos/tutoras/<id>`). */
   equipe: { id: string; nome: string }[];
   ciclo: string;
+  /** A propriedade "Sessão " do Notion: Check-in, Tutoria, Planejamento, Call SOS. */
+  tipo: string;
   /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
   tema: string;
   mesPrevisto: string;
@@ -401,6 +403,7 @@ function paraSessao(p: NotionPage, nomes: Map<string, string>): SessaoDaLista {
       .map((id) => ({ id, nome: nomes.get(id)?.trim() ?? '' }))
       .filter((t) => t.nome),
     ciclo: texto(p, TUTORIA.ciclo),
+    tipo: texto(p, TUTORIA.tipo),
     tema: texto(p, TUTORIA.tema),
     mesPrevisto: texto(p, TUTORIA.mesPrevisto),
     dataPrevista: data(p, TUTORIA.dataPrevista),
