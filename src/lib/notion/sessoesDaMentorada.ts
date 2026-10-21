@@ -45,6 +45,8 @@ export type SessaoDaLista = {
   ciclo: string;
   /** A propriedade "Sessão " do Notion: Check-in, Tutoria, Planejamento, Call SOS. */
   tipo: string;
+  /** Cor da etiqueta do tipo, uma por opção do Notion (`var(--serie-N)`). */
+  corTipo: string;
   /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
   tema: string;
   mesPrevisto: string;
@@ -90,7 +92,8 @@ export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ ciclos: s
     nomesDasTutoras(),
   ]);
 
-  const sessoes = ordenar(linhas.map((p) => paraSessao(p, nomes)));
+  const cores = await coresDosTipos();
+  const sessoes = ordenar(linhas.map((p) => paraSessao(p, nomes, cores)));
   const ciclos = ordenarCiclos([...new Set(sessoes.map((s) => s.ciclo).filter(Boolean))]);
   return { ciclos, sessoes };
 }
@@ -177,14 +180,18 @@ export async function conteudoDaSessao(
   mentoradaId: string,
   sessaoId: string,
 ): Promise<{ sessao: SessaoDaLista; blocos: BlocoSimples[] } | null> {
-  const [pagina, nomes] = await Promise.all([sessaoDaMentorada(mentoradaId, sessaoId), nomesDasTutoras()]);
+  const [pagina, nomes, cores] = await Promise.all([
+    sessaoDaMentorada(mentoradaId, sessaoId),
+    nomesDasTutoras(),
+    coresDosTipos(),
+  ]);
   if (!pagina) return null;
 
   // A página inteira, como ela está: cada sessão nasce de um modelo diferente
   // (Terapêutica, Investimentos, Produto…), então o app mostra o que houver lá.
   // Dois níveis bastam (callout -> resposta; as linhas da tabela vêm sempre) e
   // cada nível a mais é uma rodada de idas ao Notion — a sessão abria devagar.
-  return { sessao: paraSessao(pagina, nomes), blocos: await lerBlocos(pagina.id, 2) };
+  return { sessao: paraSessao(pagina, nomes, cores), blocos: await lerBlocos(pagina.id, 2) };
 }
 
 /**
@@ -385,7 +392,28 @@ function acharVideo(blocos: BlocoSimples[]): string | null {
   return null;
 }
 
-function paraSessao(p: NotionPage, nomes: Map<string, string>): SessaoDaLista {
+/**
+ * Uma cor da paleta para cada opção de "Sessão ", na ordem em que elas estão
+ * no Notion: assim Check-in é sempre do mesmo tom, em toda tela.
+ *
+ * `unstable_cache` serializa o que guarda, e um Map viraria objeto vazio —
+ * por isso aqui vai uma lista de pares.
+ */
+const tiposDeSessao = guardado('tipos-de-sessao', async (): Promise<[string, string][]> => {
+  const schema = await resolverDatabaseId('tutorias').then(getDatabase);
+  const prop = Object.values(schema.properties).find((p) => p.name === TUTORIA.tipo) as
+    | { select?: { options: { name: string }[] }; multi_select?: { options: { name: string }[] } }
+    | undefined;
+
+  const opcoes = (prop?.select ?? prop?.multi_select)?.options ?? [];
+  return opcoes.map((o, i) => [o.name, `var(--serie-${(i % 9) + 1})`]);
+});
+
+async function coresDosTipos(): Promise<Map<string, string>> {
+  return new Map(await tiposDeSessao().catch(() => []));
+}
+
+function paraSessao(p: NotionPage, nomes: Map<string, string>, coresDoTipo?: Map<string, string>): SessaoDaLista {
   const realizada = data(p, TUTORIA.dataRealizada);
   const status = texto(p, TUTORIA.status);
   return {
@@ -404,6 +432,7 @@ function paraSessao(p: NotionPage, nomes: Map<string, string>): SessaoDaLista {
       .filter((t) => t.nome),
     ciclo: texto(p, TUTORIA.ciclo),
     tipo: texto(p, TUTORIA.tipo),
+    corTipo: coresDoTipo?.get(texto(p, TUTORIA.tipo)) ?? 'var(--serie-sem)',
     tema: texto(p, TUTORIA.tema),
     mesPrevisto: texto(p, TUTORIA.mesPrevisto),
     dataPrevista: data(p, TUTORIA.dataPrevista),

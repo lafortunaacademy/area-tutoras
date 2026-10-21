@@ -6,6 +6,7 @@ import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
+import { EtiquetaSessao } from './EtiquetaSessao';
 import { ProximosPassos, buscarTarefas } from '@/components/tutorias/FormularioDoApp';
 import { FormularioPreSessao } from './FormularioPreSessao';
 import { TutorasDaSessao } from './FotoDaTutora';
@@ -30,47 +31,33 @@ function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
 /** O nome da sessão; sem título na página, vale a propriedade "Sessão " (o tipo). */
 const nomeDaSessao = (s: SessaoDaLista) => s.sessao || s.tipo || '—';
 
+/**
+ * A coluna "Sessão": o tipo como etiqueta e, ao lado, o título da página —
+ * só quando ele diz outra coisa ("Tutoria 01 | Produto" ao lado de "Tutoria").
+ */
+export function NomeDaSessao({ sessao }: { sessao: SessaoDaLista }) {
+  if (!sessao.tipo) return <>{sessao.sessao || '—'}</>;
+  const titulo = sessao.sessao.trim();
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      <EtiquetaSessao tipo={sessao.tipo} cor={sessao.corTipo} />
+      {titulo && titulo.toLowerCase() !== sessao.tipo.trim().toLowerCase() ? <span>{titulo}</span> : null}
+    </span>
+  );
+}
+
 export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
 
-const FILTROS = [
-  { chave: 'todas', rotulo: 'Todas' },
-  { chave: 'realizadas', rotulo: 'Realizadas' },
-  { chave: 'arealizar', rotulo: 'A realizar' },
-] as const;
 
 /** Lista das sessões, só para ver; cada sessão abre num cartão por cima da página. */
 export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; sessoes: SessaoDaLista[] }) {
-  const [filtro, setFiltro] = useState<(typeof FILTROS)[number]['chave']>('todas');
   const [aberta, setAberta] = useState<SessaoDaLista | null>(null);
 
-  const visiveis = sessoes.filter((s) =>
-    filtro === 'todas' ? true : filtro === 'realizadas' ? s.realizada : !s.realizada,
-  );
+  // Sem filtro de status: a etiqueta de cada linha já diz o que foi realizado.
+  const visiveis = sessoes;
 
   return (
     <div>
-      <div role="tablist" aria-label="Filtrar sessões" className="mb-3 flex gap-1">
-        {FILTROS.map((f) => (
-          <button
-            key={f.chave}
-            type="button"
-            role="tab"
-            aria-selected={filtro === f.chave}
-            onClick={() => setFiltro(f.chave)}
-            className={`rounded-lg px-3 py-1.5 text-xs transition ${
-              filtro === f.chave ? 'bg-marca font-medium text-marca-contraste' : 'text-texto-suave hover:bg-fundo hover:text-texto'
-            }`}
-          >
-            {f.rotulo}
-            <span className="ml-1.5 tabular-nums opacity-70">
-              {f.chave === 'todas'
-                ? sessoes.length
-                : sessoes.filter((s) => (f.chave === 'realizadas' ? s.realizada : !s.realizada)).length}
-            </span>
-          </button>
-        ))}
-      </div>
-
       {/* No celular cada sessão é um botão: linha de tabela não abre no toque. */}
       <ul className="space-y-2 sm:hidden">
         {visiveis.length === 0 ? (
@@ -84,7 +71,9 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                 className="flex w-full items-start gap-3 rounded-xl border border-borda bg-superficie px-4 py-3 text-left transition active:bg-fundo"
               >
                 <span className="min-w-0 flex-1 space-y-1.5">
-                  <span className="block text-sm leading-snug font-medium">{nomeDaSessao(s)}</span>
+                  <span className="block text-sm leading-snug font-medium">
+                    <NomeDaSessao sessao={s} />
+                  </span>
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-texto-suave">
                     {s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}
                     <span className="tabular-nums">{dataCurta(s.data)}</span>
@@ -129,7 +118,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   <td className="px-4 py-1 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
                   <td className="px-4 py-1 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
-                      {nomeDaSessao(s)}
+                      <NomeDaSessao sessao={s} />
                     </button>
                   </td>
                   <td className="px-4 py-1 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>

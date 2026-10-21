@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
-import { CartaoSessao, dataCurta } from '@/components/area-mentorada/ListaDeSessoes';
+import { CartaoSessao, NomeDaSessao, dataCurta } from '@/components/area-mentorada/ListaDeSessoes';
 import { TutorasDaSessao } from '@/components/area-mentorada/FotoDaTutora';
 
 /**
@@ -46,7 +46,7 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
                   </td>
                   <td className="px-3 py-1 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
-                      {s.sessao || <span className="text-texto-suave">Sem nome</span>}
+                      <NomeDaSessao sessao={s} />
                     </button>
                   </td>
                   <td className="px-3 py-1 text-texto-suave">
