@@ -39,7 +39,7 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
                 <tr
                   key={s.id}
                   onClick={() => setAberta(s)}
-                  className="cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
+                  className="h-10 cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
                   <td className="px-3 py-1 whitespace-nowrap">
                     <EtiquetaNotion texto={s.status} cor={s.corStatus} />

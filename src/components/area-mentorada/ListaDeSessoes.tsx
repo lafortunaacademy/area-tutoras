@@ -113,7 +113,8 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   key={s.id}
                   onClick={() => setAberta(s)}
                   onMouseEnter={() => void buscarSessao(s.id, mentoradaId).catch(() => {})}
-                  className="cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
+                  // Altura fixa: linha com etiqueta, foto ou "—" fica do mesmo tamanho.
+                  className="h-10 cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
                   <td className="px-4 py-1 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
                   <td className="px-4 py-1 font-medium">

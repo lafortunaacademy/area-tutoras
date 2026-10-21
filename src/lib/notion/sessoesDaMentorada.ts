@@ -45,7 +45,7 @@ export type SessaoDaLista = {
   ciclo: string;
   /** A propriedade "Sessão " do Notion: Check-in, Tutoria, Planejamento, Call SOS. */
   tipo: string;
-  /** Cor da etiqueta do tipo, uma por opção do Notion (`var(--serie-N)`). */
+  /** Cor da etiqueta do tipo, uma por opção do Notion (`var(--etiqueta-N)`). */
   corTipo: string;
   /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
   tema: string;
@@ -406,7 +406,7 @@ const tiposDeSessao = guardado('tipos-de-sessao', async (): Promise<[string, str
     | undefined;
 
   const opcoes = (prop?.select ?? prop?.multi_select)?.options ?? [];
-  return opcoes.map((o, i) => [o.name, `var(--serie-${(i % 9) + 1})`]);
+  return opcoes.map((o, i) => [o.name, `var(--etiqueta-${(i % 6) + 1})`]);
 });
 
 async function coresDosTipos(): Promise<Map<string, string>> {
@@ -432,7 +432,7 @@ function paraSessao(p: NotionPage, nomes: Map<string, string>, coresDoTipo?: Map
       .filter((t) => t.nome),
     ciclo: texto(p, TUTORIA.ciclo),
     tipo: texto(p, TUTORIA.tipo),
-    corTipo: coresDoTipo?.get(texto(p, TUTORIA.tipo)) ?? 'var(--serie-sem)',
+    corTipo: coresDoTipo?.get(texto(p, TUTORIA.tipo)) ?? 'var(--etiqueta-5)',
     tema: texto(p, TUTORIA.tema),
     mesPrevisto: texto(p, TUTORIA.mesPrevisto),
     dataPrevista: data(p, TUTORIA.dataPrevista),
