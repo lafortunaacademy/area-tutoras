@@ -14,15 +14,12 @@ export function PilaresDeTutoria({
   mentoradaId,
   admin,
   sessoes = null,
-  ciclo,
 }: {
   pilares: Pilar[];
   mentoradaId: string;
   admin: boolean;
   /** Sessões do ciclo atual por pilar; `null` quando o controle não respondeu. */
   sessoes?: Record<string, SessaoDaLista[]> | null;
-  /** Ano do ciclo escolhido, que filtra também as páginas de cada tutoria. */
-  ciclo?: string;
 }) {
   // As sessões de cada tutoria não entram aqui: elas já aparecem na página Sessões.
   pilares = pilares.map((p) => ({
@@ -56,7 +53,7 @@ export function PilaresDeTutoria({
                   </summary>
                   <div className="space-y-3 px-4 pb-4">
                     {t.partes.length ? (
-                      t.partes.map((parte) => <Parte key={parte.id} parte={parte} mentoradaId={mentoradaId} admin={admin} ciclo={ciclo} />)
+                      t.partes.map((parte) => <Parte key={parte.id} parte={parte} mentoradaId={mentoradaId} admin={admin} />)
                     ) : (
                       <p className="text-sm text-texto-suave">Nada preenchido nesta tutoria ainda.</p>
                     )}
@@ -79,21 +76,11 @@ export function PilaresDeTutoria({
   );
 }
 
-function Parte({
-  parte,
-  mentoradaId,
-  admin,
-  ciclo,
-}: {
-  parte: ParteDaTutoria;
-  mentoradaId: string;
-  admin: boolean;
-  ciclo?: string;
-}) {
+function Parte({ parte, mentoradaId, admin }: { parte: ParteDaTutoria; mentoradaId: string; admin: boolean }) {
   return (
     <div className="rounded-xl border border-borda bg-superficie p-4">
       {parte.tipo === 'materiais' ? (
-        <MateriaisDaTutoria mentoradaId={mentoradaId} itens={parte.itens} admin={admin} ciclo={ciclo} />
+        <MateriaisDaTutoria mentoradaId={mentoradaId} itens={parte.itens} admin={admin} />
       ) : null}
     </div>
   );

@@ -1,8 +1,9 @@
 import { exigirVisitante } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { Cabecalho } from '@/components/Cabecalho';
-import { MenuMentoradas } from '@/components/MenuMentoradas';
+import { MenuMentoradas, type SecaoMenu } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
+import { AtalhosNoCelular } from '@/components/area-mentorada/AtalhosNoCelular';
 
 /**
  * Área das mentoradas.
@@ -12,6 +13,17 @@ import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
  * Entram o administrativo, que vê todas, e a própria mentorada, que vê só a
  * página dela.
  */
+/** As partes da área da mentorada: no menu lateral e, no celular, na faixa de atalhos. */
+const SECOES: SecaoMenu[] = [
+  { rotulo: 'Progresso da mentoria', ancora: 'progresso' },
+  { rotulo: 'Sessões e tutorias', ancora: 'sessoes' },
+  { rotulo: 'Tutorias do HUB', rota: 'tutorias' },
+  { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
+  { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
+  { rotulo: 'Tarefas da mentoria', ancora: 'tarefas' },
+  { rotulo: 'Dashboard Bem-Sucedida', ancora: 'dashboard' },
+];
+
 export default async function MentoradasLayout({ children }: { children: React.ReactNode }) {
   const visitante = await exigirVisitante();
   const todas = await mentoradasDoModeloNovo().catch(() => []);
@@ -32,27 +44,16 @@ export default async function MentoradasLayout({ children }: { children: React.R
                   ? { href: '/mentoradas', rotulo: 'Visão geral' }
                   : { href: `/mentoradas/${visitante.mentoradaId}`, rotulo: 'Minha área' }
               }
-              secoes={[
-                { rotulo: 'Progresso da mentoria', ancora: 'progresso' },
-                {
-                  rotulo: 'Área da mentorada',
-                  ancora: 'area',
-                  filhos: [
-                    { rotulo: 'Sessões', rota: 'sessoes' },
-                    { rotulo: 'Tutorias', rota: 'tutorias' },
-                    { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
-                  ],
-                },
-                { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
-                { rotulo: 'Tarefas da mentoria', ancora: 'tarefas' },
-                { rotulo: 'Dashboard Bem-Sucedida', ancora: 'dashboard' },
-              ]}
+              secoes={SECOES}
               mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
             />
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          <AtalhosNoCelular base="/mentoradas" secoes={SECOES} />
+          {children}
+        </main>
         <RolarParaAncora />
       </div>
     </div>

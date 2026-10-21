@@ -10,8 +10,8 @@ import { MapaDaCliente } from '@/components/MapaDaCliente';
 import { TabelaNotion } from '@/components/TabelaNotion';
 import { pilaresDaMentorada } from '@/lib/notion/pilares';
 import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
-import { ciclosDoControle, ordenarAnos, sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
-import { cicloAtual } from '@/lib/notion/config';
+import { ciclosDoControle, sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { ordenarCiclos } from '@/lib/notion/config';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
 
@@ -53,15 +53,15 @@ export default async function MentoradaPage({
     sessoesPorCiclo(mentorada).catch(() => null),
     ciclosDoControle().catch(() => [] as string[]),
   ]);
-  const anoAtual = cicloAtual().match(/\d{4}/)![0];
-  const anos = ordenarAnos([...new Set([...ciclos, ...(dasSessoes?.anos ?? [])])]);
-  const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
+  const todos = ordenarCiclos([...new Set([...ciclos, ...(dasSessoes?.ciclos ?? [])])]);
+  const dela = dasSessoes?.ciclos ?? [];
+  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (dela[0] ?? todos[0] ?? '');
 
   const sessoesPorPilar = tutorias
     ? await sessoesDosPilares(
         mentorada,
         tutorias.map((p) => ({ id: p.id, tutorias: p.tutorias.map((t) => ({ nome: t.titulo })) })),
-        ano,
+        ciclo,
       ).catch(() => null)
     : null;
 
@@ -170,13 +170,7 @@ export default async function MentoradaPage({
         titulo="Tutorias"
         ancora="tutorias"
         acao={
-          <SeletorDeAno
-            anos={anos}
-            selecionado={ano}
-            caminho={`/painel/${mentorada.id}`}
-            rotulo={(a) => `Ciclo ${a}`}
-            mesmoComUm
-          />
+          <SeletorDeAno anos={todos} selecionado={ciclo} caminho={`/painel/${mentorada.id}`} mesmoComUm />
         }
       >
         {tutorias === null ? (
@@ -184,7 +178,7 @@ export default async function MentoradaPage({
         ) : tutorias.length === 0 ? (
           <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
         ) : (
-          <PilaresDeTutoria key={ano} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} ciclo={ano} />
+          <PilaresDeTutoria key={ciclo} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
         )}
       </Secao>
     </div>

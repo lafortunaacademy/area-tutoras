@@ -62,8 +62,17 @@ export const mentoradasDoModeloNovo = cache(async (): Promise<Mentorada[]> => {
   return todas.filter((m) => conhecidas.get(m.id)?.novo);
 });
 
+/**
+ * A página já está no modelo novo?
+ *
+ * Serve aos dois formatos: o de 2026, com a área dentro do callout "Área de
+ * membros", e o de 2027, em que a própria página é a área e traz o callout
+ * "Progresso da mentoria".
+ */
 async function temAreaDeMembros(mentoradaId: string): Promise<boolean> {
   const blocos = await getBlockChildren(mentoradaId);
+  const alvos = [AREA_DE_MEMBROS.callout.toLowerCase(), AREA_DE_MEMBROS.calloutProgresso.toLowerCase()];
+
   return blocos.some((b) => {
     if (b.type !== 'callout') return false;
     const texto = ((b.callout as { rich_text?: { plain_text?: string }[] })?.rich_text ?? [])
@@ -71,7 +80,7 @@ async function temAreaDeMembros(mentoradaId: string): Promise<boolean> {
       .join('')
       .trim()
       .toLowerCase();
-    return texto === AREA_DE_MEMBROS.callout.toLowerCase();
+    return alvos.includes(texto);
   });
 }
 

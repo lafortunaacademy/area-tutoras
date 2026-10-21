@@ -193,12 +193,17 @@ async function esquecerBases(mentoradaId: string): Promise<void> {
  */
 export async function paginaDaAreaDeMembros(mentoradaId: string): Promise<string | null> {
   const membros = await acharFilho(mentoradaId, (b) => ehCallout(b, AREA_DE_MEMBROS.callout));
-  if (!membros) return null;
 
-  // Pelo tipo, não pelo título: a página acompanha o nome da mentorada e muda
-  // quando alguém renomeia ("La Fortuna Academy & Nome", "Teste"…).
-  const pagina = await acharFilho(membros.id, (b) => b.type === 'child_page');
-  return pagina?.id ?? null;
+  if (membros) {
+    // Modelo de 2026: pelo tipo, não pelo título — a página acompanha o nome da
+    // mentorada e muda quando alguém renomeia.
+    const pagina = await acharFilho(membros.id, (b) => b.type === 'child_page');
+    if (pagina) return pagina.id;
+  }
+
+  // Modelo de 2027: a área é a própria página da mentorada.
+  const progresso = await acharFilho(mentoradaId, (b) => ehCallout(b, AREA_DE_MEMBROS.calloutProgresso), 0);
+  return progresso ? mentoradaId : null;
 }
 
 async function descobrirBases(mentoradaId: string): Promise<Bases | null> {

@@ -31,20 +31,15 @@ export function MateriaisDaTutoria({
   mentoradaId,
   itens,
   admin,
-  ciclo,
 }: {
   mentoradaId: string;
   itens: ItemDeMaterial[];
   admin: boolean;
-  /** Ano do ciclo escolhido na página; mostra só as páginas criadas nele. */
-  ciclo?: string;
 }) {
   const [novos, setNovos] = useState<ItemDeMaterial[]>([]);
   const [criando, setCriando] = useState<string | null>(null);
   const [erro, setErro] = useState(false);
-  // Página sem data (as antigas) aparece em qualquer ciclo.
-  const doCiclo = (i: ItemDeMaterial) => !ciclo || !i.criadaEm || i.criadaEm.slice(0, 4) === ciclo;
-  const todos = [...itens, ...novos].filter(doCiclo);
+  const todos = [...itens, ...novos];
 
   // Um botão por tipo de página que já existe aqui ("Nova pré-sessão", "Nova
   // carteira de investimentos"…), como os botões do Notion.
@@ -78,9 +73,7 @@ export function MateriaisDaTutoria({
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="text-sm text-texto-suave">Nada criado neste ciclo ainda.</p>
-      )}
+      ) : null}
 
       {modelos.length ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">

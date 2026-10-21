@@ -1,8 +1,9 @@
 import 'server-only';
 import type { Mentorada } from './carteira';
-import { TUTORIA_A_REALIZAR, TUTORIA_REALIZADA, cicloAtual } from './config';
+import { TUTORIA_A_REALIZAR, TUTORIA_REALIZADA } from './config';
+import { cicloMaisRecente } from './sessoesDaMentorada';
 import { mentoradasDoModeloNovo } from './modelo';
-import { anoDaSessao, sessoesPorCiclo } from './sessoesDaMentorada';
+import { sessoesPorCiclo } from './sessoesDaMentorada';
 import { tarefasDaMentorada } from './tarefas';
 
 /**
@@ -41,11 +42,11 @@ const AGENDADO = 'Agendado';
 export async function visaoGeral(): Promise<VisaoGeral> {
   const mentoradas = await mentoradasDoModeloNovo();
   const hoje = hojeEmSaoPaulo();
-  const ano = hoje.slice(0, 4);
+  const ciclo = await cicloMaisRecente();
 
   const resumos: ResumoDaMentorada[] = [];
   for (let i = 0; i < mentoradas.length; i += EM_PARALELO) {
-    resumos.push(...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ano)))));
+    resumos.push(...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ciclo)))));
   }
 
   // Sempre pela situação: em risco, depois atenção, depois fluindo (o resto no fim).
@@ -56,16 +57,16 @@ export async function visaoGeral(): Promise<VisaoGeral> {
       (b.diasSemSessao ?? Infinity) - (a.diasSemSessao ?? Infinity) ||
       a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'),
   );
-  return { ciclo: cicloAtual(), mentoradas: resumos };
+  return { ciclo, mentoradas: resumos };
 }
 
-async function resumir(m: Mentorada, hoje: string, ano: string): Promise<ResumoDaMentorada> {
+async function resumir(m: Mentorada, hoje: string, ciclo: string): Promise<ResumoDaMentorada> {
   const [sessoes, tarefas] = await Promise.all([
     sessoesPorCiclo(m).catch(() => null),
     tarefasDaMentorada(m.id).catch(() => null),
   ]);
 
-  const doCiclo = (sessoes?.sessoes ?? []).filter((s) => anoDaSessao(s) === ano);
+  const doCiclo = (sessoes?.sessoes ?? []).filter((s) => s.ciclo === ciclo);
   const realizadas = doCiclo.filter((s) => s.status === TUTORIA_REALIZADA);
   const aRealizar = doCiclo.filter((s) => TUTORIA_A_REALIZAR.includes(s.status));
   const agendada = aRealizar.some(

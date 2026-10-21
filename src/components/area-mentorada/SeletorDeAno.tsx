@@ -9,12 +9,18 @@ export function SeletorDeAno({
   anos,
   selecionado,
   caminho,
+  parametro = 'ano',
+  ancora,
   rotulo = (ano) => ano,
   mesmoComUm = false,
 }: {
   anos: string[];
   selecionado: string;
   caminho: string;
+  /** Nome do parâmetro no endereço; numa página com dois seletores eles precisam diferir. */
+  parametro?: string;
+  /** Seção para onde voltar depois de trocar (o id na página). */
+  ancora?: string;
   rotulo?: (ano: string) => string;
   /** Mostra os botões mesmo quando só há um ano. */
   mesmoComUm?: boolean;
@@ -26,7 +32,7 @@ export function SeletorDeAno({
       {anos.map((ano) => (
         <Link
           key={ano}
-          href={`${caminho}?ano=${ano}`}
+          href={`${caminho}?${parametro}=${ano}${ancora ? `#${ancora}` : ''}`}
           scroll={false}
           aria-current={ano === selecionado ? 'page' : undefined}
           className={`rounded-lg px-3.5 py-1.5 text-sm tabular-nums transition ${

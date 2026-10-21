@@ -1,7 +1,8 @@
 import 'server-only';
 import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
-import { SEM_TUTORA, TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA, cicloAtual } from './config';
+import { SEM_TUTORA, TUTORIA, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA } from './config';
+import { cicloMaisRecente } from './sessoesDaMentorada';
 import { data, relationIds, texto } from './props';
 import { nomesDasTutoras } from './tutora';
 import type { Mentorada } from './carteira';
@@ -29,8 +30,12 @@ export type ProgressoDaMentoria = {
 };
 
 
-export async function progressoDaMentoria(mentorada: Mentorada): Promise<ProgressoDaMentoria> {
-  const ciclo = cicloAtual();
+export async function progressoDaMentoria(
+  mentorada: Mentorada,
+  /** Ciclo mostrado ("Ciclo 3"); sem ele, o mais recente. */
+  cicloPedido?: string,
+): Promise<ProgressoDaMentoria> {
+  const ciclo = cicloPedido ?? (await cicloMaisRecente());
   const vazio: ProgressoDaMentoria = {
     ciclo,
     realizadas: 0,
@@ -51,14 +56,7 @@ export async function progressoDaMentoria(mentorada: Mentorada): Promise<Progres
             relation: { contains: id },
           })),
         },
-        // Sem ciclo preenchido também conta, como no gráfico do Notion; só
-        // sessões marcadas com OUTRO ciclo ficam de fora.
-        {
-          or: [
-            { property: TUTORIA.ciclo, select: { equals: ciclo } },
-            { property: TUTORIA.ciclo, select: { is_empty: true } },
-          ],
-        },
+        { property: TUTORIA.ciclo, select: { equals: ciclo } },
       ],
     },
     limite: 500,

@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, Video } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
-import { anoDaSessao, ciclosDoControle, ordenarAnos, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
-import { cicloAtual } from '@/lib/notion/config';
+import { ciclosDoControle, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { ordenarCiclos } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Bloco } from '@/components/area-mentorada/Bloco';
 import { ListaDeSessoes } from '@/components/area-mentorada/ListaDeSessoes';
@@ -29,13 +29,12 @@ export default async function SessoesPage({
     ciclosDoControle().catch(() => [] as string[]),
   ]);
 
-  // Ciclo mostrado: o pedido no endereço; senão o atual; senão o mais recente em que ela teve sessões.
-  const anoAtual = cicloAtual().match(/\d{4}/)![0];
   // Todos os ciclos do controle viram botão, mesmo os sem sessão dela; os
   // ciclos em que ela teve sessão entram junto, caso algum não exista mais na lista.
-  const anos = ordenarAnos([...new Set([...ciclos, ...(dados instanceof Error ? [] : dados.anos)])]);
-  const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual);
-  const sessoes = dados instanceof Error ? dados : dados.sessoes.filter((s) => anoDaSessao(s) === ano);
+  const todos = ordenarCiclos([...new Set([...ciclos, ...(dados instanceof Error ? [] : dados.ciclos)])]);
+  const dela = dados instanceof Error ? [] : dados.ciclos;
+  const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (dela[0] ?? todos[0] ?? '');
+  const sessoes = dados instanceof Error ? dados : dados.sessoes.filter((s) => s.ciclo === ciclo);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -51,24 +50,18 @@ export default async function SessoesPage({
       <p className="mt-1 mb-6 text-sm text-texto-suave">{mentorada.nome}</p>
 
       <div className="mb-4">
-        <SeletorDeAno
-          anos={anos}
-          selecionado={ano}
-          caminho={`/mentoradas/${mentorada.id}/sessoes`}
-          rotulo={(a) => `Ciclo ${a}`}
-          mesmoComUm
-        />
+        <SeletorDeAno anos={todos} selecionado={ciclo} caminho={`/mentoradas/${mentorada.id}/sessoes`} mesmoComUm />
       </div>
 
       <Bloco
         icone={Video}
         titulo="Sessões da mentoria"
-        acao={<span className="text-xs whitespace-nowrap text-texto-suave">Ciclo {ano}</span>}
+        acao={<span className="text-xs whitespace-nowrap text-texto-suave">{ciclo}</span>}
       >
         {sessoes instanceof Error ? (
           <AvisoNotion erro={sessoes} detalhar={visitante.admin} />
         ) : (
-          <ListaDeSessoes key={ano} mentoradaId={mentorada.id} sessoes={sessoes} />
+          <ListaDeSessoes key={ciclo} mentoradaId={mentorada.id} sessoes={sessoes} />
         )}
       </Bloco>
     </div>

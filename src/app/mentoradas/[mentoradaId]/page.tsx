@@ -5,13 +5,13 @@ import {
   CalendarClock,
   CircleDot,
   Flag,
-  LayoutGrid,
   ListChecks,
   Percent,
   PiggyBank,
   Target,
   TrendingUp,
   Users,
+  Video,
 } from 'lucide-react';
 import { exigirAcessoAMentorada } from '@/lib/session';
 import { exigirMentoradaDoModeloNovo } from '@/lib/notion/guard';
@@ -22,18 +22,20 @@ import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao
 import { tarefasDaMentorada } from '@/lib/notion/tarefas';
 import { cartoesDeCenario } from '@/lib/notion/cenarios';
 import { CartoesCenario } from '@/components/area-mentorada/CartoesCenario';
+import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
+import { ciclosDoControle, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
+import { ordenarCiclos } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
-import { CartoesDaArea } from '@/components/area-mentorada/CartoesDaArea';
 import { DonutTutoras } from '@/components/area-mentorada/DonutTutoras';
 import { montarFatias } from '@/components/area-mentorada/fatias';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
 import { GraficoLinha } from '@/components/area-mentorada/GraficoLinha';
 import { anoSelecionado, anosDisponiveis } from '@/components/area-mentorada/financeiro';
-import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { LinhaDoTempo } from '@/components/area-mentorada/LinhaDoTempo';
 import { Tarefas } from '@/components/area-mentorada/Tarefas';
 import { MESES, TRIMESTRES } from '@/components/area-mentorada/eixos';
@@ -53,11 +55,11 @@ export default async function AreaDaMentoradaPage({
   searchParams,
 }: {
   params: Promise<{ mentoradaId: string }>;
-  searchParams: Promise<{ ano?: string }>;
+  searchParams: Promise<{ ano?: string; ciclo?: string }>;
 }) {
   const { mentoradaId } = await params;
   const visitante = await exigirAcessoAMentorada(mentoradaId);
-  const { ano: anoPedido } = await searchParams;
+  const { ano: anoPedido, ciclo: cicloPedido } = await searchParams;
   const mentorada = await exigirMentoradaDoModeloNovo(mentoradaId);
 
   // Quem está na Pronta Para Fazer Dinheiro ganha a capa em taupe. Com as duas
@@ -100,40 +102,49 @@ export default async function AreaDaMentoradaPage({
         </div>
       </div>
 
-      <header className="mb-8">
-        <h1 className="display text-3xl leading-tight sm:text-4xl">{mentorada.nome}</h1>
-        <p className="mt-3 text-lg text-marca">
-          Seja bem-vinda, <em className="display text-xl font-semibold">bem-sucedida!</em>
-        </p>
-        <p className="mt-2 border-l-2 border-destaque pl-3 text-sm text-texto-suave">
-          Aqui é onde a líder se mantém e alcança a evolução.
-        </p>
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="display text-3xl leading-tight sm:text-4xl">{mentorada.nome}</h1>
+          <p className="mt-3 text-lg text-marca">
+            Seja bem-vinda, <em className="display text-xl font-semibold">bem-sucedida!</em>
+          </p>
+          <p className="mt-2 border-l-2 border-destaque pl-3 text-sm text-texto-suave">
+            Aqui é onde a líder se mantém e alcança a evolução.
+          </p>
+        </div>
+
+        {/* Os dois caminhos que saem da área dela: o HUB e o site da marca. */}
+        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-64">
+          <Link
+            href={`/mentoradas/${mentorada.id}/tutorias`}
+            className="flex items-center justify-center gap-2 rounded-xl bg-marca px-4 py-2.5 text-xs font-medium tracking-wide text-marca-contraste uppercase transition hover:opacity-90"
+          >
+            <Users aria-hidden size={14} />
+            Conheça o HUB de tutoras
+          </Link>
+          {/* Sem destino até o endereço do site ser definido. */}
+          <span
+            aria-disabled
+            className="relative flex items-center justify-center rounded-xl border border-borda bg-superficie-2 px-4 py-2.5 text-xs font-medium tracking-wide text-texto-suave uppercase"
+          >
+            Universo La Fortuna
+            <span className="absolute right-2 bottom-1 text-[8px] tracking-wide opacity-70">em breve</span>
+          </span>
+        </div>
       </header>
 
       <div className="space-y-4">
         {/* Os ids são as âncoras do menu lateral (layout de /mentoradas). */}
         <div id="progresso" className="scroll-mt-6">
           <Suspense fallback={<Carregando icone={CircleDot} titulo="Progresso da mentoria" altura="h-56" />}>
-            <SecaoProgresso mentorada={mentorada} />
+            <SecaoProgresso mentorada={mentorada} cicloPedido={cicloPedido} />
           </Suspense>
         </div>
 
-        <div id="area" className="scroll-mt-6">
-          <Bloco
-            icone={LayoutGrid}
-            titulo="Área da mentorada"
-            acao={
-              <Link
-                href={`/mentoradas/${mentorada.id}/hub-de-tutoras`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs font-medium whitespace-nowrap text-texto-suave transition hover:border-marca hover:text-marca"
-              >
-                <Users aria-hidden size={13} />
-                Conheça nosso HUB de tutoras
-              </Link>
-            }
-          >
-            <CartoesDaArea mentoradaId={mentorada.id} />
-          </Bloco>
+        <div id="sessoes" className="scroll-mt-6">
+          <Suspense fallback={<Carregando icone={Video} titulo="Sessões e tutorias" altura="h-48" />}>
+            <SecaoSessoes mentorada={mentorada} cicloPedido={cicloPedido} detalhar={visitante.admin} />
+          </Suspense>
         </div>
 
         <div id="planejamento" className="scroll-mt-6">
@@ -174,8 +185,10 @@ function Carregando({ icone, titulo, altura }: { icone: typeof CircleDot; titulo
   );
 }
 
-async function SecaoProgresso({ mentorada }: { mentorada: Mentorada }) {
-  const progresso = await progressoDaMentoria(mentorada).catch(() => null);
+async function SecaoProgresso({ mentorada, cicloPedido }: { mentorada: Mentorada; cicloPedido?: string }) {
+  const { todos, dela } = await ciclos(mentorada);
+  const ciclo = cicloEscolhido(todos, dela, cicloPedido);
+  const progresso = await progressoDaMentoria(mentorada, ciclo).catch(() => null);
   const fatias = progresso ? montarFatias(progresso.porTutora.realizadas, progresso.porTutora.aRealizar) : null;
 
   return (
@@ -183,7 +196,16 @@ async function SecaoProgresso({ mentorada }: { mentorada: Mentorada }) {
       icone={CircleDot}
       titulo="Progresso da mentoria"
       descricao="Tudo o que já foi realizado no seu processo de mentoria e o que está por vir."
-      acao={progresso ? <span className="text-xs whitespace-nowrap text-texto-suave">{progresso.ciclo}</span> : undefined}
+      acao={
+        <SeletorDeAno
+          anos={todos}
+          selecionado={ciclo}
+          caminho={`/mentoradas/${mentorada.id}`}
+          parametro="ciclo"
+          ancora="progresso"
+          mesmoComUm
+        />
+      }
     >
       {progresso && fatias ? (
         <>
@@ -205,6 +227,57 @@ async function SecaoProgresso({ mentorada }: { mentorada: Mentorada }) {
       )}
     </Bloco>
   );
+}
+
+async function SecaoSessoes({
+  mentorada,
+  cicloPedido,
+  detalhar,
+}: {
+  mentorada: Mentorada;
+  cicloPedido?: string;
+  detalhar: boolean;
+}) {
+  const dados = await sessoesPorCiclo(mentorada).catch((e) => e as Error);
+  const { todos, dela } = await ciclos(mentorada);
+  const ciclo = cicloEscolhido(todos, dela, cicloPedido);
+  const sessoes = dados instanceof Error ? dados : dados.sessoes.filter((s) => s.ciclo === ciclo);
+
+  return (
+    <Bloco
+      icone={Video}
+      titulo="Sessões e tutorias"
+      descricao="As sessões do ciclo, separadas entre quem conduz."
+      acao={<span className="text-xs whitespace-nowrap text-texto-suave">{ciclo}</span>}
+    >
+      {sessoes instanceof Error ? (
+        <AvisoNotion erro={sessoes} detalhar={detalhar} />
+      ) : (
+        <SessoesEmAbas key={ciclo} mentoradaId={mentorada.id} sessoes={sessoes} dona="Fernanda" />
+      )}
+    </Bloco>
+  );
+}
+
+/** Os ciclos que viram botão (todos os do controle) e os que ela de fato teve. */
+async function ciclos(mentorada: Mentorada): Promise<{ todos: string[]; dela: string[] }> {
+  const [doControle, dela] = await Promise.all([
+    ciclosDoControle().catch(() => [] as string[]),
+    sessoesPorCiclo(mentorada)
+      .then((d) => d.ciclos)
+      .catch(() => [] as string[]),
+  ]);
+  return { todos: ordenarCiclos([...new Set([...doControle, ...dela])]), dela: ordenarCiclos(dela) };
+}
+
+/**
+ * O ciclo aberto: o pedido no endereço; senão o mais recente em que ela TEM
+ * sessão — abrir no último ciclo criado mostraria uma tela vazia para quem
+ * ainda está no ciclo anterior.
+ */
+function cicloEscolhido(todos: string[], dela: string[], pedido?: string): string {
+  if (pedido && todos.includes(pedido)) return pedido;
+  return dela[0] ?? todos[0] ?? '';
 }
 
 async function SecaoPlanejamento({ mentorada, detalhar }: { mentorada: Mentorada; detalhar: boolean }) {

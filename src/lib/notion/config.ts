@@ -175,14 +175,17 @@ export const VALOR_POR_SESSAO: ReadonlyArray<{ contem: string; valor: number }> 
 export const TUTORIA = {
   sessao: 'Sessão',
   tutora: 'Tutora',
-  /** Relation para a base Tutoras — é por ela que o progresso da mentoria agrupa. */
-  tutoras: 'Tutoras',
+  /** Relation para a base Tutoras — é por ela que o progresso da mentoria agrupa.
+   *  O nome tem um espaço no fim, sim (modelo novo, out/2026). */
+  tutoras: 'Tutora ',
+  /** Tipo da sessão: Check-in, Tutoria, Planejamento, Call SOS. */
+  tipo: 'Sessão ',
   mentorada: 'Mentorada',
   status: 'Status',
   dataRealizada: 'Data realizada',
   dataPrevista: 'Data prevista',
   mesPrevisto: 'Mês previsto',
-  /** Select "Ciclo 2026", "Ciclo 2027"… — um ciclo por ano. */
+  /** Select "Ciclo 1", "Ciclo 2"… — a jornada da mentorada, não o ano. */
   ciclo: 'Ciclo',
   /** Fórmula que tira o tema do nome da sessão ("Produto", "Conteúdo"…; "Fernanda" quando não é tutoria). */
   tema: 'Tutoria',
@@ -213,9 +216,13 @@ export const TEMAS_DE_TUTORIA: { trecho: string; temas: string[]; especialidades
   { trecho: 'pessoa', temas: ['Pessoas'], especialidades: ['Liderança', 'Gestão de Pessoas'] },
 ];
 
-/** O ciclo que o progresso da mentoria mostra: o do ano corrente. */
-export function cicloAtual(hoje = new Date()): string {
-  return `Ciclo ${hoje.getFullYear()}`;
+/**
+ * A ordem dos ciclos: o maior número primeiro ("Ciclo 5", "Ciclo 4"…). O ciclo
+ * atual é o primeiro dessa lista — foi o último criado.
+ */
+export function ordenarCiclos(ciclos: string[]): string[] {
+  const numero = (c: string) => Number(c.match(/\d+/)?.[0] ?? 0);
+  return [...ciclos].sort((a, b) => numero(b) - numero(a) || b.localeCompare(a));
 }
 
 /** Só estas contam como tutoria dada. */
@@ -437,7 +444,13 @@ export type HandsoffSecaoKey = (typeof HANDSOFF_SECOES)[number]['key'];
  * aqui junto.
  */
 export const AREA_DE_MEMBROS = {
+  /** Modelo de 2026: a área era uma página dentro deste callout. */
   callout: 'Área de membros',
+  /**
+   * Modelo de 2027: a área é a própria página da mentorada, e o sinal de que
+   * ela já está no modelo novo é este callout, que só existe lá.
+   */
+  calloutProgresso: 'Progresso da mentoria',
   calloutCartoes: 'Área da mentorada',
   calloutTarefas: 'Tarefas da mentoria',
   calloutPlanejamento: 'Planejamento estratégico',

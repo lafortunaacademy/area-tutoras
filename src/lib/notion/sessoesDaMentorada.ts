@@ -2,7 +2,7 @@ import 'server-only';
 import { appendChildren, deleteBlock, enviarArquivo, getDatabase, getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
-import { TEMAS_DE_TUTORIA, TUTORIA, cicloAtual } from './config';
+import { TEMAS_DE_TUTORIA, TUTORIA, ordenarCiclos } from './config';
 import { corDaOpcao, data, relationIds, texto, titulo } from './props';
 import { nomesDasTutoras } from './tutora';
 import { lerBlocos, type BlocoSimples } from './blocks';
@@ -65,7 +65,7 @@ export const LIMITE_DO_VIDEO = 4 * 1024 * 1024;
  * teve sessões (o mais recente primeiro). Sessão sem ciclo conta no ciclo
  * atual, como no progresso da mentoria.
  */
-export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: string[]; sessoes: SessaoDaLista[] }> {
+export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ ciclos: string[]; sessoes: SessaoDaLista[] }> {
   const dbId = await resolverDatabaseId('tutorias');
   const [linhas, nomes] = await Promise.all([
     queryDatabase(dbId, {
@@ -78,8 +78,8 @@ export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: str
   ]);
 
   const sessoes = ordenar(linhas.map((p) => paraSessao(p, nomes)));
-  const anos = [...new Set(sessoes.map(anoDaSessao))].sort((a, b) => b.localeCompare(a));
-  return { anos, sessoes };
+  const ciclos = ordenarCiclos([...new Set(sessoes.map((s) => s.ciclo).filter(Boolean))]);
+  return { ciclos, sessoes };
 }
 
 /**
@@ -90,12 +90,12 @@ export async function sessoesPorCiclo(mentorada: Mentorada): Promise<{ anos: str
 export async function sessoesDosPilares(
   mentorada: Mentorada,
   pilares: { id: string; tutorias: { nome: string }[] }[],
-  /** Ciclo mostrado; sem ele, o ciclo corrente. */
-  anoPedido?: string,
+  /** Ciclo mostrado ("Ciclo 3"); sem ele, o mais recente. */
+  cicloPedido?: string,
 ): Promise<Record<string, SessaoDaLista[]>> {
   const [{ sessoes }, especialidades] = await Promise.all([sessoesPorCiclo(mentorada), especialidadesDasTutoras()]);
-  const ano = anoPedido ?? cicloAtual().match(/\d{4}/)?.[0];
-  const doCiclo = sessoes.filter((s) => anoDaSessao(s) === ano);
+  const ciclo = cicloPedido ?? (await cicloMaisRecente());
+  const doCiclo = sessoes.filter((s) => s.ciclo === ciclo);
 
   const temasDoPilar = (p: (typeof pilares)[number]) =>
     TEMAS_DE_TUTORIA.filter((t) => p.tutorias.some((tu) => semAcento(tu.nome).includes(t.trecho)));
@@ -121,8 +121,7 @@ function semAcento(t: string): string {
 
 /**
  * Todos os ciclos do controle, pelas opções da propriedade `Ciclo` no Notion —
- * e não só aqueles em que a mentorada teve sessão. O ano corrente vem primeiro,
- * depois os outros em ordem decrescente.
+ * e não só aqueles em que a mentorada teve sessão. O mais recente vem primeiro.
  */
 export async function ciclosDoControle(): Promise<string[]> {
   const schema = await resolverDatabaseId('tutorias').then(getDatabase);
@@ -130,23 +129,15 @@ export async function ciclosDoControle(): Promise<string[]> {
     | { select?: { options: { name: string }[] } }
     | undefined;
 
-  const anos = (prop?.select?.options ?? [])
-    .map((o) => o.name.match(/\d{4}/)?.[0])
-    .filter((a): a is string => Boolean(a));
-
-  return ordenarAnos([...new Set(anos)]);
+  return ordenarCiclos((prop?.select?.options ?? []).map((o) => o.name));
 }
 
-/** O ano corrente na frente; os outros do mais recente para o mais antigo. */
-export function ordenarAnos(anos: string[]): string[] {
-  const atual = cicloAtual().match(/\d{4}/)![0];
-  return [...anos].sort((a, b) => (a === atual ? -1 : b === atual ? 1 : b.localeCompare(a)));
+/** O ciclo atual: o último criado no controle. */
+export async function cicloMaisRecente(): Promise<string> {
+  const ciclos = await ciclosDoControle().catch(() => []);
+  return ciclos[0] ?? '';
 }
 
-/** "2026", tirado de "Ciclo 2026"; sem ciclo, o ano do ciclo atual. */
-export function anoDaSessao(s: SessaoDaLista): string {
-  return (s.ciclo || cicloAtual()).match(/\d{4}/)?.[0] ?? s.ciclo;
-}
 
 function ordenar(sessoes: SessaoDaLista[]): SessaoDaLista[] {
   return sessoes
