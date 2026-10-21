@@ -21,7 +21,7 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
           <thead>
             <tr className="border-b border-borda text-left">
               {['Status', 'Sessão', 'Tutoras', 'Data realizada', ''].map((c, i) => (
-                <th key={i} className="px-3 py-1.5 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                <th key={i} className="px-3 py-1 text-[11px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}
@@ -39,21 +39,21 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
                 <tr
                   key={s.id}
                   onClick={() => setAberta(s)}
-                  className="h-10 cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
+                  className="h-8 cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
-                  <td className="px-3 py-1 whitespace-nowrap">
+                  <td className="px-3 py-0.5 whitespace-nowrap">
                     <EtiquetaNotion texto={s.status} cor={s.corStatus} />
                   </td>
-                  <td className="px-3 py-1 font-medium">
+                  <td className="px-3 py-0.5 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
                       <NomeDaSessao sessao={s} />
                     </button>
                   </td>
-                  <td className="px-3 py-1 text-texto-suave">
+                  <td className="px-3 py-0.5 text-texto-suave">
                     <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
                   </td>
-                  <td className="px-3 py-1 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.dataRealizada)}</td>
-                  <td className="w-8 px-2 py-1 text-texto-suave">
+                  <td className="px-3 py-0.5 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.dataRealizada)}</td>
+                  <td className="w-8 px-2 py-0.5 text-texto-suave">
                     <ChevronRight aria-hidden size={14} />
                   </td>
                 </tr>

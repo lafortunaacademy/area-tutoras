@@ -58,16 +58,21 @@
   /* "Sem tutora": neutro, como no Notion. */
   --serie-sem: #e6e0d6;
   /* Etiquetas do tipo de sessão (Check-in, Tutoria, Planejamento, Call SOS):
-     uma cor por opção do Notion, todas na família da marca — areia, terracota,
-     oliva, barro, bege e sálvia, bem dessaturadas. Como o fundo da etiqueta é
-     sempre claro, o texto delas é o café da marca nos dois temas. */
-  --etiqueta-1: #e9dcc4;
-  --etiqueta-2: #eed5c7;
-  --etiqueta-3: #dfe1cc;
-  --etiqueta-4: #e7d6d2;
-  --etiqueta-5: #ded5c6;
-  --etiqueta-6: #d3dcd4;
-  --etiqueta-texto: #2e231c;
+     uma cor por opção do Notion, tiradas das seis cores oficiais do guia de
+     marca, na ordem em que as opções estão lá. Cada uma vem com o seu texto,
+     claro ou escuro, para ler bem — e são as mesmas nos dois temas. */
+  --etiqueta-1: #d8cfc0; /* bege */
+  --etiqueta-1-texto: #2e231c;
+  --etiqueta-2: #af9b87; /* taupe */
+  --etiqueta-2-texto: #2e231c;
+  --etiqueta-3: #5c4c3d; /* marrom frio */
+  --etiqueta-3-texto: #f5f2e9;
+  --etiqueta-4: #4b3424; /* marrom escuro */
+  --etiqueta-4-texto: #f5f2e9;
+  --etiqueta-5: #2e231c; /* café */
+  --etiqueta-5-texto: #f5f2e9;
+  --etiqueta-6: #f5f2e9; /* off-white */
+  --etiqueta-6-texto: #2e231c;
 
   /* Gráficos de barras do dashboard: verde leve para faturamento, azul leve para lucro. */
   --grafico-verde: #b3dcbb;
