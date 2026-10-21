@@ -28,6 +28,8 @@ export function FormularioPreSessao({
   token,
   aoSalvar,
   base,
+  endereco,
+  pergunta,
 }: {
   blocos: BlocoSimples[];
   materialId: string;
@@ -38,10 +40,19 @@ export function FormularioPreSessao({
   aoSalvar: () => void;
   /** Como desenhar uma base de dentro do material (as páginas dela). */
   base?: (b: BlocoSimples) => React.ReactNode;
+  /**
+   * Onde gravar. O padrão é a página de uma tutoria; a sessão usa a rota dela,
+   * porque o conteúdo de cada sessão vem do modelo que a equipe escolheu.
+   */
+  endereco?: { url: string; metodo: 'POST' | 'PATCH' };
+  /** Desenho próprio para uma pergunta (as Tarefas, por exemplo). */
+  pergunta?: (b: BlocoSimples) => React.ReactNode;
 }) {
+  const destino = endereco ?? { url: `/api/materiais/${materialId}/respostas`, metodo: 'POST' as const };
+
   const salvar: Salvar = async (corpo) => {
-    const r = await fetch(`/api/materiais/${materialId}/respostas`, {
-      method: 'POST',
+    const r = await fetch(destino.url, {
+      method: destino.metodo,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mentorada: mentoradaId, token, ...corpo }),
     });
@@ -50,26 +61,28 @@ export function FormularioPreSessao({
     return ((await r.json()) as { id: string }).id;
   };
 
-  const anexar: Anexar = async (calloutId, arquivo) => {
-    const form = new FormData();
-    form.append('mentorada', mentoradaId);
-    form.append('bloco', calloutId);
-    if (token) form.append('token', token);
-    form.append('arquivo', arquivo);
-    const r = await fetch(`/api/materiais/${materialId}/arquivos`, { method: 'POST', body: form });
-    if (!r.ok) return r.status === 413 ? 'grande' : null;
-    aoSalvar();
-    return ((await r.json()) as { bloco: BlocoSimples }).bloco;
-  };
+  // Anexo é coisa de material: a sessão não tem rota de arquivo, e aí o campo
+  // de arquivo simplesmente não aparece.
+  const anexar: Anexar | undefined = !materialId
+    ? undefined
+    : async (calloutId, arquivo) => {
+        const form = new FormData();
+        form.append('mentorada', mentoradaId);
+        form.append('bloco', calloutId);
+        if (token) form.append('token', token);
+        form.append('arquivo', arquivo);
+        const r = await fetch(`/api/materiais/${materialId}/arquivos`, { method: 'POST', body: form });
+        if (!r.ok) return r.status === 413 ? 'grande' : null;
+        aoSalvar();
+        return ((await r.json()) as { bloco: BlocoSimples }).bloco;
+      };
 
   return (
     <div className="space-y-3 text-sm leading-relaxed">
       <p className="rounded-lg bg-superficie-2 px-3 py-2 text-xs text-texto-suave">
         As respostas são salvas sozinhas: as opções na hora, os textos quando você sai do campo.
       </p>
-      {blocos.map((b) => (
-        <Bloco key={b.id} bloco={b} salvar={salvar} anexar={anexar} base={base} />
-      ))}
+      {blocos.map((b) => pergunta?.(b) ?? <Bloco key={b.id} bloco={b} salvar={salvar} anexar={anexar} base={base} />)}
     </div>
   );
 }
@@ -89,7 +102,7 @@ function Bloco({
 }: {
   bloco: BlocoSimples;
   salvar: Salvar;
-  anexar: Anexar;
+  anexar?: Anexar;
   base?: (b: BlocoSimples) => React.ReactNode;
 }) {
   if (bloco.tipo.startsWith('heading')) {
@@ -119,8 +132,8 @@ function Bloco({
             <BlocosNotion key={f.id} blocos={[f]} />
           ),
         )}
-        {temResposta || comArquivo ? null : <Resposta calloutId={bloco.id} inicial="" salvar={salvar} />}
-        {comArquivo ? <EnviarArquivo calloutId={bloco.id} anexar={anexar} /> : null}
+        {temResposta || (comArquivo && anexar) ? null : <Resposta calloutId={bloco.id} inicial="" salvar={salvar} />}
+        {comArquivo && anexar ? <EnviarArquivo calloutId={bloco.id} anexar={anexar} /> : null}
       </div>
     </div>
   );

@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Info, Loader2, Upload, X } from 'lucide-react';
-import type { ConteudoDaSessao, ParteDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
+import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { ProximosPassos } from '@/components/tutorias/FormularioDoApp';
+import { FormularioPreSessao } from './FormularioPreSessao';
 import { TutorasDaSessao } from './FotoDaTutora';
 
-type Detalhe = { conteudo: ConteudoDaSessao; podeEditar?: boolean };
+/** A sessão como ela está no Notion: os blocos da página do modelo escolhido. */
+type Detalhe = { sessao: SessaoDaLista; blocos: BlocoSimples[]; podeEditar?: boolean };
 
 const buscas = new Map<string, Promise<Detalhe>>();
 function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
@@ -66,7 +68,36 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-borda">
+      {/* No celular cada sessão é um botão: linha de tabela não abre no toque. */}
+      <ul className="space-y-2 sm:hidden">
+        {visiveis.length === 0 ? (
+          <li className="rounded-xl border border-borda px-4 py-6 text-center text-sm text-texto-suave">Nenhuma sessão aqui.</li>
+        ) : (
+          visiveis.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => setAberta(s)}
+                className="flex w-full items-start gap-3 rounded-xl border border-borda bg-superficie px-4 py-3 text-left transition active:bg-fundo"
+              >
+                <span className="min-w-0 flex-1 space-y-1.5">
+                  <span className="block text-sm leading-snug font-medium">{s.sessao}</span>
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-texto-suave">
+                    {s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}
+                    <span className="tabular-nums">{dataCurta(s.data)}</span>
+                  </span>
+                  <span className="block text-[11px] text-texto-suave">
+                    <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
+                  </span>
+                </span>
+                <ChevronRight aria-hidden size={16} className="mt-0.5 shrink-0 text-texto-suave" />
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-borda sm:block">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-borda text-left">
@@ -140,34 +171,33 @@ export function CartaoSessao({
     };
   }, [sessao.id, mentoradaId]);
 
-  const podeMexer = (parte: ParteDaSessao) => Boolean(detalhe?.podeEditar && detalhe.conteudo.editaveis?.includes(parte));
+  const endereco = `/api/sessoes/${sessao.id}?mentorada=${encodeURIComponent(mentoradaId)}`;
 
-  /** Grava a parte e guarda o conteúdo novo, inclusive na memória das sessões já abertas. */
-  async function salvarParte(parte: ParteDaSessao, valor: string | File): Promise<string | null> {
+  /** O conteúdo mudou no Notion: a próxima abertura busca de novo. */
+  function esquecer() {
+    buscas.delete(`${mentoradaId}:${sessao.id}`);
+  }
+
+  /** A gravação troca o vídeo da página inteira, então tem caminho próprio. */
+  async function salvarGravacao(valor: string | File): Promise<string | null> {
     let body: BodyInit;
     let headers: HeadersInit | undefined;
     if (typeof valor === 'string') {
-      body = JSON.stringify({ parte, valor });
+      body = JSON.stringify({ parte: 'gravacao', valor });
       headers = { 'Content-Type': 'application/json' };
     } else {
       const form = new FormData();
-      form.append('parte', parte);
+      form.append('parte', 'gravacao');
       form.append('arquivo', valor);
       body = form;
     }
-    const r = await fetch(`/api/sessoes/${sessao.id}?mentorada=${encodeURIComponent(mentoradaId)}`, {
-      method: 'PATCH',
-      headers,
-      body,
-    }).catch(() => null);
+    const r = await fetch(endereco, { method: 'PATCH', headers, body }).catch(() => null);
     const j = await r?.json().catch(() => ({}));
     if (!r?.ok) return j?.erro ?? 'Não foi possível salvar agora.';
-    setDetalhe((d) => {
-      if (!d) return d;
-      const novo = { ...d, conteudo: j.conteudo as ConteudoDaSessao };
-      buscas.set(`${mentoradaId}:${sessao.id}`, Promise.resolve(novo));
-      return novo;
-    });
+
+    esquecer();
+    const novo = await buscarSessao(sessao.id, mentoradaId).catch(() => null);
+    if (novo) setDetalhe(novo);
     return null;
   }
 
@@ -186,13 +216,13 @@ export function CartaoSessao({
   }, [aoFechar]);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={sessao.sessao} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
+    <div role="dialog" aria-modal="true" aria-label={sessao.sessao} className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-8">
       <button type="button" aria-label="Fechar" onClick={aoFechar} className="absolute inset-0 cursor-default bg-texto/35 backdrop-blur-[2px]" />
 
       <div
         ref={caixa}
         tabIndex={-1}
-        className="relative flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-borda bg-superficie shadow-[var(--sombra)] outline-none"
+        className="relative flex max-h-[88dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-borda bg-superficie shadow-[var(--sombra)] outline-none"
       >
         <div className="flex items-start gap-4 border-b border-borda px-6 py-4">
           <div className="min-w-0 flex-1">
@@ -227,55 +257,13 @@ export function CartaoSessao({
           {erro ? <p className="text-sm text-parado">Não foi possível carregar esta sessão agora.</p> : null}
 
           {detalhe ? (
-            <>
-              {(
-                [
-                  ['resumo', 'Resumo da sessão'],
-                  ['anotacoes', 'Anotações'],
-                ] as const
-              ).map(([parte, titulo]) => (
-                <Parte
-                  key={parte}
-                  titulo={titulo}
-                  blocos={detalhe.conteudo[parte]}
-                  aoSalvar={podeMexer(parte) ? (v) => salvarParte(parte, v) : undefined}
-                />
-              ))}
-
-              <details className="group rounded-xl border border-borda">
-                <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium">
-                  <ChevronRight aria-hidden size={14} className="text-texto-suave transition-transform group-open:rotate-90" />
-                  Transcrição da sessão
-                </summary>
-                <div className="border-t border-borda px-4 py-3">
-                  <Editavel
-                    inicial={paraTexto(detalhe.conteudo.transcricao)}
-                    aoSalvar={podeMexer('transcricao') ? (v) => salvarParte('transcricao', v) : undefined}
-                  >
-                    {temTexto(detalhe.conteudo.transcricao) ? (
-                      <BlocosNotion blocos={detalhe.conteudo.transcricao} />
-                    ) : (
-                      <p className="text-sm text-texto-suave">Sem transcrição.</p>
-                    )}
-                  </Editavel>
-                </div>
-              </details>
-
-              <section className="rounded-xl border border-borda px-4 py-3">
-                <h3 className="mb-2 text-sm font-medium">Tarefas</h3>
-                <div className="text-sm">
-                  <ProximosPassos mentoradaId={mentoradaId} previa={false} lendo={!detalhe.podeEditar} />
-                </div>
-              </section>
-
-              <section className="rounded-xl border border-borda px-4 py-3">
-                <h3 className="mb-2 text-sm font-medium">Gravação</h3>
-                <Gravacao url={detalhe.conteudo.gravacao} />
-                {podeMexer('gravacao') ? (
-                  <EditarGravacao temVideo={Boolean(detalhe.conteudo.gravacao)} aoSalvar={(v) => salvarParte('gravacao', v)} />
-                ) : null}
-              </section>
-            </>
+            <ConteudoDaSessao
+              detalhe={detalhe}
+              mentoradaId={mentoradaId}
+              endereco={endereco}
+              aoSalvar={esquecer}
+              salvarGravacao={salvarGravacao}
+            />
           ) : null}
         </div>
       </div>
@@ -283,94 +271,92 @@ export function CartaoSessao({
   );
 }
 
-function temTexto(blocos: BlocoSimples[]): boolean {
-  return blocos.some((b) => Boolean(b.texto.trim() || b.url) || temTexto(b.filhos));
-}
-
-/** Texto de uma parte para editar: uma linha por bloco, tópicos com "- ". */
-function paraTexto(blocos: BlocoSimples[]): string {
-  return blocos.map((b) => (b.tipo === 'bulleted_list_item' ? `- ${b.texto}` : b.texto)).join('\n');
-}
-
-function Parte({
-  titulo,
-  blocos,
-  aoSalvar,
-}: {
-  titulo: string;
-  blocos: BlocoSimples[];
-  aoSalvar?: (valor: string) => Promise<string | null>;
-}) {
-  return (
-    <section className="rounded-xl border border-borda px-4 py-3">
-      <h3 className="mb-2 text-sm font-medium">{titulo}</h3>
-      <Editavel inicial={paraTexto(blocos)} aoSalvar={aoSalvar}>
-        {temTexto(blocos) ? <BlocosNotion blocos={blocos} /> : <p className="text-sm text-texto-suave">Ainda não preenchido.</p>}
-      </Editavel>
-    </section>
-  );
-}
+/** A pergunta "Tarefas" da página vira a base de tarefas da mentorada. */
+const ehTarefas = (b: BlocoSimples) => /^(tarefas|pr[óo]ximos passos)/i.test(b.texto.trim());
+/** E a pergunta "Gravação" vira o player, com link ou arquivo para quem edita. */
+const ehGravacao = (b: BlocoSimples) => /^grava[çc][ãa]o/i.test(b.texto.trim());
 
 /**
- * Quem pode editar vê a caixa já aberta, com o texto; grava sozinho ao sair do
- * campo. Sem `aoSalvar`, só mostra o conteúdo.
+ * O que a sessão tem dentro.
+ *
+ * Cada sessão nasce de um modelo no Notion (Terapêutica, Investimentos,
+ * Produto…), então aqui não há campos fixos: o app desenha o que estiver na
+ * página e deixa preencher. Só duas partes têm tratamento próprio — as tarefas,
+ * que moram na base da mentorada, e a gravação.
  */
-function Editavel({
-  inicial,
+function ConteudoDaSessao({
+  detalhe,
+  mentoradaId,
+  endereco,
   aoSalvar,
-  children,
+  salvarGravacao,
 }: {
-  inicial: string;
-  aoSalvar?: (valor: string) => Promise<string | null>;
-  children: React.ReactNode;
+  detalhe: Detalhe;
+  mentoradaId: string;
+  endereco: string;
+  aoSalvar: () => void;
+  salvarGravacao: (valor: string | File) => Promise<string | null>;
 }) {
-  const [valor, setValor] = useState(inicial);
-  const [salvo, setSalvo] = useState(inicial);
-  const [estado, setEstado] = useState<'parado' | 'salvando' | 'salvo'>('parado');
-  const [erro, setErro] = useState<string | null>(null);
+  const podeEditar = Boolean(detalhe.podeEditar);
 
-  if (!aoSalvar) return <>{children}</>;
+  const gravacao = (b?: BlocoSimples) => (
+    <section key={b?.id ?? 'gravacao'} className="rounded-xl border border-borda px-4 py-3">
+      <h3 className="mb-2 text-sm font-medium">{b?.texto || 'Gravação'}</h3>
+      <Gravacao url={acharVideo(b ? [b] : detalhe.blocos)} />
+      {podeEditar ? (
+        <EditarGravacao temVideo={Boolean(acharVideo(detalhe.blocos))} aoSalvar={salvarGravacao} />
+      ) : null}
+    </section>
+  );
 
-  async function salvar() {
-    if (valor === salvo) return;
-    setEstado('salvando');
-    setErro(null);
-    const falha = await aoSalvar!(valor);
-    if (falha) {
-      setErro(falha);
-      setEstado('parado');
-    } else {
-      setSalvo(valor);
-      setEstado('salvo');
-    }
-  }
+  const tarefas = (b?: BlocoSimples) => (
+    <section key={b?.id ?? 'tarefas'} className="rounded-xl border border-borda px-4 py-3">
+      <h3 className="mb-2 text-sm font-medium">{b?.texto || 'Tarefas'}</h3>
+      <div className="text-sm">
+        <ProximosPassos mentoradaId={mentoradaId} previa={false} lendo={!podeEditar} />
+      </div>
+    </section>
+  );
+
+  const proprio = (b: BlocoSimples) => (ehTarefas(b) ? tarefas(b) : ehGravacao(b) ? gravacao(b) : undefined);
+
+  const temTarefas = detalhe.blocos.some(ehTarefas);
+  const temGravacao = detalhe.blocos.some(ehGravacao) || Boolean(acharVideo(detalhe.blocos));
 
   return (
-    <div>
-      <textarea
-        value={valor}
-        onChange={(e) => {
-          setValor(e.target.value);
-          setEstado('parado');
-        }}
-        onBlur={() => void salvar()}
-        rows={Math.min(Math.max(valor.split('\n').length + 1, 3), 16)}
-        placeholder="Edite aqui"
-        className="w-full resize-y rounded-lg border border-borda bg-fundo px-3 py-2 text-sm leading-relaxed outline-none focus:border-marca"
-      />
-      <p className="mt-1 h-4 text-[11px] text-texto-suave">
-        {erro ? (
-          <span className="text-parado">{erro}</span>
-        ) : estado === 'salvando' ? (
-          'Salvando…'
-        ) : estado === 'salvo' ? (
-          'Salvo'
-        ) : valor !== salvo ? (
-          'Salva ao sair do campo. Comece a linha com - para tópico.'
-        ) : null}
-      </p>
-    </div>
+    <>
+      {podeEditar ? (
+        <FormularioPreSessao
+          blocos={detalhe.blocos}
+          materialId=""
+          mentoradaId={mentoradaId}
+          aoSalvar={aoSalvar}
+          endereco={{ url: endereco, metodo: 'PATCH' }}
+          pergunta={proprio}
+        />
+      ) : (
+        detalhe.blocos.map((b) => proprio(b) ?? <BlocosNotion key={b.id} blocos={[b]} />)
+      )}
+
+      {detalhe.blocos.length === 0 ? (
+        <p className="text-sm text-texto-suave">Esta sessão ainda não tem conteúdo no Notion.</p>
+      ) : null}
+
+      {/* O modelo pode não trazer estas duas; elas valem para toda sessão. */}
+      {temTarefas ? null : tarefas()}
+      {temGravacao ? null : gravacao()}
+    </>
   );
+}
+
+/** O primeiro vídeo que aparecer nos blocos — é ele que o player mostra. */
+function acharVideo(blocos: BlocoSimples[]): string | null {
+  for (const b of blocos) {
+    if ((b.tipo === 'video' || b.tipo === 'embed' || b.tipo === 'bookmark' || b.tipo === 'file') && b.url) return b.url;
+    const dentro = acharVideo(b.filhos);
+    if (dentro) return dentro;
+  }
+  return null;
 }
 
 /** Até onde o app consegue enviar um vídeo (o mesmo limite do servidor). */

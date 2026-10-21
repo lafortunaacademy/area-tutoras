@@ -15,7 +15,16 @@ const FOLGA = 2.5;
  * nunca é a única pista. Passar o mouse (ou o foco) numa fatia ou num item da
  * legenda destaca a tutora e troca o número do centro.
  */
-export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia[] }) {
+export function DonutTutoras({
+  rotulo,
+  fatias,
+  legenda = true,
+}: {
+  rotulo: string;
+  fatias: Fatia[];
+  /** As duas roscas usam a mesma cor por tutora, então basta uma legenda. */
+  legenda?: boolean;
+}) {
   const [ativa, setAtiva] = useState<string | null>(null);
   const total = fatias.reduce((s, f) => s + f.total, 0);
   const destaque = fatias.find((f) => f.tutora === ativa);
@@ -88,7 +97,7 @@ export function DonutTutoras({ rotulo, fatias }: { rotulo: string; fatias: Fatia
         </div>
       </div>
 
-      {fatias.length > 0 ? (
+      {legenda && fatias.length > 0 ? (
         // Uma coluna, com linhas mais juntas quando são muitas: assim a legenda
         // fica da altura da rosca sem cortar nome de ninguém.
         <ul className={`flex w-full max-w-xs flex-col sm:w-auto ${fatias.length > 6 ? 'gap-0.5' : 'gap-1.5'}`}>

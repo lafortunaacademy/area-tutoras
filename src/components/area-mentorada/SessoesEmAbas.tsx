@@ -18,8 +18,12 @@ export function SessoesEmAbas({
   /** Nome de quem conduz as sessões da mentoria (a primeira aba). */
   dona: string;
 }) {
-  const daDona = sessoes.filter((s) => s.tutoras.some((t) => t.toLowerCase().includes(dona.toLowerCase())));
-  const dasTutoras = sessoes.filter((s) => !daDona.includes(s));
+  // Tutoria é a sessão que tem alguma tutora que não é a dona da mentoria. O
+  // resto (sem tutora nenhuma, ou só com ela) é sessão com ela — assim a
+  // divisão continua certa mesmo quando ela também aparece na coluna Tutora.
+  const dela = (t: string) => t.toLowerCase().includes(dona.toLowerCase());
+  const dasTutoras = sessoes.filter((s) => s.tutoras.some((t) => !dela(t)));
+  const daDona = sessoes.filter((s) => !dasTutoras.includes(s));
 
   const ABAS = [
     { chave: 'dona' as const, rotulo: `Com a ${dona}`, lista: daDona },

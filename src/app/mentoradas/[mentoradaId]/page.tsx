@@ -216,7 +216,8 @@ async function SecaoProgresso({ mentorada, cicloPedido }: { mentorada: Mentorada
       {progresso && fatias ? (
         <>
           <div className="grid gap-10 py-2 lg:grid-cols-3">
-            <DonutTutoras rotulo="Realizadas" fatias={fatias.realizadas} />
+            {/* A legenda sai daqui: a cor de cada tutora é a mesma nas duas roscas. */}
+            <DonutTutoras rotulo="Realizadas" fatias={fatias.realizadas} legenda={false} />
             <DonutTutoras rotulo="A realizar" fatias={fatias.aRealizar} />
             <div>
               <p className="mb-3 w-fit rounded-full bg-marca-suave px-3 py-1 text-xs font-medium text-marca">

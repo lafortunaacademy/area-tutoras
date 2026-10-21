@@ -1,5 +1,15 @@
 import 'server-only';
-import { appendChildren, deleteBlock, enviarArquivo, getDatabase, getPage, queryDatabase, type NotionPage } from './client';
+import {
+  appendChildren,
+  deleteBlock,
+  enviarArquivo,
+  getBlock,
+  getDatabase,
+  getPage,
+  queryDatabase,
+  type NotionPage,
+  type Pai,
+} from './client';
 import { normalizarId, type Mentorada } from './carteira';
 import { resolverDatabaseId } from './resolver';
 import { TEMAS_DE_TUTORIA, TUTORIA, ordenarCiclos } from './config';
@@ -164,12 +174,38 @@ function compararNomes(a: string, b: string): number {
 export async function conteudoDaSessao(
   mentoradaId: string,
   sessaoId: string,
-): Promise<{ sessao: SessaoDaLista; conteudo: ConteudoDaSessao } | null> {
+): Promise<{ sessao: SessaoDaLista; blocos: BlocoSimples[] } | null> {
   const [pagina, nomes] = await Promise.all([sessaoDaMentorada(mentoradaId, sessaoId), nomesDasTutoras()]);
   if (!pagina) return null;
 
-  const blocos = await lerBlocos(pagina.id, 3);
-  return { sessao: paraSessao(pagina, nomes), conteudo: separar(blocos) };
+  // A página inteira, como ela está: cada sessão nasce de um modelo diferente
+  // (Terapêutica, Investimentos, Produto…), então o app mostra o que houver lá.
+  // Dois níveis bastam (callout -> resposta; as linhas da tabela vêm sempre) e
+  // cada nível a mais é uma rodada de idas ao Notion — a sessão abria devagar.
+  return { sessao: paraSessao(pagina, nomes), blocos: await lerBlocos(pagina.id, 2) };
+}
+
+/**
+ * Um bloco de dentro da página de uma sessão desta mentorada — a conferência
+ * que toda escrita faz antes de gravar. `null` quando o bloco não é de lá.
+ */
+export async function blocoDaSessao(mentoradaId: string, sessaoId: string, blocoId: string) {
+  const pagina = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!pagina) return null;
+
+  const bloco = await getBlock(blocoId).catch(() => null);
+  if (!bloco) return null;
+  return (await moraNaPagina(bloco.parent, pagina.id)) ? bloco : null;
+}
+
+/** O bloco pendura nessa página (passando por callouts, colunas, toggles)? */
+async function moraNaPagina(pai: Pai | undefined, paginaId: string): Promise<boolean> {
+  for (let salto = 0; pai && salto < 8; salto++) {
+    if (pai.type === 'page_id') return Boolean(pai.page_id) && normalizarId(pai.page_id!) === normalizarId(paginaId);
+    if (pai.type !== 'block_id' || !pai.block_id) return false;
+    pai = (await getBlock(pai.block_id).catch(() => null))?.parent;
+  }
+  return false;
 }
 
 /** A página da sessão, só se ela for da base de sessões e estiver ligada a esta mentorada. */

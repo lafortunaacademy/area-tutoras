@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Search, Users } from 'lucide-react';
 import { iniciais } from '@/lib/iniciais';
+import { rolarAte } from '@/lib/ancora';
 
 export type ItemMenu = { id: string; nome: string; foto: string | null };
 
@@ -172,6 +173,10 @@ function ListaDeSecoes({
           <li key={s.rotulo}>
             <Link
               href={href}
+              // Seção da própria página: rola até ela em vez de navegar.
+              onClick={(e) => {
+                if (!s.rota && s.ancora && caminho === prefixo && rolarAte(s.ancora)) e.preventDefault();
+              }}
               aria-current={naRota ? 'page' : undefined}
               className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[12.5px] leading-snug transition ${
                 naRota ? SUB_ATIVO : SUB_INATIVO

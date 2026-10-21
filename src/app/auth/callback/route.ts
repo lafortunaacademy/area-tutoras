@@ -5,8 +5,14 @@ import { cookies } from 'next/headers';
 import { destinoDepoisDoLogin } from '@/lib/session';
 import { caminhoSeguro, COOKIE_DEPOIS_DO_LOGIN } from '@/lib/depoisDoLogin';
 
-/** Volta para onde a pessoa estava (o formulário), se houver; senão, a área dela. */
-async function destino(): Promise<string> {
+/**
+ * Para onde ir depois de entrar: o `?proximo=` do próprio link, o lugar de onde
+ * a pessoa veio (o formulário) ou, por fim, a área dela.
+ */
+async function destino(pedido?: string | null): Promise<string> {
+  const doLink = caminhoSeguro(pedido);
+  if (doLink) return doLink;
+
   const jar = await cookies();
   const guardado = caminhoSeguro(jar.get(COOKIE_DEPOIS_DO_LOGIN)?.value);
   if (guardado) {
@@ -42,7 +48,7 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] verifyOtp falhou:', error.message);
       return NextResponse.redirect(`${origin}/login?erro=link_expirado`);
     }
-    return NextResponse.redirect(`${origin}${await destino()}`);
+    return NextResponse.redirect(`${origin}${await destino(searchParams.get('proximo'))}`);
   }
 
   if (code) {
@@ -51,7 +57,7 @@ export async function GET(request: NextRequest) {
       console.error('[auth/callback] troca de código falhou:', error.message);
       return NextResponse.redirect(`${origin}/login?erro=link_expirado`);
     }
-    return NextResponse.redirect(`${origin}${await destino()}`);
+    return NextResponse.redirect(`${origin}${await destino(searchParams.get('proximo'))}`);
   }
 
   return NextResponse.redirect(`${origin}/login?erro=link_invalido`);

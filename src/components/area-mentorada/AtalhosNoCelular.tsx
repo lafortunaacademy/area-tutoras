@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { SecaoMenu } from '@/components/MenuMentoradas';
+import { rolarAte } from '@/lib/ancora';
 
 /**
  * Os mesmos atalhos do menu lateral, numa faixa que rola para o lado.
@@ -12,6 +14,7 @@ import type { SecaoMenu } from '@/components/MenuMentoradas';
  */
 export function AtalhosNoCelular({ base, secoes }: { base: string; secoes: SecaoMenu[] }) {
   const caminho = usePathname();
+  useAncoraDaPagina();
 
   // Só dentro da área de uma mentorada: é lá que estas seções existem.
   const dentro = caminho.startsWith(`${base}/`);
@@ -33,6 +36,10 @@ export function AtalhosNoCelular({ base, secoes }: { base: string; secoes: Secao
           <Link
             key={s.rotulo}
             href={href}
+            // Seção da própria página: rola até ela em vez de navegar.
+            onClick={(e) => {
+              if (!s.rota && s.ancora && caminho === raiz && rolarAte(s.ancora)) e.preventDefault();
+            }}
             aria-current={aqui && s.rota ? 'page' : undefined}
             className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs whitespace-nowrap transition ${
               aqui && s.rota
@@ -46,4 +53,25 @@ export function AtalhosNoCelular({ base, secoes }: { base: string; secoes: Secao
       })}
     </nav>
   );
+}
+
+/**
+ * Chegou com `#sessoes` no endereço: espera a seção aparecer e rola até lá.
+ *
+ * As seções chegam depois do primeiro desenho (cada uma busca o Notion), e o
+ * navegador procura a âncora antes disso — sem esta espera a página abria no
+ * topo e parecia que o atalho não tinha funcionado.
+ */
+function useAncoraDaPagina() {
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+
+    let tentativas = 0;
+    const relogio = setInterval(() => {
+      // Seis segundos de espera; se a pessoa já rolou, não insiste.
+      if (rolarAte(id) || ++tentativas > 20 || window.scrollY > 40) clearInterval(relogio);
+    }, 300);
+    return () => clearInterval(relogio);
+  }, []);
 }
