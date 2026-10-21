@@ -210,6 +210,11 @@ async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
   const pagina = await paginaDaAreaDeMembros(mentoradaId);
   if (!pagina) return null;
 
+  // Modelo de 2027: os callouts da gestão ficam na própria página da mentorada.
+  const naPagina = await basesNosCallouts(await getBlockChildren(pagina));
+  if (naPagina) return naPagina;
+
+  // Modelo de 2026: eles moram na página do cartão "Gestão de resultados".
   const calloutCartoes = await acharFilho(pagina, (b) => ehCallout(b, AREA_DE_MEMBROS.calloutCartoes));
   if (!calloutCartoes) return null;
 
@@ -220,7 +225,15 @@ async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
   const gestao = cartoes.find((c) => mesmoTexto(titulo(c), AREA_DE_MEMBROS.cartaoGestao));
   if (!gestao) return null;
 
-  const blocos = await getBlockChildren(gestao.id);
+  return basesNosCallouts(await getBlockChildren(gestao.id));
+}
+
+/**
+ * As quatro bases da gestão, procurando um callout por seção entre os blocos
+ * dados. `null` quando falta alguma: melhor não mostrar nada do que mostrar a
+ * página pela metade.
+ */
+async function basesNosCallouts(blocos: NotionBlock[]): Promise<Bases | null> {
   const pares = await Promise.all(
     SECOES.map(async (s) => {
       const callout = blocos.find((b) => ehCallout(b, GESTAO_CALLOUTS[s]));
@@ -229,8 +242,6 @@ async function descobrirBases(mentoradaId: string): Promise<Bases | null> {
     }),
   );
 
-  // Uma seção faltando é modelo alterado à mão: melhor não mostrar nada do que
-  // mostrar a página pela metade.
   if (pares.some(([, id]) => !id)) return null;
   return Object.fromEntries(pares) as Bases;
 }

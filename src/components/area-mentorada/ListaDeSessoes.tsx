@@ -67,11 +67,11 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-borda">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-borda text-left">
               {['Status', 'Sessão', 'Data', 'Tutora', ''].map((c, i) => (
-                <th key={i} className="px-4 py-2.5 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                <th key={i} className="px-4 py-1.5 text-[11px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}
@@ -92,17 +92,17 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   onMouseEnter={() => void buscarSessao(s.id, mentoradaId).catch(() => {})}
                   className="cursor-pointer border-b border-borda/60 transition last:border-0 hover:bg-fundo"
                 >
-                  <td className="px-4 py-2.5 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
-                  <td className="px-4 py-2.5 font-medium">
+                  <td className="px-4 py-1 whitespace-nowrap">{s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}</td>
+                  <td className="px-4 py-1 font-medium">
                     <button type="button" onClick={() => setAberta(s)} className="text-left hover:text-marca">
                       {s.sessao}
                     </button>
                   </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>
-                  <td className="px-4 py-2.5 text-texto-suave">
+                  <td className="px-4 py-1 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>
+                  <td className="px-4 py-1 text-texto-suave">
                     <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
                   </td>
-                  <td className="w-8 px-2 text-texto-suave">
+                  <td className="w-8 px-2 py-1 text-texto-suave">
                     <ChevronRight aria-hidden size={14} />
                   </td>
                 </tr>
