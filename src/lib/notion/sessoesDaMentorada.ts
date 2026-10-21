@@ -7,6 +7,7 @@ import { corDaOpcao, data, relationIds, texto, titulo } from './props';
 import { nomesDasTutoras } from './tutora';
 import { lerBlocos, type BlocoSimples } from './blocks';
 import { especialidadesDasTutoras } from './hub';
+import { guardado } from './cache';
 
 /**
  * As sessões da mentorada, da base "Acompanhamento de clientes" — a mesma do
@@ -123,14 +124,14 @@ function semAcento(t: string): string {
  * Todos os ciclos do controle, pelas opções da propriedade `Ciclo` no Notion —
  * e não só aqueles em que a mentorada teve sessão. O mais recente vem primeiro.
  */
-export async function ciclosDoControle(): Promise<string[]> {
+export const ciclosDoControle = guardado('ciclos', async (): Promise<string[]> => {
   const schema = await resolverDatabaseId('tutorias').then(getDatabase);
   const prop = Object.values(schema.properties).find((p) => p.name === TUTORIA.ciclo) as
     | { select?: { options: { name: string }[] } }
     | undefined;
 
   return ordenarCiclos((prop?.select?.options ?? []).map((o) => o.name));
-}
+});
 
 /** O ciclo atual: o último criado no controle. */
 export async function cicloMaisRecente(): Promise<string> {

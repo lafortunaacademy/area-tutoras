@@ -17,8 +17,7 @@ import { AtalhosNoCelular } from '@/components/area-mentorada/AtalhosNoCelular';
 const SECOES: SecaoMenu[] = [
   { rotulo: 'Progresso da mentoria', ancora: 'progresso' },
   { rotulo: 'Sessões e tutorias', ancora: 'sessoes' },
-  { rotulo: 'Tutorias do HUB', rota: 'tutorias' },
-  { rotulo: 'Gestão de resultados', rota: 'gestao-de-resultados' },
+  { rotulo: 'Resultados financeiros', rota: 'gestao-de-resultados' },
   { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
   { rotulo: 'Tarefas da mentoria', ancora: 'tarefas' },
   { rotulo: 'Dashboard Bem-Sucedida', ancora: 'dashboard' },

@@ -1,5 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
+import { guardado } from './cache';
 import { queryDatabase, type NotionPage } from './client';
 import { resolverDatabaseId } from './resolver';
 import { MENTORADA, STATUS_INATIVOS } from './config';
@@ -43,7 +44,8 @@ function paraMentorada(page: NotionPage): Mentorada {
   };
 }
 
-export const carteiraDaTutora = cache(async (): Promise<Mentorada[]> => {
+export const carteiraDaTutora = cache(
+  guardado('carteira', async (): Promise<Mentorada[]> => {
   const dbId = await resolverDatabaseId('areaClientes');
   const paginas = await queryDatabase(dbId, { limite: 300 });
 
@@ -51,7 +53,8 @@ export const carteiraDaTutora = cache(async (): Promise<Mentorada[]> => {
     .map(paraMentorada)
     .filter((m) => !STATUS_INATIVOS.includes(m.status as (typeof STATUS_INATIVOS)[number]))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-});
+  }),
+);
 
 /** IDs do Notion circulam com e sem hífen; a comparação precisa dos dois. */
 export function normalizarId(id: string): string {

@@ -6,7 +6,6 @@ import {
   salvarParteDaSessao,
   type ParteDaSessao,
 } from '@/lib/notion/sessoesDaMentorada';
-import { tarefasDaMentorada } from '@/lib/notion/tarefas';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 
 /**
@@ -23,12 +22,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { sessaoId } = await params;
   try {
-    const [dados, tarefas] = await Promise.all([
-      conteudoDaSessao(normalizarId(mentoradaId), normalizarId(sessaoId)),
-      tarefasDaMentorada(normalizarId(mentoradaId)).catch(() => null),
-    ]);
+    // As tarefas vêm por `/api/tutorias/tarefas`, que o próprio cartão chama:
+    // buscá-las aqui também dobrava a espera para abrir a sessão.
+    const dados = await conteudoDaSessao(normalizarId(mentoradaId), normalizarId(sessaoId));
     if (!dados) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
-    return NextResponse.json({ ...dados, tarefas, podeEditar: permissao.podeEditar });
+    return NextResponse.json({ ...dados, podeEditar: permissao.podeEditar });
   } catch {
     return NextResponse.json({ erro: 'falhou' }, { status: 502 });
   }

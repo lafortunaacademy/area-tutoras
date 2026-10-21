@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Info, Loader2, Upload, X } from 'lucide-react';
 import type { ConteudoDaSessao, ParteDaSessao, SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
-import type { TarefaDaMentoria } from '@/lib/notion/tarefas';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { ProximosPassos } from '@/components/tutorias/FormularioDoApp';
+import { TutorasDaSessao } from './FotoDaTutora';
 
-type Detalhe = { conteudo: ConteudoDaSessao; tarefas: TarefaDaMentoria[] | null; podeEditar?: boolean };
+type Detalhe = { conteudo: ConteudoDaSessao; podeEditar?: boolean };
 
 const buscas = new Map<string, Promise<Detalhe>>();
 function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
@@ -99,7 +99,9 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                     </button>
                   </td>
                   <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.data)}</td>
-                  <td className="px-4 py-2.5 text-texto-suave">{s.tutoras.join(', ') || '—'}</td>
+                  <td className="px-4 py-2.5 text-texto-suave">
+                    <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
+                  </td>
                   <td className="w-8 px-2 text-texto-suave">
                     <ChevronRight aria-hidden size={14} />
                   </td>
@@ -198,7 +200,11 @@ export function CartaoSessao({
             <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-texto-suave">
               {sessao.status ? <EtiquetaNotion texto={sessao.status} cor={sessao.corStatus} /> : null}
               <span className="tabular-nums">{dataCurta(sessao.data)}</span>
-              {sessao.tutoras.length ? <span>· {sessao.tutoras.join(', ')}</span> : null}
+              {sessao.equipe?.length || sessao.tutoras.length ? (
+                <span className="flex items-center gap-1.5">
+                  · <TutorasDaSessao equipe={sessao.equipe} nomes={sessao.tutoras} />
+                </span>
+              ) : null}
             </p>
           </div>
           <button

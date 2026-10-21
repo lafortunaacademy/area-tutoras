@@ -1,5 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
+import { guardado } from './cache';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getBlockChildren } from './client';
 import { carteiraDaTutora, type Mentorada } from './carteira';
@@ -24,7 +25,8 @@ const EM_PARALELO = 3;
 
 const chave = (mentoradaId: string) => `modelo:${mentoradaId}`;
 
-export const mentoradasDoModeloNovo = cache(async (): Promise<Mentorada[]> => {
+export const mentoradasDoModeloNovo = cache(
+  guardado('modelo-novo', async (): Promise<Mentorada[]> => {
   const todas = await carteiraDaTutora();
   const db = supabaseAdmin();
 
@@ -60,7 +62,8 @@ export const mentoradasDoModeloNovo = cache(async (): Promise<Mentorada[]> => {
   });
 
   return todas.filter((m) => conhecidas.get(m.id)?.novo);
-});
+  }),
+);
 
 /**
  * A página já está no modelo novo?

@@ -1,5 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
+import { guardado } from './cache';
 import { getPage, queryDatabase, type NotionPage } from './client';
 import { normalizarId } from './carteira';
 import { resolverDatabaseId } from './resolver';
@@ -17,30 +18,39 @@ export type TutoraDoHub = {
   id: string;
   nome: string;
   /**
-   * A foto, já reduzida pelo próprio app (`/api/fotos/tutoras/…`): a original
-   * do Notion tem vários MB. `null` se a tutora não tem foto.
+   * A foto já reduzida, servida do armazenamento (rápida, sem passar pelo app).
+   * `null` se a tutora não tem foto.
    */
   foto: string | null;
+  /** A mesma foto pela rota do app: gera e guarda a versão reduzida na primeira vez. */
+  fotoDeReserva: string | null;
   especialidades: string[];
   legendaEntregaveis: string;
   topicos: string[];
 };
 
-export const tutorasDoHub = cache(async (): Promise<TutoraDoHub[]> => {
+export const tutorasDoHub = cache(
+  guardado('hub-tutoras', async (): Promise<TutoraDoHub[]> => {
   const dbId = await resolverDatabaseId('tutoras');
   const linhas = await queryDatabase(dbId, {
     filter: { or: TUTORAS_ATIVAS.map((s) => ({ property: TUTORA.status, status: { equals: s } })) },
     limite: 200,
   });
   return linhas.map(paraTutora).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-});
+  }),
+);
 
 /** Especialidades de todas as tutoras (ativas ou não), por ID normalizado. */
-export const especialidadesDasTutoras = cache(async (): Promise<Map<string, string[]>> => {
+const especialidadesGuardadas = guardado('hub-especialidades', async (): Promise<[string, string[]][]> => {
   const dbId = await resolverDatabaseId('tutoras');
   const linhas = await queryDatabase(dbId, { limite: 300 });
-  return new Map(linhas.map((p) => [normalizarId(p.id), multi(p, TUTORA.especialidades)]));
+  return linhas.map((p) => [normalizarId(p.id), multi(p, TUTORA.especialidades)]);
 });
+
+// O que fica guardado é uma lista: Mapa não sobrevive à ida e volta do cache.
+export const especialidadesDasTutoras = cache(
+  async (): Promise<Map<string, string[]>> => new Map(await especialidadesGuardadas()),
+);
 
 /**
  * Uma tutora com o conteúdo da página dela. `null` se o ID não for de uma
@@ -86,11 +96,21 @@ function paraTutora(p: NotionPage): TutoraDoHub {
   return {
     id: p.id,
     nome: texto(p, TUTORA.nome) || titulo(p),
-    foto: fotoOriginal(p)
+    foto: fotoOriginal(p) ? fotoGuardada(p.id, p.last_edited_time) : null,
+    fotoDeReserva: fotoOriginal(p)
       ? `/api/fotos/tutoras/${p.id}?v=${encodeURIComponent(p.last_edited_time)}`
       : null,
     especialidades: multi(p, TUTORA.especialidades),
     legendaEntregaveis: texto(p, TUTORA.legendaEntregaveis),
     topicos: multi(p, TUTORA.topicos),
   };
+}
+
+/**
+ * O endereço da foto reduzida no armazenamento. Ela é criada na primeira vez
+ * que alguém abre pela rota do app; até lá, o navegador cai na reserva.
+ */
+function fotoGuardada(tutoraId: string, versao: string): string {
+  const caminho = `${normalizarId(tutoraId)}/${versao.replace(/[^\w.-]/g, '')}-card.webp`;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/fotos/${caminho}`;
 }

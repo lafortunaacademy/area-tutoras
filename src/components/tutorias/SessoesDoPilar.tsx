@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react';
 import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { CartaoSessao, dataCurta } from '@/components/area-mentorada/ListaDeSessoes';
+import { TutorasDaSessao } from '@/components/area-mentorada/FotoDaTutora';
 
 /**
  * As sessões do ciclo atual que são deste pilar. A tabela só abre as sessões (quem
@@ -49,18 +50,7 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
                     </button>
                   </td>
                   <td className="px-3 py-1 text-texto-suave">
-                    {s.equipe?.length ? (
-                      <span className="flex flex-col gap-0.5">
-                        {s.equipe.map((t) => (
-                          <span key={t.id} className="flex items-center gap-2 whitespace-nowrap">
-                            <FotoDaTutora id={t.id} nome={t.nome} />
-                            {t.nome}
-                          </span>
-                        ))}
-                      </span>
-                    ) : (
-                      s.tutoras.join(', ') || '—'
-                    )}
+                    <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
                   </td>
                   <td className="px-3 py-1 whitespace-nowrap text-texto-suave tabular-nums">{dataCurta(s.dataRealizada)}</td>
                   <td className="w-8 px-2 py-1 text-texto-suave">
@@ -75,27 +65,5 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
 
       {aberta ? <CartaoSessao sessao={aberta} mentoradaId={mentoradaId} aoFechar={() => setAberta(null)} /> : null}
     </>
-  );
-}
-
-/** Foto redonda da tutora; sem foto, a inicial do nome. */
-function FotoDaTutora({ id, nome }: { id: string; nome: string }) {
-  const [falhou, setFalhou] = useState(false);
-  if (falhou) {
-    return (
-      <span aria-hidden className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[10px] font-medium text-texto">
-        {nome.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- já sai reduzida e em cache pela rota
-    <img
-      src={`/api/fotos/tutoras/${id}?tamanho=mini`}
-      alt=""
-      loading="lazy"
-      onError={() => setFalhou(true)}
-      className="size-5 shrink-0 rounded-full bg-marca-suave object-cover object-top"
-    />
   );
 }

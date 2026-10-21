@@ -25,13 +25,14 @@ import { CartoesCenario } from '@/components/area-mentorada/CartoesCenario';
 import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { ciclosDoControle, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
-import { ordenarCiclos } from '@/lib/notion/config';
+import { ordenarCiclos, SEM_TUTORA } from '@/lib/notion/config';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { ObjetivosPorAno } from '@/components/TabelaObjetivos';
 import { iniciais } from '@/lib/iniciais';
 import { Bloco, Grupo } from '@/components/area-mentorada/Bloco';
 import { DonutTutoras } from '@/components/area-mentorada/DonutTutoras';
 import { montarFatias } from '@/components/area-mentorada/fatias';
+import { TutoriasPorMes } from '@/components/area-mentorada/TutoriasPorMes';
 import { GraficoVazio } from '@/components/area-mentorada/GraficoVazio';
 import { GraficoBarras } from '@/components/area-mentorada/GraficoBarras';
 import { GraficoLinha } from '@/components/area-mentorada/GraficoLinha';
@@ -188,8 +189,13 @@ function Carregando({ icone, titulo, altura }: { icone: typeof CircleDot; titulo
 async function SecaoProgresso({ mentorada, cicloPedido }: { mentorada: Mentorada; cicloPedido?: string }) {
   const { todos, dela } = await ciclos(mentorada);
   const ciclo = cicloEscolhido(todos, dela, cicloPedido);
-  const progresso = await progressoDaMentoria(mentorada, ciclo).catch(() => null);
+  const [progresso, dados] = await Promise.all([
+    progressoDaMentoria(mentorada, ciclo).catch(() => null),
+    sessoesPorCiclo(mentorada).catch(() => null),
+  ]);
   const fatias = progresso ? montarFatias(progresso.porTutora.realizadas, progresso.porTutora.aRealizar) : null;
+  // O terceiro gráfico: as realizadas do ciclo, mês a mês, com a cor de cada tutora.
+  const porMes = fatias ? realizadasPorMes(dados?.sessoes ?? [], ciclo, fatias.realizadas) : [];
 
   return (
     <Bloco
@@ -209,9 +215,15 @@ async function SecaoProgresso({ mentorada, cicloPedido }: { mentorada: Mentorada
     >
       {progresso && fatias ? (
         <>
-          <div className="grid gap-10 py-2 lg:grid-cols-2">
+          <div className="grid gap-10 py-2 lg:grid-cols-3">
             <DonutTutoras rotulo="Realizadas" fatias={fatias.realizadas} />
             <DonutTutoras rotulo="A realizar" fatias={fatias.aRealizar} />
+            <div>
+              <p className="mb-3 w-fit rounded-full bg-marca-suave px-3 py-1 text-xs font-medium text-marca">
+                Tutorias realizadas
+              </p>
+              <TutoriasPorMes meses={porMes} />
+            </div>
           </div>
           {progresso.proxima ? (
             <p className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-borda pt-4 text-sm">
@@ -257,6 +269,39 @@ async function SecaoSessoes({
       )}
     </Bloco>
   );
+}
+
+const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+/**
+ * As sessões realizadas do ciclo, agrupadas por mês e por tutora. Só os meses
+ * que têm alguma coisa, do mais antigo para o mais recente.
+ */
+function realizadasPorMes(
+  sessoes: { ciclo: string; realizada: boolean; dataRealizada: string | null; tutoras: string[] }[],
+  ciclo: string,
+  fatias: { tutora: string; cor: string }[],
+) {
+  const cor = new Map(fatias.map((f) => [f.tutora, f.cor]));
+  const porMes = new Map<string, Map<string, number>>();
+
+  for (const s of sessoes) {
+    if (s.ciclo !== ciclo || !s.realizada || !s.dataRealizada) continue;
+    const mes = s.dataRealizada.slice(0, 7);
+    const tutoras = s.tutoras.length ? s.tutoras : [SEM_TUTORA];
+    const doMes = porMes.get(mes) ?? new Map<string, number>();
+    for (const t of tutoras) doMes.set(t, (doMes.get(t) ?? 0) + 1);
+    porMes.set(mes, doMes);
+  }
+
+  return [...porMes.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([mes, tutoras]) => ({
+      rotulo: `${MESES_CURTOS[Number(mes.slice(5, 7)) - 1]}/${mes.slice(2, 4)}`,
+      porTutora: [...tutoras.entries()]
+        .map(([tutora, total]) => ({ tutora, total, cor: cor.get(tutora) ?? 'var(--serie-sem)' }))
+        .sort((a, b) => b.total - a.total || a.tutora.localeCompare(b.tutora)),
+    }));
 }
 
 /** Os ciclos que viram botão (todos os do controle) e os que ela de fato teve. */

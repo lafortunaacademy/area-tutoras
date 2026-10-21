@@ -85,11 +85,22 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
 }
 
 function Foto({ tutora, className, carregar }: { tutora: TutoraDoHub; className: string; carregar?: 'lazy' | 'eager' }) {
-  return tutora.foto ? (
+  // A foto vem do armazenamento (rápida). Na primeira vez ela ainda não existe
+  // lá: o erro de carregamento troca para a rota do app, que gera e guarda.
+  const [endereco, setEndereco] = useState(tutora.foto);
+
+  return endereco ? (
     // Retratos: o rosto costuma estar um pouco acima do meio da foto, então o
     // recorte mira ali — nem no topo (corta o queixo) nem no centro (corta a testa).
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={tutora.foto} alt="" loading={carregar} decoding="async" className={`${className} object-cover object-[center_40%]`} />
+    <img
+      src={endereco}
+      alt=""
+      loading={carregar}
+      decoding="async"
+      onError={() => setEndereco(tutora.fotoDeReserva)}
+      className={`${className} object-cover object-[center_40%]`}
+    />
   ) : (
     <span aria-hidden className={`${className} display flex items-center justify-center bg-marca-suave text-3xl text-marca`}>
       {iniciais(tutora.nome)}

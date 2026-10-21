@@ -1,5 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
+import { guardado } from './cache';
 import { getPage, queryDatabase } from './client';
 import { tutoriasDaTutora } from './tutorias';
 import { resolverDatabaseId } from './resolver';
@@ -53,11 +54,14 @@ export type MesDeSessoes = {
 export const SEM_MENTORIA = 'Sem mentoria';
 
 /** id da tutora -> nome, para rotular quem assinou cada hands-off. */
-export const nomesDasTutoras = cache(async (): Promise<Map<string, string>> => {
+const nomesGuardados = guardado('nomes-tutoras', async (): Promise<[string, string][]> => {
   const dbId = await resolverDatabaseId('tutoras');
   const linhas = await queryDatabase(dbId, { limite: 200 });
-  return new Map(linhas.map((p) => [p.id, texto(p, TUTORA.nome)]));
+  return linhas.map((p) => [p.id, texto(p, TUTORA.nome)]);
 });
+
+// O que fica guardado é uma lista: Mapa não sobrevive à ida e volta do cache.
+export const nomesDasTutoras = cache(async (): Promise<Map<string, string>> => new Map(await nomesGuardados()));
 
 export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora | null> {
   const page = await getPage(tutoraPageId).catch(() => null);
