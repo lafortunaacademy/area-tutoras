@@ -367,12 +367,14 @@ export async function paginaDaSessao(
   const blocos = porPergunta(await comAsBasesDeDentro(await lerBlocos(pagina.id, 3), false));
   const placar = await contar(blocos);
 
-  // O quadro "Resultado do teste" no Notion é outra visualização vinculada, que
-  // a API não lê: ficaria um título sem nada embaixo. Ele sai, e o placar
-  // calculado entra no lugar, no fim da página.
-  const semVazios = blocos.filter(
-    (b) => !(b.filhos.length > 0 && b.filhos.every((f) => f.tipo === 'child_database' && !f.itens?.length)),
-  );
+  // O "Resultado do teste" no Notion é um título com outra visualização
+  // vinculada embaixo, que a API não lê: ficaria um pedaço vazio da página, e
+  // repetido, porque o placar calculado já entra no lugar dele no fim. Então
+  // saem os dois: o quadro vazio e o título solto.
+  const soTitulo = (b: BlocoSimples) => b.filhos.length === 0 && /^resultado\b/i.test(b.texto.trim());
+  const quadroVazio = (b: BlocoSimples) =>
+    b.filhos.length > 0 && b.filhos.every((f) => f.tipo === 'child_database' && !f.itens?.length);
+  const semVazios = blocos.filter((b) => !(placar.length > 0 && (soTitulo(b) || quadroVazio(b))));
 
   return { titulo: titulo(pagina), blocos: semVazios, placar };
 }
