@@ -196,6 +196,66 @@ export async function conteudoDaSessao(
   return { sessao: paraSessao(pagina, nomes, cores), blocos: await lerBlocos(pagina.id, 2) };
 }
 
+export type Placar = { nome: string; total: number }[];
+
+/**
+ * Só o placar, sem o resto da página: é o que atualiza enquanto ela marca as
+ * opções. Aqui as bases não são consultadas uma a uma — basta achar a base do
+ * questionário e a base que conta.
+ */
+export async function placarDaPagina(mentoradaId: string, sessaoId: string, paginaId: string): Promise<Placar | null> {
+  const sessao = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!sessao) return null;
+
+  const pagina = await getPage(paginaId).catch(() => null);
+  if (!pagina || !(await moraNaPagina(pagina.parent, sessao.id))) return null;
+
+  return contar(await lerBlocos(pagina.id, 2));
+}
+
+/**
+ * O resultado de um questionário, do jeito que o Notion já conta.
+ *
+ * As opções do teste de estilo apontam, por uma relação, para a base Estilos,
+ * que soma num rollup quantas opções de cada estilo foram marcadas. É esse
+ * placar que a tutora precisa ver — sem ele, ela teria de abrir o Notion.
+ */
+async function contar(blocos: BlocoSimples[]): Promise<Placar> {
+  const bases: BlocoSimples[] = [];
+  const procurar = (lista: BlocoSimples[]) => {
+    for (const b of lista) {
+      if (b.tipo === 'child_database') bases.push(b);
+      procurar(b.filhos);
+    }
+  };
+  procurar(blocos);
+
+  // A base de verdade é a única que a API abre; as outras são visualizações
+  // vinculadas dela. É nela que mora a relação para a base que conta.
+  let ondeConta: string | undefined;
+  for (const b of bases) {
+    const esquema = await getDatabase(b.id).catch(() => null);
+    const relacao = Object.values(esquema?.properties ?? {}).find((p) => p.type === 'relation') as
+      | { relation?: { database_id?: string } }
+      | undefined;
+    ondeConta = relacao?.relation?.database_id;
+    if (ondeConta) break;
+  }
+  if (!ondeConta) return [];
+
+  const linhas = await queryDatabase(ondeConta, { limite: 50 }).catch(() => []);
+  return linhas
+    .map((p) => {
+      const props = Object.values(p.properties);
+      const conta = props.find((x) => x.type === 'rollup' || x.type === 'formula') as
+        | { rollup?: { number?: number | null }; formula?: { number?: number | null } }
+        | undefined;
+      return { nome: titulo(p), total: conta?.rollup?.number ?? conta?.formula?.number ?? 0 };
+    })
+    .filter((e) => e.nome)
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
 /**
  * Marca (ou desmarca) uma opção de resposta — uma linha de uma base de dentro
  * da sessão, como cada look do teste de estilo. `false` quando a linha não é
@@ -295,7 +355,7 @@ export async function paginaDaSessao(
   mentoradaId: string,
   sessaoId: string,
   paginaId: string,
-): Promise<{ titulo: string; blocos: BlocoSimples[] } | null> {
+): Promise<{ titulo: string; blocos: BlocoSimples[]; placar: Placar } | null> {
   const sessao = await sessaoDaMentorada(mentoradaId, sessaoId);
   if (!sessao) return null;
 
@@ -305,7 +365,16 @@ export async function paginaDaSessao(
   // As bases de dentro (as galerias do teste de estilo) vêm com as páginas
   // delas: a API não devolve as linhas junto com os blocos.
   const blocos = porPergunta(await comAsBasesDeDentro(await lerBlocos(pagina.id, 3), false));
-  return { titulo: titulo(pagina), blocos };
+  const placar = await contar(blocos);
+
+  // O quadro "Resultado do teste" no Notion é outra visualização vinculada, que
+  // a API não lê: ficaria um título sem nada embaixo. Ele sai, e o placar
+  // calculado entra no lugar, no fim da página.
+  const semVazios = blocos.filter(
+    (b) => !(b.filhos.length > 0 && b.filhos.every((f) => f.tipo === 'child_database' && !f.itens?.length)),
+  );
+
+  return { titulo: titulo(pagina), blocos: semVazios, placar };
 }
 
 /** A página da sessão, só se ela for da base de sessões e estiver ligada a esta mentorada. */

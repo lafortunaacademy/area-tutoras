@@ -49,7 +49,7 @@ export function NomeDaSessao({ sessao }: { sessao: SessaoDaLista }) {
 }
 
 /** O conteúdo de cada página de dentro, buscado uma vez por página aberta. */
-type PaginaDeDentro = { titulo: string; blocos: BlocoSimples[] };
+type PaginaDeDentro = { titulo: string; blocos: BlocoSimples[]; placar?: { nome: string; total: number }[] };
 const paginas = new Map<string, Promise<PaginaDeDentro>>();
 function buscarPagina(sessaoId: string, paginaId: string, mentoradaId: string): Promise<PaginaDeDentro> {
   const chave = `${mentoradaId}:${paginaId}`;
@@ -567,6 +567,16 @@ function PaginaDaSessao({
   const [aberta, setAberta] = useState(Boolean(comecaAberta));
   const [dados, setDados] = useState<PaginaDeDentro | null>(null);
   const [erro, setErro] = useState(false);
+  // O placar é recontado a cada escolha; antes da primeira, vale o da página.
+  const [recontado, setRecontado] = useState<{ nome: string; total: number }[] | null>(null);
+  const placar = recontado ?? dados?.placar;
+
+  const rota = `/api/sessoes/${sessaoId}/paginas/${bloco.id}?mentorada=${encodeURIComponent(mentoradaId)}`;
+  const recontar = () =>
+    void fetch(`${rota}&so=placar`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('falhou'))))
+      .then((j: { placar: { nome: string; total: number }[] }) => setRecontado(j.placar))
+      .catch(() => {});
 
   const carregar = () => void buscarPagina(sessaoId, bloco.id, mentoradaId).catch(() => {});
 
@@ -626,6 +636,7 @@ function PaginaDaSessao({
                     sessaoId={sessaoId}
                     paginaId={bloco.id}
                     podeEditar={podeEditar}
+                    aoMarcar={recontar}
                   />
                 )}
               />
@@ -633,6 +644,7 @@ function PaginaDaSessao({
               <BlocosNotion blocos={dados.blocos} />
             )
           ) : null}
+          {placar?.length ? <Placar itens={placar} /> : null}
         </Tela>
       ) : null}
     </>
@@ -651,12 +663,15 @@ function Opcoes({
   sessaoId,
   paginaId,
   podeEditar,
+  aoMarcar,
 }: {
   itens: { id: string; titulo: string; capa?: string; marcado?: boolean }[];
   mentoradaId: string;
   sessaoId: string;
   paginaId: string;
   podeEditar: boolean;
+  /** Avisa quem mostra o resultado de que ele mudou. */
+  aoMarcar?: () => void;
 }) {
   const [marcadas, setMarcadas] = useState(() => new Set(itens.filter((i) => i.marcado).map((i) => i.id)));
   const [erro, setErro] = useState(false);
@@ -687,7 +702,9 @@ function Opcoes({
         else novo.add(id);
         return novo;
       });
+      return;
     }
+    aoMarcar?.();
   };
 
   return (
@@ -766,5 +783,38 @@ function CopiarLink({
       {copiado ? <Check aria-hidden size={14} /> : <Link2 aria-hidden size={14} />}
       <span className="sr-only">Copiar link para a mentorada</span>
     </button>
+  );
+}
+
+/**
+ * O resultado do questionário, como o Notion conta: quantas opções de cada
+ * estilo foram marcadas, da maior para a menor. É o que a tutora abre para ver
+ * depois que a mentorada preenche.
+ */
+function Placar({ itens }: { itens: { nome: string; total: number }[] }) {
+  const maior = Math.max(...itens.map((i) => i.total), 1);
+  const respondeu = itens.some((i) => i.total > 0);
+
+  return (
+    <section className="mt-5 rounded-xl border border-borda px-4 py-3">
+      <h3 className="mb-3 text-sm font-medium">Resultado do teste</h3>
+      {respondeu ? null : (
+        <p className="mb-3 text-xs text-texto-suave">Ainda sem respostas: o placar aparece conforme ela marca as opções.</p>
+      )}
+      <ul className="space-y-1.5">
+        {itens.map((i, pos) => (
+          <li key={i.nome} className="flex items-center gap-2.5 text-sm">
+            <span className={`w-36 shrink-0 truncate ${pos === 0 && i.total > 0 ? 'font-medium' : ''}`}>{i.nome}</span>
+            <span className="h-2 min-w-0 flex-1 rounded-full bg-superficie-2">
+              <span
+                className="block h-full rounded-full bg-marca"
+                style={{ width: `${(i.total / maior) * 100}%` }}
+              />
+            </span>
+            <span className="w-5 shrink-0 text-right text-texto-suave tabular-nums">{i.total}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

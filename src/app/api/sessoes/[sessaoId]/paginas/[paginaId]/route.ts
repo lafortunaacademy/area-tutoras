@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { normalizarId } from '@/lib/notion/carteira';
-import { marcarOpcaoDaSessao, paginaDaSessao } from '@/lib/notion/sessoesDaMentorada';
+import { marcarOpcaoDaSessao, paginaDaSessao, placarDaPagina } from '@/lib/notion/sessoesDaMentorada';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 
 /**
@@ -20,6 +20,13 @@ export async function GET(
 
   const { sessaoId, paginaId } = await params;
   try {
+    // `?so=placar`: o resultado sozinho, para atualizar depois de cada escolha.
+    if (request.nextUrl.searchParams.get('so') === 'placar') {
+      const placar = await placarDaPagina(normalizarId(mentoradaId), normalizarId(sessaoId), normalizarId(paginaId));
+      if (!placar) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
+      return NextResponse.json({ placar });
+    }
+
     const dados = await paginaDaSessao(normalizarId(mentoradaId), normalizarId(sessaoId), normalizarId(paginaId));
     if (!dados) return NextResponse.json({ erro: 'não encontrada' }, { status: 404 });
     return NextResponse.json({ ...dados, podeEditar: permissao.podeEditar });
