@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Loader2, Plus, X } from 'lucide-react';
 import {
   alternarAcesso,
@@ -166,6 +167,13 @@ export function NovoAcesso({
   // No time, quem dá tutoria sai da lista do Notion (é de lá que vem o recorte
   // dela); quem só administra tem o nome digitado aqui mesmo.
   const [comoAdmin, setComoAdmin] = useState(false);
+
+  // Depois de liberar, a lista acima precisa chegar de novo do servidor: sem
+  // isso a pessoa recém-liberada só aparece quando alguém recarrega a página.
+  const router = useRouter();
+  useEffect(() => {
+    if (estado.ok) router.refresh();
+  }, [estado.ok, router]);
 
   return (
     <form action={acao} className="flex flex-wrap items-center gap-2 border-t border-borda px-5 py-3">

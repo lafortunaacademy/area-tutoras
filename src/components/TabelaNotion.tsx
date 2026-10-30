@@ -74,7 +74,7 @@ export function TabelaNotion({
                     }`}
                     title={valor}
                   >
-                    {valor || '—'}
+                    {valor}
                   </td>
                 ))}
               </tr>

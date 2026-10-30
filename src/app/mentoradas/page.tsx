@@ -104,13 +104,13 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                       <span className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[10.5px] font-medium tracking-wide text-andamento uppercase">
                         Agendar
                       </span>
-                      <span className="ml-2">{m.proximaAAgendar ?? '—'}</span>
+                      <span className="ml-2">{m.proximaAAgendar ?? ''}</span>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
                       {m.aRealizar} {m.aRealizar === 1 ? 'sessão' : 'sessões'}
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
-                      {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : '—'}
+                      {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : ''}
                       {m.incompleto ? <span className="block text-xs">Parte dos dados não carregou agora.</span> : null}
                     </td>
                   </tr>

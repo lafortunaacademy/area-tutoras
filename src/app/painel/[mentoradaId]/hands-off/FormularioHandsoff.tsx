@@ -47,7 +47,7 @@ export function FormularioHandsoff({
           rotulo={secao.titulo}
           ajuda={
             secao.formato === 'bullets'
-              ? `${secao.ajuda} — uma linha por bullet`
+              ? `${secao.ajuda} (uma linha por bullet)`
               : secao.ajuda
           }
           htmlFor={secao.key}

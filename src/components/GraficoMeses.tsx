@@ -30,7 +30,7 @@ export function GraficoMeses({
 
   const valorDe = (m: MesDeSessoes) => (tipo === 'reais' ? (m.valor ?? 0) : m.sessoes);
   const rotuloCheio = (m: MesDeSessoes) =>
-    tipo === 'reais' ? (m.valorEmReais ?? '—') : `${m.sessoes} ${m.sessoes === 1 ? 'tutoria' : 'tutorias'}`;
+    tipo === 'reais' ? (m.valorEmReais ?? '') : `${m.sessoes} ${m.sessoes === 1 ? 'tutoria' : 'tutorias'}`;
 
   /** O número em cima da barra: em reais, com o R$ e os milhares separados. */
   const rotuloCurto = (m: MesDeSessoes) => {
@@ -124,7 +124,7 @@ export function GraficoMeses({
                       {m.porMentoria.map((f) => (
                         <li key={f.mentoria} className="flex items-center gap-1.5 text-[11px] text-texto-suave">
                           <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: corDa(f.mentoria) }} />
-                          {f.mentoria}: {tipo === 'reais' ? (f.valorEmReais ?? '—') : f.sessoes}
+                          {f.mentoria}: {tipo === 'reais' ? (f.valorEmReais ?? '') : f.sessoes}
                         </li>
                       ))}
                     </ul>

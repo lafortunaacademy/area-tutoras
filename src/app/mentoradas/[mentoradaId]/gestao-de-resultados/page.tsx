@@ -217,4 +217,4 @@ function gruposDoAno(meses: MesFinanceiro[], ano: string): GrupoMensal[] {
 const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const NUMERO = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const semMoeda = (n: number | null) => (n === null ? '—' : NUMERO.format(n));
+const semMoeda = (n: number | null) => (n === null ? '' : NUMERO.format(n));

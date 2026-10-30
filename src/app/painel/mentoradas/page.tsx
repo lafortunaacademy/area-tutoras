@@ -22,7 +22,7 @@ export default async function PainelPage() {
         <p className="mt-1 text-sm text-texto-suave">
           {mentoradas.length === 0
             ? 'Nenhuma mentorada.'
-            : `${mentoradas.length} mentorada${mentoradas.length > 1 ? 's' : ''} — sempre atualizado.`}
+            : `${mentoradas.length} mentorada${mentoradas.length > 1 ? 's' : ''}, sempre atualizado.`}
         </p>
       </div>
 

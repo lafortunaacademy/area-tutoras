@@ -37,7 +37,7 @@ export function FotoDaTutora({ id, nome }: { id: string; nome: string }) {
 
 /** Os nomes das tutoras de uma sessão, cada um com a foto. */
 export function TutorasDaSessao({ equipe, nomes }: { equipe?: { id: string; nome: string }[]; nomes: string[] }) {
-  if (!equipe?.length) return <>{nomes.join(', ') || '—'}</>;
+  if (!equipe?.length) return <>{nomes.join(', ')}</>;
 
   return (
     <span className="flex flex-col gap-0.5">

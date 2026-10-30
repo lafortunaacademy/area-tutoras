@@ -5,14 +5,14 @@
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-/** Célula vazia no Notion vira "—", não "R$ 0,00": zero é informação, vazio não é. */
+/** Célula vazia no Notion fica vazia, não "R$ 0,00": zero é informação, vazio não é. */
 export function reais(n: number | null | undefined): string {
-  return n === null || n === undefined ? '—' : BRL.format(n);
+  return n === null || n === undefined ? '' : BRL.format(n);
 }
 
 /** Recebe fração (0,25) — é assim que as fórmulas de lucro do modelo calculam. */
 export function percentual(n: number | null | undefined): string {
-  if (n === null || n === undefined || !Number.isFinite(n)) return '—';
+  if (n === null || n === undefined || !Number.isFinite(n)) return '';
   return `${(n * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
 }
 

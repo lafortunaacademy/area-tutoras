@@ -93,7 +93,7 @@ export default async function AdminPage() {
             Mapas sem dona
           </h2>
           <p className="mt-1 mb-4 max-w-2xl text-sm text-texto-suave">
-            Respostas do formulário do Mapa da cliente que o app não conseguiu ligar a ninguém — porque o
+            Respostas do formulário do Mapa da cliente que o app não conseguiu ligar a ninguém, porque o
             e-mail não está no cadastro e o nome não bateu. Escolha a mentorada e a resposta vai para a área dela.
           </p>
 

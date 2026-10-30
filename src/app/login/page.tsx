@@ -11,7 +11,7 @@ import { caminhoSeguro } from '@/lib/depoisDoLogin';
 const MENSAGENS: Record<string, string> = {
   link_invalido: 'Esse link não veio completo. Peça um novo abaixo.',
   link_expirado:
-    'Esse link não vale mais — ou já foi usado, ou foi pedido em outro navegador. Peça um novo abaixo.',
+    'Esse link não vale mais: ou já foi usado, ou foi pedido em outro navegador. Peça um novo abaixo.',
 };
 
 export default async function LoginPage({

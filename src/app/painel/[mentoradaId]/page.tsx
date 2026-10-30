@@ -101,7 +101,7 @@ export default async function MentoradaPage({
           <Vazio>
             {mentorada.areaDaClienteIds.length === 0
               ? 'Esta mentorada ainda não tem área individual vinculada, e os objetivos se ligam a ela por ali. É o mesmo motivo da foto e da mentoria não aparecerem.'
-              : 'Não consigo separar os objetivos por mentorada — mostrar sem esse recorte traria os objetivos de todas.'}
+              : 'Não consigo separar os objetivos por mentorada: mostrar sem esse recorte traria os objetivos de todas.'}
           </Vazio>
         ) : (
           <ObjetivosPorAno objetivos={plano} />
@@ -130,7 +130,7 @@ export default async function MentoradaPage({
         ancora="hands-off"
         acao={
           sessao.verComo ? (
-            <span className="text-xs text-texto-suave">preview — só leitura</span>
+            <span className="text-xs text-texto-suave">preview, só leitura</span>
           ) : (
             <Link
               href={`/painel/${mentorada.id}/hands-off/novo`}

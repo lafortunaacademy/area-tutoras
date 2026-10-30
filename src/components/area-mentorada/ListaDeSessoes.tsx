@@ -31,14 +31,14 @@ function buscarSessao(id: string, mentoradaId: string): Promise<Detalhe> {
 }
 
 /** O nome da sessão; sem título na página, vale a propriedade "Sessão " (o tipo). */
-const nomeDaSessao = (s: SessaoDaLista) => s.sessao || s.tipo || '—';
+const nomeDaSessao = (s: SessaoDaLista) => s.sessao || s.tipo;
 
 /**
  * A coluna "Sessão": o tipo como etiqueta e, ao lado, o título da página —
  * só quando ele diz outra coisa ("Tutoria 01 | Produto" ao lado de "Tutoria").
  */
 export function NomeDaSessao({ sessao }: { sessao: SessaoDaLista }) {
-  if (!sessao.tipo) return <>{sessao.sessao || '—'}</>;
+  if (!sessao.tipo) return <>{sessao.sessao}</>;
   const titulo = sessao.sessao.trim();
   return (
     <span className="flex flex-wrap items-center gap-1.5">
@@ -68,7 +68,7 @@ function buscarPagina(sessaoId: string, paginaId: string, mentoradaId: string): 
 const mesmoId = (a?: string | null, b?: string | null) =>
   Boolean(a && b) && a!.replace(/-/g, '') === b!.replace(/-/g, '');
 
-export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '—');
+export const dataCurta = (iso: string | null) => (iso ? iso.slice(0, 10).split('-').reverse().join('/') : '');
 
 
 /** Lista das sessões, só para ver; cada sessão abre num cartão por cima da página. */

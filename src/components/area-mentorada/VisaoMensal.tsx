@@ -175,7 +175,7 @@ function Calculado({
 }
 
 function Vazio() {
-  return <span className="text-borda">—</span>;
+  return null;
 }
 
 /** "1.234,56", "1234.56", "R$ 1.234" -> número; vazio -> null; lixo -> undefined. */
