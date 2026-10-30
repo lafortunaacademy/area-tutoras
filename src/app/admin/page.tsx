@@ -60,17 +60,12 @@ export default async function AdminPage() {
 
       <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="display text-3xl">Olá, {sessao.real.nome.split(' ')[0]}.</h1>
-        <p className="mt-1 text-sm text-texto-suave">Quem entra no app e como ele está ligado ao resto.</p>
 
         <section className="mt-8">
-          <h2 className="flex items-center gap-2 text-lg font-medium">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
             <Users aria-hidden size={18} className="text-marca" />
             Acessos
           </h2>
-          <p className="mt-1 mb-4 max-w-2xl text-sm text-texto-suave">
-            Não existe senha: a pessoa entra pelo link que chega no e-mail cadastrado aqui. Desligar o
-            interruptor tira o acesso na hora e guarda o cadastro para quando ela voltar.
-          </p>
 
           <div className="space-y-5">
             <div className="overflow-hidden rounded-xl border border-borda bg-superficie">
