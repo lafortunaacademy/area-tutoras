@@ -1,4 +1,4 @@
-import { exigirVisitante } from '@/lib/session';
+import { exigirVisitante, getSessao } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraDeAreas, type ItemDaBarra } from '@/components/BarraDeAreas';
 import { BarraVerComo } from '@/components/BarraVerComo';
@@ -28,6 +28,9 @@ const SECOES: SecaoMenu[] = [
 
 export default async function MentoradasLayout({ children }: { children: React.ReactNode }) {
   const visitante = await exigirVisitante();
+  // O retrato de quem administra é o mesmo das outras áreas: sem isto, a
+  // mesma pessoa aparecia de foto lá e de iniciais aqui.
+  const sessao = await getSessao();
   const todas = await mentoradasDoModeloNovo().catch(() => []);
   // A mentorada só enxerga a própria página; o administrativo, todas.
   const mentoradas = visitante.admin ? todas : todas.filter((m) => m.id === visitante.mentoradaId);
@@ -37,11 +40,14 @@ export default async function MentoradasLayout({ children }: { children: React.R
       {/* A barra é de todo mundo; só o bloco das áreas é de quem administra. */}
       <BarraDeAreas
         nome={visitante.nome}
+        fotoId={sessao?.real.notion_tutora_page_id}
+        foto={sessao?.real.foto}
         comAreas={visitante.admin}
         secoes={
           visitante.admin
             ? ([
-                { href: '/mentoradas', base: '/mentoradas', rotulo: 'Visão geral', icone: 'inicio' },
+                // "Área das mentoradas" já abre na visão geral: repetir o item
+                // embaixo dela levava ao mesmo lugar.
                 {
                   href: `/mentoradas/${mentoradas[0]?.id ?? ''}`,
                   base: '/mentoradas/',
