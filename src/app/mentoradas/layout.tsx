@@ -33,10 +33,14 @@ export default async function MentoradasLayout({ children }: { children: React.R
   return (
     <div className="flex min-h-dvh">
       {/* A mentorada tem uma área só: a barra das áreas é de quem administra. */}
-      {visitante.admin ? <BarraDeAreas /> : null}
+      {visitante.admin ? <BarraDeAreas nome={visitante.nome} /> : null}
 
       <div className="min-w-0 flex-1">
-        <Cabecalho visitante={visitante} area="mentoradas" />
+        {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
+            onde a barra não cabe. */}
+        <div className={visitante.admin ? 'lg:hidden' : ''}>
+          <Cabecalho visitante={visitante} area="mentoradas" />
+        </div>
 
         <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-4 py-8 sm:px-6">
           <aside className="hidden w-60 shrink-0 lg:block">

@@ -4,6 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { GraduationCap, Settings, Sparkles } from 'lucide-react';
+import { BotaoTema } from '@/components/BotaoTema';
+import { FotoDaTutora } from '@/components/area-mentorada/FotoDaTutora';
+import { iniciais } from '@/lib/iniciais';
 
 /**
  * As três áreas do sistema, numa barra marrom à esquerda.
@@ -19,7 +22,7 @@ const AREAS = [
   { href: '/mentoradas', base: '/mentoradas', rotulo: 'Área das mentoradas', detalhe: 'A área de membros', icone: Sparkles },
 ];
 
-export function BarraDeAreas() {
+export function BarraDeAreas({ nome, fotoId }: { nome: string; fotoId?: string | null }) {
   const caminho = usePathname();
 
   return (
@@ -37,7 +40,7 @@ export function BarraDeAreas() {
             width={2369}
             height={862}
             priority
-            className="logo-na-barra h-8 w-auto"
+            className="logo-na-barra h-11 w-auto"
           />
         </Link>
 
@@ -64,6 +67,32 @@ export function BarraDeAreas() {
             </Link>
           );
         })}
+        {/* Quem está logada, o tema e a saída: tudo o que era do cabeçalho
+            mora aqui, no pé da barra. */}
+        <div className="mt-auto border-t border-marca-contraste/15 pt-3">
+          <div className="flex items-center gap-2 px-3 py-2 text-[13px]">
+            {fotoId ? (
+              <FotoDaTutora id={fotoId} nome={nome} />
+            ) : (
+              <span
+                aria-hidden
+                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-contraste/20 text-[9px] font-medium"
+              >
+                {iniciais(nome)}
+              </span>
+            )}
+            <span className="min-w-0 flex-1 truncate">{nome}</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 px-3 pt-1 pb-2">
+            <BotaoTema />
+            <form action="/logout" method="post">
+              <button type="submit" className="text-xs opacity-70 transition hover:opacity-100">
+                Sair
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </nav>
   );

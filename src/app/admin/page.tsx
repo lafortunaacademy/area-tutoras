@@ -44,7 +44,9 @@ export default async function AdminPage() {
 
   return (
     <div className="min-h-dvh">
-      <Cabecalho sessao={sessao} area="admin" />
+      <div className="lg:hidden">
+        <Cabecalho sessao={sessao} area="admin" />
+      </div>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
         <h1 className="display text-3xl">Configurações</h1>

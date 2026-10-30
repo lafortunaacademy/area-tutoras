@@ -16,12 +16,18 @@ export default async function PainelLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-dvh">
       {/* Só quem administra anda entre as áreas; para a tutora esta é a única. */}
-      {sessao.real.is_admin ? <BarraDeAreas /> : null}
+      {sessao.real.is_admin ? (
+        <BarraDeAreas nome={sessao.real.nome} fotoId={sessao.real.notion_tutora_page_id} />
+      ) : null}
 
       <div className="min-w-0 flex-1">
         {sessao.verComo ? <BarraVerComo nome={sessao.tutora.nome} /> : null}
 
-        <Cabecalho sessao={sessao} area="tutoras" />
+        {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
+            onde a barra não cabe. */}
+        <div className={sessao.real.is_admin ? 'lg:hidden' : ''}>
+          <Cabecalho sessao={sessao} area="tutoras" />
+        </div>
 
         <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-6 py-8">
           {/* Abaixo de lg o menu sai: em tela estreita ele comeria a página toda,
