@@ -39,7 +39,7 @@ export function TutoriasPorMes({ meses }: { meses: MesDeTutorias[] }) {
               onBlur={() => setSobre(null)}
               tabIndex={0}
             >
-              <span className="mb-1 text-[10px] text-texto-suave tabular-nums">{soma || ''}</span>
+              <span className="mb-1 text-[11px] text-texto-suave tabular-nums">{soma || ''}</span>
 
               {/* 12% da altura ficam para o número em cima da barra. */}
               <div
@@ -59,10 +59,10 @@ export function TutoriasPorMes({ meses }: { meses: MesDeTutorias[] }) {
 
               {ativo && soma ? (
                 <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-lg border border-borda bg-superficie px-3 py-2 shadow-[var(--sombra)]">
-                  <p className="text-[11px] text-texto-suave">{m.rotulo}</p>
+                  <p className="text-[12px] text-texto-suave">{m.rotulo}</p>
                   <ul className="mt-1 space-y-0.5">
                     {m.porTutora.map((f) => (
-                      <li key={f.rotulo} className="flex items-center gap-1.5 text-[11px]">
+                      <li key={f.rotulo} className="flex items-center gap-1.5 text-[12px]">
                         <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: f.cor }} />
                         {f.rotulo}: {f.total}
                       </li>
@@ -77,7 +77,7 @@ export function TutoriasPorMes({ meses }: { meses: MesDeTutorias[] }) {
 
       <div className="mt-2 flex gap-2">
         {meses.map((m) => (
-          <span key={m.rotulo} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
+          <span key={m.rotulo} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto-suave">
             {m.rotulo}
           </span>
         ))}

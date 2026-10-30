@@ -241,7 +241,7 @@ function Resposta({
         placeholder="Escreva sua resposta"
         className="w-full resize-y rounded-lg border border-borda bg-superficie px-3 py-2 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
       />
-      <p className="h-4 text-right text-[11px] text-texto-suave" aria-live="polite">
+      <p className="h-4 text-right text-[12px] text-texto-suave" aria-live="polite">
         {estado === 'salvando' ? 'Salvando…' : estado === 'salvo' ? 'Salvo' : estado === 'erro' ? <span className="text-parado">Não salvou. Saia do campo de novo para tentar.</span> : ''}
       </p>
     </div>
@@ -369,12 +369,12 @@ function Tabela({ tabela, salvar }: { tabela: BlocoSimples; salvar: Salvar }) {
           type="button"
           onClick={adicionar}
           disabled={criando}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[12px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
         >
           {criando ? <Loader2 aria-hidden size={11} className="animate-spin" /> : <Plus aria-hidden size={11} />}
           Nova linha
         </button>
-        {erro ? <span className="text-[11px] text-parado">Não salvou. Tente de novo.</span> : null}
+        {erro ? <span className="text-[12px] text-parado">Não salvou. Tente de novo.</span> : null}
       </div>
     </div>
   );

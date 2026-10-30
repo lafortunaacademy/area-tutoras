@@ -83,13 +83,13 @@ export function MateriaisDaTutoria({
               type="button"
               onClick={() => void criar(m)}
               disabled={criando !== null}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[12px] text-texto-suave transition hover:border-marca hover:text-marca disabled:opacity-60"
             >
               {criando === m.id ? <Loader2 aria-hidden size={11} className="animate-spin" /> : <Plus aria-hidden size={11} />}
               Nova {m.titulo.toLocaleLowerCase('pt-BR')}
             </button>
           ))}
-          {erro ? <span className="text-[11px] text-parado">Não deu para criar. Tente de novo.</span> : null}
+          {erro ? <span className="text-[12px] text-parado">Não deu para criar. Tente de novo.</span> : null}
         </div>
       ) : null}
     </div>
@@ -127,7 +127,7 @@ function Material({ item, mentoradaId, admin }: { item: ItemDeMaterial; mentorad
         <Icone icone={item.icone} tamanho={16} />
         <span className="min-w-0 flex-1 leading-snug">{item.titulo}</span>
         {item.criadaEm ? (
-          <span className="shrink-0 text-[11px] font-normal whitespace-nowrap text-texto-suave tabular-nums">
+          <span className="shrink-0 text-[12px] font-normal whitespace-nowrap text-texto-suave tabular-nums">
             {dataCurta(item.criadaEm)}
           </span>
         ) : null}

@@ -32,7 +32,7 @@ export type Pessoa = {
  */
 function TipoDeAcesso({ pessoa }: { pessoa: Pessoa }) {
   if (pessoa.euMesma) {
-    return <span className="shrink-0 text-[11px] text-texto-suave">você · administradora</span>;
+    return <span className="shrink-0 text-[12px] text-texto-suave">você · administradora</span>;
   }
 
   return (
@@ -43,7 +43,7 @@ function TipoDeAcesso({ pessoa }: { pessoa: Pessoa }) {
         defaultValue={pessoa.admin ? 'admin' : 'tutora'}
         aria-label={`Tipo de acesso de ${pessoa.nome}`}
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
-        className="shrink-0 rounded-lg border border-borda bg-superficie px-2 py-1 text-[11px] outline-none focus:border-marca"
+        className="shrink-0 rounded-lg border border-borda bg-superficie px-2 py-1 text-[12px] outline-none focus:border-marca"
       >
         <option value="admin">Administradora</option>
         <option value="tutora">Tutora</option>
@@ -120,7 +120,7 @@ export function ListaDeAcessos({
               <button
                 type="submit"
                 title="Abrir a área como ela vê"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[12px] text-texto-suave transition hover:border-marca hover:text-marca"
               >
                 <Eye aria-hidden size={13} />
                 <span className="hidden sm:inline">Ver como</span>
@@ -128,7 +128,7 @@ export function ListaDeAcessos({
             </form>
           ) : null}
 
-          <span className={`hidden text-[11px] sm:inline ${p.ativa ? 'text-ok' : 'text-texto-suave'}`}>
+          <span className={`hidden text-[12px] sm:inline ${p.ativa ? 'text-ok' : 'text-texto-suave'}`}>
             {p.ativa ? 'com acesso' : 'sem acesso'}
           </span>
           <Interruptor tabela={tabela} pessoa={p} />

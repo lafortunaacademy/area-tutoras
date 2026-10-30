@@ -61,7 +61,7 @@ function Campo({ nome, valor }: { nome: string; valor: string }) {
     // `min-w-0` + quebra em qualquer ponto: resposta longa sem espaço (um link,
     // um texto colado) ficava passando por cima da coluna do lado.
     <div className="min-w-0">
-      <dt className="rotulo text-[10px] [overflow-wrap:anywhere] text-destaque">{nome}</dt>
+      <dt className="rotulo text-[11px] [overflow-wrap:anywhere] text-destaque">{nome}</dt>
       <dd className="mt-1 text-sm whitespace-pre-line [overflow-wrap:anywhere]">{conteudo(nome, valor)}</dd>
     </div>
   );

@@ -65,7 +65,7 @@ export function GraficoBarras({
                           style={{ top: `${topo}%`, height: `${Math.max(base - topo, 0.5)}%`, background: cor, opacity: v > 0 ? 1 : 0.55 }}
                         />
                         <span
-                          className="absolute left-1/2 -translate-x-1/2 text-[9.5px] whitespace-nowrap text-texto-suave tabular-nums"
+                          className="absolute left-1/2 -translate-x-1/2 text-[10.5px] whitespace-nowrap text-texto-suave tabular-nums"
                           // Com mais de quatro barras os valores vizinhos se encostariam: alternam de altura.
                           style={
                             v > 0
@@ -93,7 +93,7 @@ export function GraficoBarras({
 
           <div aria-hidden className="mt-2 flex">
             {pontos.map((p, i) => (
-              <span key={i} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
+              <span key={i} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto-suave">
                 {p.rotulo}
               </span>
             ))}

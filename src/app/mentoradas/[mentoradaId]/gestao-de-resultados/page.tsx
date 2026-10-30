@@ -101,7 +101,7 @@ function Conteudo({
                     {a.ano}
                   </p>
                   {/* Cinco cartões por linha: sem "R$" em cada valor (o rótulo do lucro já diz a moeda) e sem quebrar linha. */}
-                  <dl className="mt-2.5 space-y-1 text-[11.5px] whitespace-nowrap">
+                  <dl className="mt-2.5 space-y-1 text-[12.5px] whitespace-nowrap">
                     {[
                       { rotulo: 'Faturamento', texto: semMoeda(a.faturamento), valor: a.faturamento },
                       { rotulo: 'Despesas', texto: semMoeda(a.despesas), valor: a.despesas },

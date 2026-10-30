@@ -28,13 +28,13 @@ export default async function PainelPage() {
 
       {mentoradas.length > 0 ? (
         <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-          <table className="w-full min-w-[34rem] table-fixed text-[13px]">
+          <table className="w-full min-w-[34rem] table-fixed text-[14px]">
             <thead>
               <tr className="border-b border-borda text-left">
-                <th className="rotulo px-5 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave">
+                <th className="rotulo px-5 py-2.5 text-[11px] font-normal whitespace-nowrap text-texto-suave">
                   Cliente
                 </th>
-                <th className="rotulo px-5 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave">
+                <th className="rotulo px-5 py-2.5 text-[11px] font-normal whitespace-nowrap text-texto-suave">
                   Mentoria
                 </th>
               </tr>

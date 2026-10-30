@@ -115,7 +115,7 @@ export function VisaoMensal({ mentoradaId, grupos }: { mentoradaId: string; grup
         ) : (
           <span />
         )}
-        <p className="text-[11px] text-texto-suave">Valores em R$ · clique num valor para editar</p>
+        <p className="text-[12px] text-texto-suave">Valores em R$ · clique num valor para editar</p>
       </div>
 
       <TabelaFinanceira
@@ -257,7 +257,7 @@ function CelulaValor({
         }}
         inputMode="decimal"
         aria-label={rotulo}
-        className="w-28 rounded-md border border-marca bg-superficie px-1.5 py-0.5 text-right text-[13px] text-texto tabular-nums outline-none ring-2 ring-marca/20"
+        className="w-28 rounded-md border border-marca bg-superficie px-1.5 py-0.5 text-right text-[14px] text-texto tabular-nums outline-none ring-2 ring-marca/20"
       />
     );
   }

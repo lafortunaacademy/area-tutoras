@@ -41,7 +41,7 @@ export function GraficoVazio({
 
       <div aria-hidden className="mt-2 flex gap-1.5">
         {eixo.map((e) => (
-          <span key={e} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
+          <span key={e} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto-suave">
             {e}
           </span>
         ))}

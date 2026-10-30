@@ -91,7 +91,7 @@ export function MenuMentoradas({
                   <Link
                     href={`${base}/${m.id}`}
                     aria-current={atual ? 'page' : undefined}
-                    className={`-ml-px flex items-center gap-2.5 border-l-2 py-1.5 pr-3 pl-3.5 text-[13px] leading-snug transition ${
+                    className={`-ml-px flex items-center gap-2.5 border-l-2 py-1.5 pr-3 pl-3.5 text-[14px] leading-snug transition ${
                       // A mentorada aberta continua com o fundo marrom da marca.
                       atual ? 'rounded-r-lg border-destaque bg-marca font-medium text-marca-contraste' : SUB_INATIVO
                     }`}
@@ -124,7 +124,7 @@ export function MenuMentoradas({
 // Formato do menu: item de topo grande, com ícone; o ativo ganha fundo e uma
 // barra na borda esquerda. Os subitens ficam recuados sobre uma linha vertical,
 // e o ativo marca a linha com a mesma barra.
-const ITEM = 'flex items-center gap-3 rounded-r-xl border-l-2 px-3 py-2.5 text-[15px] transition';
+const ITEM = 'flex items-center gap-3 rounded-r-xl border-l-2 px-3 py-2.5 text-[16px] transition';
 const ITEM_ATIVO = 'border-destaque bg-marca-suave font-medium text-texto';
 const ITEM_INATIVO = 'border-transparent text-texto-suave hover:bg-superficie hover:text-texto';
 const SUB_ATIVO = 'rounded-r-lg border-destaque bg-marca-suave font-medium text-texto';
@@ -178,7 +178,7 @@ function ListaDeSecoes({
                 if (!s.rota && s.ancora && caminho === prefixo && rolarAte(s.ancora)) e.preventDefault();
               }}
               aria-current={naRota ? 'page' : undefined}
-              className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[12.5px] leading-snug transition ${
+              className={`-ml-px block border-l-2 py-1 pr-2 pl-3 text-[13.5px] leading-snug transition ${
                 naRota ? SUB_ATIVO : SUB_INATIVO
               }`}
             >
@@ -206,7 +206,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
   return (
     <span
       aria-hidden
-      className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[8px] font-medium text-marca"
+      className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[9px] font-medium text-marca"
     >
       {iniciais(nome)}
     </span>

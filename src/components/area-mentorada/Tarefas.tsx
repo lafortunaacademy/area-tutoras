@@ -102,7 +102,7 @@ export function Tarefas({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-borda">
-        <table className="w-full min-w-[36rem] table-fixed text-[13px]">
+        <table className="w-full min-w-[36rem] table-fixed text-[14px]">
           <thead>
             <tr className="border-b border-borda text-left">
               {[
@@ -113,7 +113,7 @@ export function Tarefas({
               ].map(([nome, largura]) => (
                 <th
                   key={nome}
-                  className={`rotulo px-4 py-2.5 text-[10px] font-normal whitespace-nowrap text-texto-suave ${largura}`}
+                  className={`rotulo px-4 py-2.5 text-[11px] font-normal whitespace-nowrap text-texto-suave ${largura}`}
                 >
                   {nome}
                 </th>
@@ -248,7 +248,7 @@ function LinhaNova({
     if (e.key === 'Escape') fechar();
   };
   const campo =
-    'w-full rounded-md border border-borda bg-superficie px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave/70 focus:border-marca';
+    'w-full rounded-md border border-borda bg-superficie px-2 py-1.5 text-[14px] outline-none placeholder:text-texto-suave/70 focus:border-marca';
 
   return (
     <>
@@ -270,7 +270,7 @@ function LinhaNova({
             <button
               type="button"
               onClick={enviar}
-              className="mt-0.5 rounded-md bg-marca px-2 py-1 text-[11px] font-medium text-marca-contraste transition hover:opacity-90"
+              className="mt-0.5 rounded-md bg-marca px-2 py-1 text-[12px] font-medium text-marca-contraste transition hover:opacity-90"
             >
               Salvar
             </button>
@@ -286,7 +286,7 @@ function LinhaNova({
               aria-label="Nova tarefa"
               className={campo}
             />
-            <p className={`mt-1 px-1 text-[11px] ${erro ? 'text-parado' : 'text-texto-suave'}`}>
+            <p className={`mt-1 px-1 text-[12px] ${erro ? 'text-parado' : 'text-texto-suave'}`}>
               {erro ? 'Não salvou. Tente de novo.' : 'Enter também salva · Esc cancela'}
             </p>
           </td>

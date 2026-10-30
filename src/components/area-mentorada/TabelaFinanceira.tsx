@@ -19,13 +19,13 @@ export function TabelaFinanceira({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-borda">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[14px]">
         <thead>
           <tr className="border-b border-borda">
             {colunas.map((c) => (
               <th
                 key={c.nome}
-                className={`px-3 py-2.5 text-[11px] font-medium whitespace-nowrap text-texto-suave ${alinhamento(c)}`}
+                className={`px-3 py-2.5 text-[12px] font-medium whitespace-nowrap text-texto-suave ${alinhamento(c)}`}
               >
                 {c.nome}
               </th>
@@ -49,7 +49,7 @@ export function TabelaFinanceira({
               {rodape.map((valor, i) => (
                 <td
                   key={i}
-                  className={`px-3 py-2.5 text-[12px] font-medium whitespace-nowrap ${alinhamento(colunas[i])}`}
+                  className={`px-3 py-2.5 text-[13px] font-medium whitespace-nowrap ${alinhamento(colunas[i])}`}
                 >
                   {valor}
                 </td>

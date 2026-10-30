@@ -16,7 +16,7 @@ export default async function MentoradasPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-[11px] tracking-[0.14em] text-texto-suave uppercase">Área das mentoradas</p>
+      <p className="text-[12px] tracking-[0.14em] text-texto-suave uppercase">Área das mentoradas</p>
       <h1 className="display mt-1 text-3xl sm:text-4xl">Visão geral</h1>
       <p className="mt-1 text-sm text-texto-suave">
         Quem precisa agendar sessão e em que ponto cada mentorada está no ciclo. Só as mentoradas do modelo novo.
@@ -72,11 +72,11 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-borda text-left">
                   {['Situação', 'Mentorada', 'Próxima a agendar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
-                    <th key={c} className="px-4 py-2.5 text-[11px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
+                    <th key={c} className="px-4 py-2.5 text-[12px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
                   ))}
@@ -101,7 +101,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                       </Link>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[10.5px] font-medium tracking-wide text-andamento uppercase">
+                      <span className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[11.5px] font-medium tracking-wide text-andamento uppercase">
                         Agendar
                       </span>
                       <span className="ml-2">{m.proximaAAgendar ?? ''}</span>
@@ -157,7 +157,7 @@ const fracao = (m: ResumoDaMentorada) => (m.total ? m.realizadas / m.total : 0);
 function Numero({ rotulo, valor, detalhe }: { rotulo: string; valor: number; detalhe: string }) {
   return (
     <li className="rounded-xl border border-borda bg-superficie px-4 py-3">
-      <p className="text-[10.5px] tracking-[0.12em] text-texto-suave uppercase">{rotulo}</p>
+      <p className="text-[11.5px] tracking-[0.12em] text-texto-suave uppercase">{rotulo}</p>
       <p className="display mt-1 text-3xl tabular-nums">{valor}</p>
       <p className="text-xs text-texto-suave">{detalhe}</p>
     </li>
@@ -179,7 +179,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img src={foto} alt="" className="size-7 shrink-0 rounded-full object-cover" />
   ) : (
-    <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[10px] font-medium text-marca">
+    <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[11px] font-medium text-marca">
       {iniciais(nome)}
     </span>
   );

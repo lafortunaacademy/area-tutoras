@@ -57,7 +57,7 @@ export function GraficoMeses({
     <figure className="rounded-xl border border-borda bg-superficie p-6">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <p className="rotulo text-[10px] text-destaque">
+          <p className="rotulo text-[11px] text-destaque">
             {tipo === 'reais' ? 'Total no período' : 'Tutorias no período'}
           </p>
           <p className="display mt-1 text-2xl leading-none">
@@ -90,7 +90,7 @@ export function GraficoMeses({
               tabIndex={0}
             >
               <span
-                className={`mb-1 text-[10px] whitespace-nowrap tabular-nums transition-opacity ${
+                className={`mb-1 text-[11px] whitespace-nowrap tabular-nums transition-opacity ${
                   apagado ? 'text-texto-suave opacity-40' : 'text-texto-suave'
                 }`}
               >
@@ -117,12 +117,12 @@ export function GraficoMeses({
 
               {ativo ? (
                 <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-lg border border-borda bg-superficie px-3 py-2 shadow-[var(--sombra)]">
-                  <p className="text-[11px] text-texto-suave">{m.rotulo}</p>
+                  <p className="text-[12px] text-texto-suave">{m.rotulo}</p>
                   <p className="mt-0.5 text-sm font-medium">{rotuloCheio(m)}</p>
                   {m.porMentoria.length > 1 ? (
                     <ul className="mt-1.5 space-y-0.5">
                       {m.porMentoria.map((f) => (
-                        <li key={f.mentoria} className="flex items-center gap-1.5 text-[11px] text-texto-suave">
+                        <li key={f.mentoria} className="flex items-center gap-1.5 text-[12px] text-texto-suave">
                           <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ backgroundColor: corDa(f.mentoria) }} />
                           {f.mentoria}: {tipo === 'reais' ? (f.valorEmReais ?? '') : f.sessoes}
                         </li>
@@ -140,7 +140,7 @@ export function GraficoMeses({
         {meses.map((m, i) => (
           <span
             key={m.chave}
-            className={`min-w-0 flex-1 truncate text-center text-[10px] tabular-nums transition-colors ${
+            className={`min-w-0 flex-1 truncate text-center text-[11px] tabular-nums transition-colors ${
               sobre === i || (sobre === null && i === ultimo) ? 'font-medium text-texto' : 'text-texto-suave'
             }`}
             title={m.rotulo}
@@ -153,7 +153,7 @@ export function GraficoMeses({
       {naLegenda.length > 1 ? (
         <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
           {naLegenda.map((m) => (
-            <li key={m} className="flex items-center gap-1.5 text-[11px] text-texto-suave">
+            <li key={m} className="flex items-center gap-1.5 text-[12px] text-texto-suave">
               <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: corDa(m) }} />
               {m}
             </li>

@@ -104,11 +104,11 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
                   <span className="block text-sm leading-snug font-medium">
                     <NomeDaSessao sessao={s} />
                   </span>
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-texto-suave">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-texto-suave">
                     {s.status ? <EtiquetaNotion texto={s.status} cor={s.corStatus} /> : null}
                     <span className="tabular-nums">{dataCurta(s.data)}</span>
                   </span>
-                  <span className="block text-[11px] text-texto-suave">
+                  <span className="block text-[12px] text-texto-suave">
                     <TutorasDaSessao equipe={s.equipe} nomes={s.tutoras} />
                   </span>
                 </span>
@@ -124,7 +124,7 @@ export function ListaDeSessoes({ mentoradaId, sessoes }: { mentoradaId: string; 
           <thead>
             <tr className="border-b border-borda text-left">
               {['Status', 'Sessão', 'Data', 'Tutora', ''].map((c, i) => (
-                <th key={i} className="px-4 py-1 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                <th key={i} className="px-4 py-1 text-[12px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}
@@ -748,7 +748,7 @@ function Opcoes({
           );
         })}
       </ul>
-      {erro ? <p className="mt-1 text-[11px] text-parado">Não deu para salvar essa escolha. Tente de novo.</p> : null}
+      {erro ? <p className="mt-1 text-[12px] text-parado">Não deu para salvar essa escolha. Tente de novo.</p> : null}
     </div>
   );
 }

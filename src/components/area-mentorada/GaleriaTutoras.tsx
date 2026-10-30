@@ -71,7 +71,7 @@ export function GaleriaTutoras({ tutoras }: { tutoras: TutoraDoHub[] }) {
             >
               <Foto tutora={t} className="h-28 w-full transition group-hover:brightness-105" carregar="lazy" />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-2.5">
-                <p className="text-[11.5px] font-medium leading-tight">{t.nome}</p>
+                <p className="text-[12.5px] font-medium leading-tight">{t.nome}</p>
                 <Etiquetas itens={t.especialidades} />
               </div>
             </button>
@@ -116,7 +116,7 @@ function Etiquetas({ itens, suave }: { itens: string[]; suave?: boolean }) {
         <li
           key={i}
           title={i}
-          className={`max-w-full rounded px-1 py-px text-[9.5px] leading-snug break-words hyphens-auto ${suave ? 'bg-superficie-2 text-texto-suave' : 'bg-marca-suave text-marca'}`}
+          className={`max-w-full rounded px-1 py-px text-[10.5px] leading-snug break-words hyphens-auto ${suave ? 'bg-superficie-2 text-texto-suave' : 'bg-marca-suave text-marca'}`}
         >
           {i}
         </li>

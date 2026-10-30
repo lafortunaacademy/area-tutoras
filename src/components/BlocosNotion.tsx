@@ -73,7 +73,7 @@ function Bloco({ bloco, base }: { bloco: BlocoSimples; base?: (bloco: BlocoSimpl
         <div className="flex items-start gap-2.5">
           <span
             aria-hidden
-            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px] ${
               bloco.marcado
                 ? 'border-ok bg-ok-suave text-ok'
                 : 'border-borda'
@@ -173,7 +173,7 @@ function Bloco({ bloco, base }: { bloco: BlocoSimples; base?: (bloco: BlocoSimpl
     case 'table':
       return (
         <div className="overflow-x-auto rounded-lg border border-borda">
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[14px]">
             <tbody>
               {bloco.filhos.map((linha, i) => {
                 const Celula = bloco.cabecalho && i === 0 ? 'th' : 'td';

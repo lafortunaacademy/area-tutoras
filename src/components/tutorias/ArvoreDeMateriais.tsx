@@ -117,7 +117,7 @@ function CopiarLink({ materialId }: { materialId: string }) {
       type="button"
       onClick={copiar}
       title="Copiar o link do formulário (o mesmo para todas as mentoradas)"
-      className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda bg-superficie px-2 py-1 text-[11px] font-medium text-texto-suave transition hover:border-marca hover:text-marca"
+      className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda bg-superficie px-2 py-1 text-[12px] font-medium text-texto-suave transition hover:border-marca hover:text-marca"
     >
       {estado === 'copiado' ? <Check aria-hidden size={12} /> : <Link2 aria-hidden size={12} />}
       {estado === 'copiado' ? 'Link copiado' : estado === 'erro' ? 'Não deu' : 'Link do formulário'}

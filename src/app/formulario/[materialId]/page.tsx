@@ -85,7 +85,7 @@ function Moldura({ acima, titulo, children }: { acima?: string; titulo?: string;
           priority
           className="logo-marca mx-auto h-8 w-auto"
         />
-        {acima ? <p className="mt-6 text-[11px] tracking-[0.3em] text-destaque uppercase">{acima}</p> : null}
+        {acima ? <p className="mt-6 text-[12px] tracking-[0.3em] text-destaque uppercase">{acima}</p> : null}
         {titulo ? <h1 className="display mt-2 text-3xl sm:text-4xl">{titulo}</h1> : null}
       </div>
       <div className="rounded-2xl border border-borda bg-superficie p-5 sm:p-7">{children}</div>

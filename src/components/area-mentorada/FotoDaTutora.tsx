@@ -15,7 +15,7 @@ export function FotoDaTutora({ id, nome }: { id: string; nome: string }) {
     return (
       <span
         aria-hidden
-        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[10px] font-medium text-texto"
+        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[11px] font-medium text-texto"
       >
         {nome.charAt(0)}
       </span>

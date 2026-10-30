@@ -90,7 +90,7 @@ export default async function InicioPage() {
           <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
             {atuacao.map((c) => (
               <div key={c.rotulo}>
-                <dt className="rotulo text-[10px] text-destaque">{c.rotulo}</dt>
+                <dt className="rotulo text-[11px] text-destaque">{c.rotulo}</dt>
                 <dd className="mt-1 text-sm leading-relaxed">{c.valor}</dd>
               </div>
             ))}
@@ -129,7 +129,7 @@ export default async function InicioPage() {
 function Numero({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?: string }) {
   return (
     <div className="rounded-xl border border-borda bg-superficie p-5">
-      <p className="rotulo text-[10px] text-destaque">{rotulo}</p>
+      <p className="rotulo text-[11px] text-destaque">{rotulo}</p>
       <p className="display mt-2 text-3xl leading-none">{valor}</p>
       {nota ? <p className="mt-2 text-xs text-texto-suave">{nota}</p> : null}
     </div>
@@ -139,7 +139,7 @@ function Numero({ rotulo, valor, nota }: { rotulo: string; valor: string; nota?:
 function Secao({ titulo, nota, children }: { titulo: string; nota?: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
-      <h2 className="rotulo mb-1 text-[11px] text-texto-suave">{titulo}</h2>
+      <h2 className="rotulo mb-1 text-[12px] text-texto-suave">{titulo}</h2>
       {nota ? <p className="mb-3 text-xs text-texto-suave">{nota}</p> : null}
       {!nota ? <div className="mb-3" /> : null}
       {children}

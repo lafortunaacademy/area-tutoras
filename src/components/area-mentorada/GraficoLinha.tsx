@@ -88,7 +88,7 @@ export function GraficoLinha({
                 title={`${pontos[p.i].rotulo}: ${cheio(p.v)}`}
               >
                 <span className="block size-2 rounded-full border-2 border-superficie" style={{ background: cor }} />
-                <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-[9.5px] whitespace-nowrap text-texto-suave tabular-nums">
+                <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-[10.5px] whitespace-nowrap text-texto-suave tabular-nums">
                   {rotuloCurto(p.v, formato)}
                 </span>
               </div>
@@ -103,7 +103,7 @@ export function GraficoLinha({
 
           <div aria-hidden className="mt-2 flex">
             {pontos.map((p, i) => (
-              <span key={i} className="min-w-0 flex-1 truncate text-center text-[10px] text-texto-suave">
+              <span key={i} className="min-w-0 flex-1 truncate text-center text-[11px] text-texto-suave">
                 {p.rotulo}
               </span>
             ))}
@@ -141,7 +141,7 @@ export function Eixo({
       {marcas.map((m) => (
         <span
           key={m}
-          className="absolute right-0 -translate-y-1/2 text-[9.5px] whitespace-nowrap text-texto-suave/80 tabular-nums"
+          className="absolute right-0 -translate-y-1/2 text-[10.5px] whitespace-nowrap text-texto-suave/80 tabular-nums"
           style={{ top: `${y(m)}%` }}
         >
           {rotuloCurto(m, formato)}

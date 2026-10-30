@@ -21,7 +21,7 @@ export function SessoesDoPilar({ mentoradaId, sessoes }: { mentoradaId: string; 
           <thead>
             <tr className="border-b border-borda text-left">
               {['Status', 'Sessão', 'Tutoras', 'Data realizada', ''].map((c, i) => (
-                <th key={i} className="px-3 py-1 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                <th key={i} className="px-3 py-1 text-[12px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}

@@ -29,7 +29,7 @@ export function FormularioLogin({ proximo }: { proximo?: string | null }) {
       </p>
 
       <div>
-        <label htmlFor="email" className="mb-2 block text-[11px] font-medium tracking-[0.18em] text-texto-suave uppercase">
+        <label htmlFor="email" className="mb-2 block text-[12px] font-medium tracking-[0.18em] text-texto-suave uppercase">
           E-mail
         </label>
         <input

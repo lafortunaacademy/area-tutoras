@@ -197,7 +197,7 @@ function Secao({
   return (
     <section id={ancora} className="mb-10 scroll-mt-24">
       <div className="mb-3 flex items-center justify-between gap-4">
-        <h2 className="rotulo text-[11px] text-texto-suave">{titulo}</h2>
+        <h2 className="rotulo text-[12px] text-texto-suave">{titulo}</h2>
         {acao}
       </div>
       {children}

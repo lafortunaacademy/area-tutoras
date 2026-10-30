@@ -203,7 +203,7 @@ export function PainelDoFormulario({
 
       {enviados.length && mostrarEnviadas ? (
         <div className="space-y-2">
-          <p className="text-[11px] font-medium tracking-[0.14em] text-texto-suave uppercase">
+          <p className="text-[12px] font-medium tracking-[0.14em] text-texto-suave uppercase">
             {rotulo.lista} ({enviados.length})
           </p>
           <ul className="space-y-2">
@@ -279,7 +279,7 @@ function CaixaDeEnvio({
         className="flex w-full items-center gap-2.5 rounded-lg border border-borda bg-superficie px-3 py-2.5 text-left text-sm transition hover:border-marca hover:shadow-[var(--sombra)]"
       >
         <span className="font-medium">{titulo}</span>
-        {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[10.5px] text-ok">mais recente</span> : null}
+        {maisRecente ? <span className="rounded-full bg-ok-suave px-2 py-0.5 text-[11.5px] text-ok">mais recente</span> : null}
         <ChevronRight aria-hidden size={14} className="ml-auto shrink-0 text-texto-suave" />
       </button>
 

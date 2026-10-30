@@ -202,6 +202,17 @@
  * tamanho e também nas classes leading-* usadas pelos componentes.
  */
 @theme {
+  /*
+   * A Neue Montreal tem o corpo da letra mais baixo que a fonte anterior: no
+   * mesmo tamanho em pixels ela parece menor. A escala sobe um ponto para o
+   * texto voltar a ler bem.
+   */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.375rem;
+
   --text-xs--line-height: 1.15;
   --text-sm--line-height: 1.15;
   --text-base--line-height: 1.15;

@@ -68,7 +68,7 @@ export function Cabecalho({
                   key={a.chave}
                   href={a.href}
                   aria-current={a.chave === area ? 'page' : undefined}
-                  className={`rounded-md px-2 py-1 text-[11px] whitespace-nowrap transition sm:px-2.5 sm:text-xs ${
+                  className={`rounded-md px-2 py-1 text-[12px] whitespace-nowrap transition sm:px-2.5 sm:text-xs ${
                     a.chave === area
                       ? 'bg-marca font-medium text-marca-contraste'
                       : 'text-texto-suave hover:text-texto'
@@ -104,7 +104,7 @@ export function Cabecalho({
             ) : (
               <span
                 aria-hidden
-                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[9px] font-medium text-marca"
+                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[10px] font-medium text-marca"
               >
                 {iniciais(nome)}
               </span>

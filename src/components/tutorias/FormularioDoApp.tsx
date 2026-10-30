@@ -162,7 +162,7 @@ function CampoTexto({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: s
         placeholder="Escreva sua resposta"
         className="w-full resize-y rounded-lg border border-borda bg-superficie px-3 py-2 text-sm outline-none transition focus:border-marca focus:ring-2 focus:ring-marca/20"
       />
-      <p className="h-4 text-right text-[11px] text-texto-suave" aria-live="polite">
+      <p className="h-4 text-right text-[12px] text-texto-suave" aria-live="polite">
         {estado === 'salvando' ? 'Salvando…' : estado === 'salvo' ? 'Salvo' : estado === 'erro' ? <span className="text-parado">Não salvou. Saia do campo de novo para tentar.</span> : ''}
       </p>
     </div>
@@ -205,8 +205,8 @@ function Opcoes({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
           </label>
         );
       })}
-      {estado === 'salvando' ? <p className="text-[11px] text-texto-suave">Salvando…</p> : null}
-      {estado === 'erro' ? <p className="text-[11px] text-parado">Não salvou. Tente de novo.</p> : null}
+      {estado === 'salvando' ? <p className="text-[12px] text-texto-suave">Salvando…</p> : null}
+      {estado === 'erro' ? <p className="text-[12px] text-parado">Não salvou. Tente de novo.</p> : null}
     </div>
   );
 }
@@ -523,17 +523,17 @@ function Tabela({ pergunta, inicial, ctx }: { pergunta: Pergunta; inicial: strin
   };
 
   const celula =
-    'w-full min-w-24 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[13px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
+    'w-full min-w-24 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[14px] outline-none placeholder:text-texto-suave focus:border-borda focus:bg-superficie';
 
   return (
     <div className="space-y-1.5">
       <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[14px]">
           <thead>
             <tr className="border-b border-borda text-left">
               {ctx.podeEditar ? <th className="w-8" /> : null}
               {colunas.map((c) => (
-                <th key={c} className="px-3 py-2 text-[11px] font-medium whitespace-nowrap text-texto-suave">
+                <th key={c} className="px-3 py-2 text-[12px] font-medium whitespace-nowrap text-texto-suave">
                   {c}
                 </th>
               ))}

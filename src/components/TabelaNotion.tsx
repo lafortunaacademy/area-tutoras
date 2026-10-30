@@ -46,13 +46,13 @@ export function TabelaNotion({
   return (
     <>
       <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
-        <table className="w-full min-w-[36rem] table-fixed text-[13px]">
+        <table className="w-full min-w-[36rem] table-fixed text-[14px]">
           <thead>
             <tr className="border-b border-borda text-left">
               {colunas.map((c) => (
                 <th
                   key={c.nome}
-                  className={`rotulo px-4 py-2 text-[10px] font-normal whitespace-nowrap text-texto-suave ${c.largura ?? ''}`}
+                  className={`rotulo px-4 py-2 text-[11px] font-normal whitespace-nowrap text-texto-suave ${c.largura ?? ''}`}
                 >
                   {c.nome}
                 </th>

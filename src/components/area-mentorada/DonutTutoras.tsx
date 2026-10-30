@@ -86,7 +86,7 @@ export function DonutTutoras({
           ) : destaque ? (
             <>
               <span className="display text-4xl leading-none">{destaque.total}</span>
-              <span className="mt-1 line-clamp-2 text-[11px] leading-tight text-texto-suave">{destaque.rotulo}</span>
+              <span className="mt-1 line-clamp-2 text-[12px] leading-tight text-texto-suave">{destaque.rotulo}</span>
             </>
           ) : (
             <>
@@ -109,7 +109,7 @@ export function DonutTutoras({
               onMouseLeave={() => setAtiva(null)}
               onFocus={() => setAtiva(f.rotulo)}
               onBlur={() => setAtiva(null)}
-              className="flex min-w-0 cursor-default items-center gap-1.5 rounded text-[10.5px] leading-tight outline-none focus-visible:ring-2 focus-visible:ring-marca/30"
+              className="flex min-w-0 cursor-default items-center gap-1.5 rounded text-[11.5px] leading-tight outline-none focus-visible:ring-2 focus-visible:ring-marca/30"
             >
               <span aria-hidden className="size-2 shrink-0 rounded-sm" style={{ background: f.cor }} />
               <span className="min-w-0 flex-1 text-texto">

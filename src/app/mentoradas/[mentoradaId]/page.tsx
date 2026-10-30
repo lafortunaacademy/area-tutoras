@@ -129,7 +129,7 @@ export default async function AreaDaMentoradaPage({
             className="relative flex items-center justify-center rounded-xl border border-borda bg-superficie-2 px-4 py-2.5 text-xs font-medium tracking-wide text-texto-suave uppercase"
           >
             Universo La Fortuna
-            <span className="absolute right-2 bottom-1 text-[8px] tracking-wide opacity-70">em breve</span>
+            <span className="absolute right-2 bottom-1 text-[9px] tracking-wide opacity-70">em breve</span>
           </span>
         </div>
       </header>

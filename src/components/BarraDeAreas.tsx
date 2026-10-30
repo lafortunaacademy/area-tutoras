@@ -44,7 +44,7 @@ export function BarraDeAreas({ nome, fotoId }: { nome: string; fotoId?: string |
           />
         </Link>
 
-        <p className="px-3 pb-2 text-[10px] tracking-[0.18em] uppercase opacity-60">Áreas</p>
+        <p className="px-3 pb-2 text-[11px] tracking-[0.18em] uppercase opacity-60">Áreas</p>
 
         {AREAS.map((a) => {
           const aqui = caminho === a.base || caminho.startsWith(`${a.base}/`);
@@ -61,8 +61,8 @@ export function BarraDeAreas({ nome, fotoId }: { nome: string; fotoId?: string |
             >
               <Icone aria-hidden size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" />
               <span className="min-w-0">
-                <span className="block text-[13px] leading-snug">{a.rotulo}</span>
-                <span className="mt-0.5 block text-[11px] leading-snug opacity-60">{a.detalhe}</span>
+                <span className="block text-[14px] leading-snug">{a.rotulo}</span>
+                <span className="mt-0.5 block text-[12px] leading-snug opacity-60">{a.detalhe}</span>
               </span>
             </Link>
           );
@@ -70,13 +70,13 @@ export function BarraDeAreas({ nome, fotoId }: { nome: string; fotoId?: string |
         {/* Quem está logada, o tema e a saída: tudo o que era do cabeçalho
             mora aqui, no pé da barra. */}
         <div className="mt-auto border-t border-marca-contraste/15 pt-3">
-          <div className="flex items-center gap-2 px-3 py-2 text-[13px]">
+          <div className="flex items-center gap-2 px-3 py-2 text-[14px]">
             {fotoId ? (
               <FotoDaTutora id={fotoId} nome={nome} />
             ) : (
               <span
                 aria-hidden
-                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-contraste/20 text-[9px] font-medium"
+                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-contraste/20 text-[10px] font-medium"
               >
                 {iniciais(nome)}
               </span>

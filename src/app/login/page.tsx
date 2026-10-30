@@ -52,14 +52,14 @@ export default async function LoginPage({
           {/* Quem chega por um formulário é mentorada: o texto é para ela. */}
           {voltarPara?.startsWith('/formulario/') ? (
             <>
-              <p className="mt-6 text-[11px] tracking-[0.35em] text-destaque uppercase">Formulário da tutoria</p>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">Formulário da tutoria</p>
               <p className="mt-3 text-sm text-texto-suave sm:text-base">
                 Entre com o seu e-mail para responder. O link de acesso chega na sua caixa de entrada.
               </p>
             </>
           ) : (
             <>
-              <p className="mt-6 text-[11px] tracking-[0.35em] text-destaque uppercase">Painel interno</p>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">Painel interno</p>
               <p className="mt-3 text-sm text-texto-suave sm:text-base">
                 Área da equipe. Entre pelo link que chega no seu e-mail.
               </p>

@@ -10,7 +10,7 @@ export function EtiquetaSessao({ tipo, cor }: { tipo: string; cor?: string }) {
   const par = cor || 'etiqueta-1';
   return (
     <span
-      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap"
+      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[12px] font-medium whitespace-nowrap"
       style={{ backgroundColor: `var(--${par})`, color: `var(--${par}-texto)` }}
     >
       {tipo}

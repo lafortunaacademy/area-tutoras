@@ -30,7 +30,7 @@ export function LinhaDoTempo({ marcos = [] }: { marcos?: MarcoNaLinha[] }) {
             {MESES.map((m, i) => (
               <span
                 key={m}
-                className={`px-2 pb-2 text-[11px] ${i === mesAtual ? 'font-medium text-marca' : 'text-texto-suave'}`}
+                className={`px-2 pb-2 text-[12px] ${i === mesAtual ? 'font-medium text-marca' : 'text-texto-suave'}`}
               >
                 {m}
                 {i === 0 ? <span className="ml-1 text-destaque">{ano}</span> : null}
@@ -58,7 +58,7 @@ export function LinhaDoTempo({ marcos = [] }: { marcos?: MarcoNaLinha[] }) {
               return (
                 <div
                   key={m.id}
-                  className="absolute flex max-w-[12rem] items-center gap-1.5 rounded-full border border-borda bg-superficie py-0.5 pr-2.5 pl-1.5 text-[11px] shadow-[var(--sombra)]"
+                  className="absolute flex max-w-[12rem] items-center gap-1.5 rounded-full border border-borda bg-superficie py-0.5 pr-2.5 pl-1.5 text-[12px] shadow-[var(--sombra)]"
                   style={{
                     left: `${x}%`,
                     top: `${12 + (i % 3) * 36}px`,
