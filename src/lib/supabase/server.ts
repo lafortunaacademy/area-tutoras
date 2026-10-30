@@ -1,15 +1,19 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { COOKIE_DA_SESSAO, dominioDoCookie } from '@/lib/portas';
 
 /** Client do Supabase para Server Components / Server Actions / Route Handlers. */
 export async function supabaseServer() {
   const cookieStore = await cookies();
+  const dominio = dominioDoCookie((await headers()).get('host'));
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // O crachá vale para as três portas: mesmo nome e mesmo domínio nas três.
+      cookieOptions: { name: COOKIE_DA_SESSAO, domain: dominio },
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {

@@ -41,3 +41,31 @@ export function urlDaPorta(porta: Porta, email?: string): string {
   if (email) url.searchParams.set('email', email);
   return url.toString();
 }
+
+/**
+ * O crachá vale para os três endereços, não para um só.
+ *
+ * Cada subdomínio é um site diferente aos olhos do navegador, com o seu
+ * próprio cofre de cookies: entrar em `tutorias.` não entrava em `equipe.`.
+ * Dizendo que o cookie é do domínio inteiro, uma entrada basta para as três
+ * portas, e quem administra para de digitar e-mail a cada endereço.
+ *
+ * Fora da produção devolve `undefined`: em localhost o navegador recusa um
+ * cookie de outro domínio e a sessão simplesmente não existiria.
+ */
+const DOMINIO = 'lafortunaacademy.com.br';
+
+export function dominioDoCookie(host: string | null): string | undefined {
+  const limpo = host?.split(':')[0].toLowerCase();
+  return limpo?.endsWith(DOMINIO) ? `.${DOMINIO}` : undefined;
+}
+
+/**
+ * O nome do cookie de sessão.
+ *
+ * Mudou junto com o domínio de propósito: os cookies antigos valiam para um
+ * subdomínio só e, com o mesmo nome, os dois conviveriam e o navegador
+ * mandaria os dois. O nome novo ignora os velhos de uma vez. O preço é uma
+ * última entrada para quem já estava conectada.
+ */
+export const COOKIE_DA_SESSAO = 'lafortuna-auth';

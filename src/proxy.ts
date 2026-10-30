@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { COOKIE_DA_SESSAO, dominioDoCookie } from '@/lib/portas';
 
 /**
  * Só renova o cookie de sessão do Supabase (no Next 16 isto se chama proxy,
@@ -27,6 +28,8 @@ async function renovarSessao(request: NextRequest, inicial: NextResponse) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // O mesmo crachá das três portas: ver `portas.ts`.
+      cookieOptions: { name: COOKIE_DA_SESSAO, domain: dominioDoCookie(request.headers.get('host')) },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
