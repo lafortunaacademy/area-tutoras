@@ -18,6 +18,8 @@ import { tarefasDaMentorada } from './tarefas';
 export type ResumoDaMentorada = {
   mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria' | 'situacao' | 'corSituacao'>;
   precisaAgendar: boolean;
+  /** O que falta marcar: tutoria (com as tutoras), sessão (com a Fernanda) ou as duas. */
+  faltaAgendar: ('tutoria' | 'sessao')[];
   /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
   proximaAAgendar: string | null;
   realizadas: number;
@@ -27,11 +29,14 @@ export type ResumoDaMentorada = {
   /** "2026-09-10", a sessão realizada mais recente com data. */
   ultimaSessao: string | null;
   diasSemSessao: number | null;
+  /** O ciclo dela: o mais recente marcado nas sessões da mentorada. */
+  ciclo: string;
   /** Não foi possível ler algo desta mentorada agora. */
   incompleto: boolean;
 };
 
 export type VisaoGeral = {
+  /** O ciclo mais recente do controle, só para dizer de onde a visão fala. */
   ciclo: string;
   mentoradas: ResumoDaMentorada[];
 };
@@ -60,18 +65,33 @@ export async function visaoGeral(): Promise<VisaoGeral> {
   return { ciclo, mentoradas: resumos };
 }
 
-async function resumir(m: Mentorada, hoje: string, ciclo: string): Promise<ResumoDaMentorada> {
+async function resumir(m: Mentorada, hoje: string, cicloDoControle: string): Promise<ResumoDaMentorada> {
   const [sessoes, tarefas] = await Promise.all([
     sessoesPorCiclo(m).catch(() => null),
     tarefasDaMentorada(m.id).catch(() => null),
   ]);
 
+  // O ciclo é o dela, não o do controle: cada mentorada anda no seu ritmo, e
+  // olhar um ciclo em que ela não tem nada mostraria uma tela de zeros.
+  const ciclo = sessoes?.ciclos[0] ?? cicloDoControle;
   const doCiclo = (sessoes?.sessoes ?? []).filter((s) => s.ciclo === ciclo);
   const realizadas = doCiclo.filter((s) => s.status === TUTORIA_REALIZADA);
   const aRealizar = doCiclo.filter((s) => TUTORIA_A_REALIZAR.includes(s.status));
-  const agendada = aRealizar.some(
-    (s) => s.status === AGENDADO || (s.dataPrevista !== null && s.dataPrevista.slice(0, 10) >= hoje),
-  );
+  const temHora = (s: (typeof aRealizar)[number]) =>
+    s.status === AGENDADO || (s.dataPrevista !== null && s.dataPrevista.slice(0, 10) >= hoje);
+  const agendada = aRealizar.some(temHora);
+
+  // Quem marca cada coisa é gente diferente: a tutoria é com a tutora, o resto
+  // (check-in, planejamento, call SOS) é com a Fernanda. Por isso a falta é
+  // apurada separada, pelo tipo da sessão.
+  const ehTutoria = (s: (typeof aRealizar)[number]) => s.tipo.toLowerCase().startsWith('tutoria');
+  const faltaAgendar: ('tutoria' | 'sessao')[] = [];
+  for (const [chave, dessas] of [
+    ['tutoria', aRealizar.filter(ehTutoria)],
+    ['sessao', aRealizar.filter((s) => !ehTutoria(s))],
+  ] as const) {
+    if (dessas.length > 0 && !dessas.some(temHora)) faltaAgendar.push(chave);
+  }
 
   const ultimaSessao =
     (sessoes?.sessoes ?? [])
@@ -85,6 +105,7 @@ async function resumir(m: Mentorada, hoje: string, ciclo: string): Promise<Resum
   return {
     mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, situacao: m.situacao, corSituacao: m.corSituacao },
     precisaAgendar: aRealizar.length > 0 && !agendada,
+    faltaAgendar,
     proximaAAgendar: aRealizar[0]?.sessao || null,
     realizadas: realizadas.length,
     aRealizar: aRealizar.length,
@@ -92,6 +113,7 @@ async function resumir(m: Mentorada, hoje: string, ciclo: string): Promise<Resum
     tarefasAtrasadas: atrasadas.length,
     ultimaSessao,
     diasSemSessao: ultimaSessao ? diasEntre(ultimaSessao, hoje) : null,
+    ciclo,
     incompleto: sessoes === null || tarefas === null,
   };
 }

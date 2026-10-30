@@ -41,20 +41,22 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
     );
   }
 
-  const { ciclo, mentoradas } = dados;
+  const { mentoradas } = dados;
   if (mentoradas.length === 0) {
     return <p className="mt-8 text-sm text-texto-suave">Nenhuma mentorada está na área de membros nova ainda.</p>;
   }
 
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
   const comAtraso = mentoradas.filter((m) => m.tarefasAtrasadas > 0).length;
-  const semAgenda = mentoradas.filter((m) => m.precisaAgendar);
+  // Falta tutoria, falta sessão com a Fernanda, ou as duas: quem marca é gente
+  // diferente, então basta faltar uma para a mentorada entrar na lista.
+  const semAgenda = mentoradas.filter((m) => m.faltaAgendar.length > 0);
 
   return (
     <>
       <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Numero rotulo="Mentoradas" valor={mentoradas.length} detalhe="no modelo novo" />
-        <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} detalhe={`no ${ciclo}`} />
+        <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} detalhe="no ciclo de cada uma" />
         <Numero
           rotulo="Tarefas atrasadas"
           valor={soma((m) => m.tarefasAtrasadas)}
@@ -64,7 +66,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
       <Secao
         titulo="Alertas de acompanhamento"
-        descricao={`Quem ainda tem sessão a realizar no ${ciclo} e nenhuma agendada (nem status Agendado, nem data prevista de hoje em diante).`}
+        descricao="Quem ainda tem o que marcar no ciclo em que está: tutoria com a tutora, sessão com a Fernanda, ou as duas. Conta como marcada a sessão com status Agendado ou com data prevista de hoje em diante."
       >
         {semAgenda.length === 0 ? (
           <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
@@ -75,7 +77,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
             <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Situação', 'Mentorada', 'Próxima a agendar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
+                  {['Situação', 'Mentorada', 'O que falta marcar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
                     <th key={c} className="px-4 py-2.5 text-[12px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
@@ -101,10 +103,17 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                       </Link>
                     </td>
                     <td className="px-4 py-2.5">
-                      <span className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[11.5px] font-medium tracking-wide text-andamento uppercase">
-                        Agendar
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        {m.faltaAgendar.map((o) => (
+                          <span
+                            key={o}
+                            className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-andamento"
+                          >
+                            {o === 'tutoria' ? 'Tutoria' : 'Sessão com a Fernanda'}
+                          </span>
+                        ))}
+                        {m.proximaAAgendar ? <span className="text-texto-suave">{m.proximaAAgendar}</span> : null}
                       </span>
-                      <span className="ml-2">{m.proximaAAgendar ?? ''}</span>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
                       {m.aRealizar} {m.aRealizar === 1 ? 'sessão' : 'sessões'}
@@ -121,7 +130,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
         )}
       </Secao>
 
-      <Secao titulo="Onde cada mentorada está" descricao={`Sessões realizadas no ${ciclo}, de todas as previstas.`}>
+      <Secao titulo="Onde cada mentorada está" descricao="Sessões realizadas no ciclo de cada uma, de todas as previstas.">
         <ul className="space-y-3 rounded-xl border border-borda bg-superficie p-4 sm:p-5">
           {/* Aqui a ordem é alfabética; nos alertas, pela situação. */}
           {[...mentoradas]
