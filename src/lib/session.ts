@@ -192,7 +192,9 @@ export async function exigirAcessoAMentorada(mentoradaId: string): Promise<Visit
 
 /** Para onde mandar quem acabou de entrar. */
 export async function destinoDepoisDoLogin(): Promise<string> {
-  if (await getSessao()) return '/painel';
+  const sessao = await getSessao();
+  // Quem administra abre na área inicial, que é a dela; a tutora abre no painel.
+  if (sessao) return sessao.real.is_admin ? '/admin' : '/painel';
   const acesso = await getAcessoMentorada();
   return acesso ? `/mentoradas/${acesso.notion_page_id}` : '/painel';
 }

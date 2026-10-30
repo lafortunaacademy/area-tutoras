@@ -59,11 +59,24 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
     <>
       <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} />
-        <Numero rotulo="Sessões para agendar" valor={aAgendar} />
-        <Numero rotulo="Briefings pendentes" valor={briefings} />
+        {/* Os dois números que viram trabalho levam para a tabela que diz quais
+            são, e já adiantam a lista quando o cursor passa por cima. */}
+        <Numero
+          rotulo="Sessões para agendar"
+          valor={aAgendar}
+          href="#alertas"
+          dica={listar(mentoradas, (m) => m.paraAgendar.map((x) => x.sessao))}
+        />
+        <Numero
+          rotulo="Briefings pendentes"
+          valor={briefings}
+          href="#alertas"
+          dica={listar(mentoradas, (m) => m.semBriefing.map((b) => `${b.sessao} (${b.tutora})`))}
+        />
       </ul>
 
       <Secao
+        id="alertas"
         titulo="Alertas de acompanhamento"
         descricao="As sessões marcadas como Agendar no Notion, mais o combinado do mês: no mínimo uma tutoria e uma sessão com a Fernanda, realizadas ou marcadas. Quem tem tutoria marcada sem briefing também aparece."
       >
@@ -182,18 +195,54 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
 const fracao = (m: ResumoDaMentorada) => (m.total ? m.realizadas / m.total : 0);
 
-function Numero({ rotulo, valor }: { rotulo: string; valor: number }) {
-  return (
-    <li className="rounded-xl border border-borda bg-superficie px-4 py-3">
+/** Uma linha por mentorada, para o balão do cursor: "Teste: Pessoas, Planejamento". */
+function listar(mentoradas: ResumoDaMentorada[], de: (m: ResumoDaMentorada) => string[]): string | undefined {
+  const linhas = mentoradas
+    .map((m) => [m.mentorada.nome, de(m)] as const)
+    .filter(([, itens]) => itens.length > 0)
+    .map(([nome, itens]) => `${nome}: ${itens.join(', ')}`);
+
+  return linhas.length > 0 ? linhas.join('\n') : undefined;
+}
+
+function Numero({ rotulo, valor, href, dica }: { rotulo: string; valor: number; href?: string; dica?: string }) {
+  const dentro = (
+    <>
       <p className="text-[11.5px] tracking-[0.12em] text-texto-suave uppercase">{rotulo}</p>
       <p className="display mt-1 text-3xl tabular-nums">{valor}</p>
+    </>
+  );
+
+  if (!href || valor === 0) {
+    return <li className="rounded-xl border border-borda bg-superficie px-4 py-3">{dentro}</li>;
+  }
+
+  return (
+    <li>
+      <a
+        href={href}
+        title={dica}
+        className="block h-full rounded-xl border border-borda bg-superficie px-4 py-3 transition hover:border-marca"
+      >
+        {dentro}
+      </a>
     </li>
   );
 }
 
-function Secao({ titulo, descricao, children }: { titulo: string; descricao: string; children: React.ReactNode }) {
+function Secao({
+  titulo,
+  descricao,
+  children,
+  id,
+}: {
+  titulo: string;
+  descricao: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
   return (
-    <section className="mt-10">
+    <section id={id} className="mt-10 scroll-mt-6">
       <h2 className="display text-2xl text-marca">{titulo}</h2>
       <p className="mt-1 mb-4 text-sm text-texto-suave">{descricao}</p>
       {children}
