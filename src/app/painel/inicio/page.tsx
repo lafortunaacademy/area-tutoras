@@ -213,26 +213,24 @@ function Agendada({
 /**
  * Um produto de que ela é tutora: My Partner, Pronta Para Fazer Dinheiro.
  *
- * Cada um tem a própria marca, e é ela que a tutora reconhece. Enquanto os
- * arquivos não chegam, fica o monograma: a inicial no círculo da marca.
+ * Cada um tem o próprio símbolo, que é como a tutora reconhece o produto. Os
+ * arquivos são os oficiais da marca, no café; no tema escuro eles invertem,
+ * como o logotipo da La Fortuna.
  */
+const SIMBOLOS: { contem: RegExp; arquivo: string }[] = [
+  { contem: /my\s*partner/i, arquivo: '/marca/produtos/my-partner.png' },
+  { contem: /pronta.*dinheiro/i, arquivo: '/marca/produtos/ppfd.png' },
+];
+
 function Programa({ nome }: { nome: string }) {
-  const sigla = nome
-    .split(/\s+/)
-    .filter((p) => p.length > 2)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase();
+  const simbolo = SIMBOLOS.find((s) => s.contem.test(nome))?.arquivo;
 
   return (
     <span className="flex items-center gap-2 text-sm">
-      <span
-        aria-hidden
-        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-marca text-[11px] font-medium text-marca-contraste"
-      >
-        {sigla}
-      </span>
+      {simbolo ? (
+        // eslint-disable-next-line @next/next/no-img-element -- símbolo pequeno, sem ganho em otimizar
+        <img src={simbolo} alt="" className="logo-marca h-6 w-auto shrink-0" />
+      ) : null}
       {nome}
     </span>
   );
