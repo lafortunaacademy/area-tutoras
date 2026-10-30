@@ -46,11 +46,6 @@ async function renovarSessao(request: NextRequest, inicial: NextResponse) {
   );
 
   await supabase.auth.getUser();
-
-  // Marca de que a renovação passou por aqui. É o único jeito de saber, de
-  // fora, se o proxy está mesmo rodando em produção: sem ele o cookie de
-  // sessão nunca é renovado e a pessoa é deslogada quando o token vence.
-  response.headers.set('x-sessao-renovada', '1');
   return response;
 }
 
