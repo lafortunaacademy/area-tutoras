@@ -14,6 +14,14 @@ export async function supabaseServer() {
     {
       // O crachá vale para as três portas: mesmo nome e mesmo domínio nas três.
       cookieOptions: { name: COOKIE_DA_SESSAO, domain: dominio },
+      // Sem PKCE no link do e-mail.
+      //
+      // No modo padrão o Supabase manda um código que só fecha com a metade
+      // guardada no navegador que pediu: abrir o e-mail no celular, ou em
+      // outro perfil, não entra. Aqui o link leva um token que o nosso próprio
+      // /auth/callback confere com o Supabase, e por isso vale em qualquer
+      // navegador. É o que torna o link do e-mail um link de verdade.
+      auth: { flowType: 'implicit' },
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
