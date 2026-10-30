@@ -1,8 +1,9 @@
 import { exigirVisitante } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
-import { BarraDeAreas } from '@/components/BarraDeAreas';
+import { BarraDeAreas, type ItemDaBarra } from '@/components/BarraDeAreas';
+import { FaixaDaMarca } from '@/components/FaixaDaMarca';
 import { Cabecalho } from '@/components/Cabecalho';
-import { MenuMentoradas, type SecaoMenu } from '@/components/MenuMentoradas';
+import type { SecaoMenu } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
 import { AtalhosNoCelular } from '@/components/area-mentorada/AtalhosNoCelular';
 
@@ -32,32 +33,47 @@ export default async function MentoradasLayout({ children }: { children: React.R
 
   return (
     <div className="flex min-h-dvh">
-      {/* A mentorada tem uma área só: a barra das áreas é de quem administra. */}
-      {visitante.admin ? <BarraDeAreas nome={visitante.nome} /> : null}
+      {/* A barra é de todo mundo; só o bloco das áreas é de quem administra. */}
+      <BarraDeAreas
+        nome={visitante.nome}
+        comAreas={visitante.admin}
+        secoes={
+          visitante.admin
+            ? ([
+                { href: '/mentoradas', base: '/mentoradas', rotulo: 'Visão geral', icone: 'inicio' },
+                {
+                  href: `/mentoradas/${mentoradas[0]?.id ?? ''}`,
+                  base: '/mentoradas/',
+                  rotulo: 'Mentoradas',
+                  icone: 'mentoradas',
+                  comLista: true,
+                },
+              ] as ItemDaBarra[])
+            : ([
+                {
+                  href: `/mentoradas/${visitante.mentoradaId}`,
+                  base: `/mentoradas/${visitante.mentoradaId}`,
+                  rotulo: 'Minha área',
+                  icone: 'membros',
+                  comLista: true,
+                },
+              ] as ItemDaBarra[])
+        }
+        mentoradas={visitante.admin ? mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto })) : []}
+        base="/mentoradas"
+        secoesDaMentorada={SECOES}
+      />
 
       <div className="min-w-0 flex-1">
         {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
             onde a barra não cabe. */}
-        <div className={visitante.admin ? 'lg:hidden' : ''}>
+        <div className="lg:hidden">
           <Cabecalho visitante={visitante} area="mentoradas" />
         </div>
 
-        <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-4 py-8 sm:px-6">
-          <aside className="hidden w-60 shrink-0 lg:block">
-            <div className="sticky top-8 h-[calc(100dvh-6rem)]">
-              <MenuMentoradas
-                base="/mentoradas"
-                inicio={
-                  visitante.admin
-                    ? { href: '/mentoradas', rotulo: 'Visão geral' }
-                    : { href: `/mentoradas/${visitante.mentoradaId}`, rotulo: 'Minha área' }
-                }
-                secoes={SECOES}
-                mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
-              />
-            </div>
-          </aside>
+        <FaixaDaMarca />
 
+        <div className="mx-auto flex w-full max-w-6xl px-4 py-8 sm:px-6">
           <main className="min-w-0 flex-1">
             <AtalhosNoCelular base="/mentoradas" secoes={SECOES} />
             {children}

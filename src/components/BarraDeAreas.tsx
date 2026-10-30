@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { rolarAte } from '@/lib/ancora';
+import type { SecaoMenu } from '@/components/MenuMentoradas';
 import { GraduationCap, Home, Search, Settings, Sparkles, Users } from 'lucide-react';
 import { BotaoTema } from '@/components/BotaoTema';
 import { FotoDaTutora } from '@/components/area-mentorada/FotoDaTutora';
@@ -53,6 +55,7 @@ export function BarraDeAreas({
   secoes = [],
   mentoradas = [],
   base = '/painel',
+  secoesDaMentorada = [],
 }: {
   nome: string;
   fotoId?: string | null;
@@ -64,6 +67,8 @@ export function BarraDeAreas({
   mentoradas?: { id: string; nome: string; foto: string | null }[];
   /** Onde mora a página de cada mentorada ("/painel", "/mentoradas"). */
   base?: string;
+  /** As partes da página da mentorada aberta, penduradas embaixo do nome dela. */
+  secoesDaMentorada?: SecaoMenu[];
 }) {
   const caminho = usePathname();
   const [busca, setBusca] = useState('');
@@ -74,6 +79,37 @@ export function BarraDeAreas({
     if (!termo) return mentoradas;
     return mentoradas.filter((m) => m.nome.toLowerCase().includes(termo));
   }, [busca, mentoradas]);
+
+  /** As partes da página de uma mentorada, recuadas embaixo do nome dela. */
+  const partes = (raiz: string) => {
+    if (secoesDaMentorada.length === 0) return null;
+
+    return (
+      <ul className="my-1 ml-4 space-y-px border-l border-marca-contraste/15 pl-2">
+        {secoesDaMentorada.map((sec) => {
+          const destino = `${raiz}${sec.rota ? `/${sec.rota}` : ''}${sec.ancora ? `#${sec.ancora}` : ''}`;
+          const naRota = sec.rota ? caminho.startsWith(`${raiz}/${sec.rota}`) : false;
+          return (
+            <li key={sec.rotulo}>
+              <Link
+                href={destino}
+                // Seção da própria página: rola até ela em vez de navegar.
+                onClick={(e) => {
+                  if (!sec.rota && sec.ancora && caminho === raiz && rolarAte(sec.ancora)) e.preventDefault();
+                }}
+                aria-current={naRota ? 'page' : undefined}
+                className={`block rounded-lg px-2.5 py-1 text-[12px] leading-snug transition ${
+                  naRota ? 'bg-marca-contraste/15 font-medium' : 'opacity-60 hover:bg-marca-contraste/10 hover:opacity-100'
+                }`}
+              >
+                {sec.rotulo}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   const lista = (
     <div className="mt-1 ml-4 flex min-h-0 flex-1 flex-col border-l border-marca-contraste/15 pl-2">
@@ -104,6 +140,8 @@ export function BarraDeAreas({
                 <Retrato nome={m.nome} foto={m.foto} />
                 <span className="min-w-0 flex-1 truncate">{m.nome}</span>
               </Link>
+
+              {aqui ? partes(`${base}/${m.id}`) : null}
             </li>
           );
         })}
@@ -116,7 +154,10 @@ export function BarraDeAreas({
   const item = (a: ItemDaBarra) => {
     const aqui = caminho === a.base || caminho.startsWith(`${a.base}/`);
     const Icone = ICONES[a.icone];
+    // Quem tem lista mostra a busca; quem não tem (a própria mentorada) mostra
+    // direto as partes da área dela.
     const comLista = a.comLista && mentoradas.length > 0;
+    const soPartes = a.comLista && mentoradas.length === 0;
 
     const link = (
       <Link
@@ -134,6 +175,15 @@ export function BarraDeAreas({
         </span>
       </Link>
     );
+
+    if (soPartes) {
+      return (
+        <div key={a.base} className="flex flex-col">
+          {link}
+          {partes(a.base)}
+        </div>
+      );
+    }
 
     if (!comLista) return link;
 
