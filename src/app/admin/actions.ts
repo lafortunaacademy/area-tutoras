@@ -195,3 +195,57 @@ export async function verComoMentorada(form: FormData) {
 
   redirect(`/mentoradas/${mentoradaId}`);
 }
+
+/** Nada de arquivo gigante vindo do navegador: 8 MB já é mais que uma foto de celular. */
+const MAIOR_FOTO = 8 * 1024 * 1024;
+
+/**
+ * O retrato de quem é do time e não tem página na base Tutoras.
+ *
+ * A imagem é reduzida aqui mesmo, para um quadrado de 192px em webp, e guardada
+ * inteira na linha da pessoa. São meia dúzia de retratos de uns 10 KB: um
+ * bucket de arquivos só para isso seria mais peça para dar manutenção.
+ */
+export async function salvarFoto(_anterior: EstadoAcesso, form: FormData): Promise<EstadoAcesso> {
+  await exigirAdmin();
+
+  const id = String(form.get('id') ?? '');
+  const arquivo = form.get('foto');
+  if (!id || !(arquivo instanceof File) || arquivo.size === 0) return { erro: 'Escolha uma imagem.' };
+  if (!arquivo.type.startsWith('image/')) return { erro: 'Isso não é uma imagem.' };
+  if (arquivo.size > MAIOR_FOTO) return { erro: 'A imagem é grande demais. Tente uma menor que 8 MB.' };
+
+  const { default: sharp } = await import('sharp');
+  let webp: Buffer;
+  try {
+    webp = await sharp(Buffer.from(await arquivo.arrayBuffer()))
+      .rotate()
+      .resize(192, 192, { fit: 'cover', position: 'top' })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch {
+    return { erro: 'Não consegui ler essa imagem. Tente um JPG ou PNG.' };
+  }
+
+  const { error } = await supabaseAdmin()
+    .from('tutoras')
+    .update({ foto: `data:image/webp;base64,${webp.toString('base64')}` })
+    .eq('id', id);
+
+  if (error) return { erro: 'Não consegui guardar a foto agora.' };
+
+  revalidatePath('/admin');
+  revalidatePath('/painel', 'layout');
+  return { ok: 'Foto atualizada.' };
+}
+
+/** Tira o retrato e devolve a pessoa às iniciais. */
+export async function removerFoto(form: FormData) {
+  await exigirAdmin();
+  const id = String(form.get('id') ?? '');
+  if (!id) return;
+
+  await supabaseAdmin().from('tutoras').update({ foto: null }).eq('id', id);
+  revalidatePath('/admin');
+  revalidatePath('/painel', 'layout');
+}

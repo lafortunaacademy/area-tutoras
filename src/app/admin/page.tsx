@@ -39,6 +39,8 @@ export default async function AdminPage() {
     email: t.email,
     ativa: t.ativa,
     admin: t.is_admin,
+    fotoId: t.notion_tutora_page_id,
+    foto: t.foto,
     euMesma: t.id === sessao.real.id,
   }));
   // Quem foi apagada do Notion continua no cadastro daqui: a página some, o

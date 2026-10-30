@@ -50,6 +50,7 @@ export type ItemDaBarra = {
 export function BarraDeAreas({
   nome,
   fotoId,
+  foto,
   comAreas = true,
   secoes = [],
   mentoradas = [],
@@ -58,6 +59,8 @@ export function BarraDeAreas({
 }: {
   nome: string;
   fotoId?: string | null;
+  /** Retrato enviado à mão, de quem não tem página na base Tutoras. */
+  foto?: string | null;
   /** As três áreas do sistema. Só quem administra anda entre elas. */
   comAreas?: boolean;
   /** O que a área atual tem dentro (Início, Mentoradas…), abaixo das áreas. */
@@ -231,7 +234,10 @@ export function BarraDeAreas({
             mora aqui, no pé da barra. */}
         <div className="mt-auto border-t border-marca-contraste/15 pt-3">
           <div className="flex items-center gap-2 px-3 py-2 text-[14px]">
-            {fotoId ? (
+            {foto ? (
+              // eslint-disable-next-line @next/next/no-img-element -- já sai reduzida do servidor
+              <img src={foto} alt="" className="size-5 shrink-0 rounded-full object-cover object-top" />
+            ) : fotoId ? (
               <FotoDaTutora id={fotoId} nome={nome} />
             ) : (
               <span

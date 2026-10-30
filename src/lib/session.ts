@@ -16,6 +16,8 @@ export type Tutora = {
   notion_tutora_page_id: string;
   ativa: boolean;
   is_admin: boolean;
+  /** Retrato de quem não tem página na base Tutoras; quem tem puxa a foto de lá. */
+  foto: string | null;
 };
 
 export type Sessao = {

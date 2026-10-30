@@ -7,7 +7,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-dvh">
-      <BarraDeAreas nome={sessao.real.nome} fotoId={sessao.real.notion_tutora_page_id} />
+      <BarraDeAreas
+        nome={sessao.real.nome}
+        fotoId={sessao.real.notion_tutora_page_id}
+        foto={sessao.real.foto}
+      />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );

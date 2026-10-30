@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, Loader2, Plus, X } from 'lucide-react';
+import { Camera, Eye, Loader2, Plus, X } from 'lucide-react';
 import {
   alternarAcesso,
   alternarTipo,
@@ -10,6 +10,8 @@ import {
   liberarAcessoTutora,
   removerAcesso,
   removerDoTime,
+  removerFoto,
+  salvarFoto,
   verComo,
   verComoMentorada,
   type EstadoAcesso,
@@ -24,12 +26,90 @@ export type Pessoa = {
   ativa: boolean;
   /** Time interno: administradora vê tudo e mexe nas configurações. */
   admin?: boolean;
+  /** Time interno: a página dela na base Tutoras, de onde vem a foto. */
+  fotoId?: string | null;
+  /** Time interno: o retrato enviado à mão, de quem não é tutora. */
+  foto?: string | null;
   /** Clientes: a página dela no Notion, para abrir a área como ela vê. */
   mentoradaId?: string;
   /** A página dela não está mais no Notion: não há área para abrir. */
   semPagina?: boolean;
   euMesma?: boolean;
 };
+
+/**
+ * O retrato de quem é do time.
+ *
+ * Quem é tutora tem foto na base Tutoras do Notion e é de lá que ela vem:
+ * trocar lá troca aqui. Quem administra e não dá tutoria não tem página
+ * nenhuma, então a foto é enviada aqui mesmo, clicando no retrato.
+ */
+function FotoDoTime({ pessoa }: { pessoa: Pessoa }) {
+  const [estado, enviar, enviando] = useActionState(salvarFoto, inicial);
+  const router = useRouter();
+  const [falhou, setFalhou] = useState(false);
+
+  useEffect(() => {
+    if (estado.ok) router.refresh();
+  }, [estado.ok, router]);
+
+  const src = pessoa.foto ?? (pessoa.fotoId ? `/api/fotos/tutoras/${pessoa.fotoId}?tamanho=mini` : null);
+  const retrato =
+    src && !falhou ? (
+      // eslint-disable-next-line @next/next/no-img-element -- já sai reduzida
+      <img
+        src={src}
+        alt=""
+        onError={() => setFalhou(true)}
+        className="size-9 shrink-0 rounded-full bg-marca-suave object-cover object-top"
+      />
+    ) : (
+      <span
+        aria-hidden
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[12px] font-medium text-marca"
+      >
+        {pessoa.nome.charAt(0)}
+      </span>
+    );
+
+  // A foto do Notion não se troca por aqui: lá é a fonte.
+  if (pessoa.fotoId) return retrato;
+
+  return (
+    <div className="shrink-0">
+      <form action={enviar}>
+        <input type="hidden" name="id" value={pessoa.id} />
+        <label
+          title={estado.erro || (pessoa.foto ? 'Trocar a foto' : 'Adicionar uma foto')}
+          className="relative block cursor-pointer"
+        >
+          {retrato}
+          <span className="absolute -right-0.5 -bottom-0.5 flex size-4 items-center justify-center rounded-full bg-marca text-marca-contraste">
+            {enviando ? <Loader2 aria-hidden size={10} className="animate-spin" /> : <Camera aria-hidden size={10} />}
+          </span>
+          <input
+            type="file"
+            name="foto"
+            accept="image/*"
+            disabled={enviando}
+            onChange={(e) => e.currentTarget.form?.requestSubmit()}
+            className="sr-only"
+          />
+          <span className="sr-only">Foto de {pessoa.nome}</span>
+        </label>
+      </form>
+
+      {pessoa.foto ? (
+        <form action={removerFoto}>
+          <input type="hidden" name="id" value={pessoa.id} />
+          <button type="submit" className="mt-1 block w-full text-center text-[10px] text-texto-suave hover:text-marca">
+            tirar
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
 
 /**
  * O tipo de acesso de quem é do time. Troca na hora: o `select` manda o
@@ -110,6 +190,8 @@ export function ListaDeAcessos({
     <ul className="divide-y divide-borda/60">
       {pessoas.map((p) => (
         <li key={p.id} className="flex items-center gap-3 px-5 py-2.5">
+          {tabela === 'tutoras' ? <FotoDoTime pessoa={p} /> : null}
+
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{p.nome}</p>
             <p className="text-xs break-all text-texto-suave">{p.email}</p>

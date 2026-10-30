@@ -26,6 +26,7 @@ export default async function PainelLayout({ children }: { children: React.React
       <BarraDeAreas
         nome={sessao.tutora.nome}
         fotoId={sessao.tutora.notion_tutora_page_id}
+        foto={sessao.tutora.foto}
         comAreas={areasNaBarra}
         secoes={secoes}
         mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
