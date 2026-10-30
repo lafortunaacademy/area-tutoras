@@ -1,0 +1,82 @@
+<!--
+  O e-mail do link de acesso, para colar no Supabase em
+  Authentication -> Emails -> Templates -> "Magic link or OTP".
+
+  Assunto: Seu link de acesso — La Fortuna Academy
+
+  Só funciona com SMTP próprio configurado (Resend); sem ele o Supabase usa o
+  texto padrão, em inglês, e nem deixa editar. `{{ .ConfirmationURL }}` é o
+  link que entra; o Supabase troca na hora do envio.
+
+  HTML de e-mail é antiquado de propósito: tabela em vez de grade, estilo em
+  cada tag em vez de folha de estilo. É o que o Gmail e o Outlook entendem.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f2e9;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #d8cfc0;border-radius:16px;">
+        <tr>
+          <td style="padding:32px 32px 0 32px;text-align:center;">
+            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:0.14em;text-transform:uppercase;color:#4b3424;">
+              La Fortuna
+            </p>
+            <p style="margin:6px 0 0 0;font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:#af9b87;">
+              Academy
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:28px 32px 0 32px;">
+            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.2;color:#2e231c;">
+              Seu acesso à área
+            </p>
+            <p style="margin:14px 0 0 0;font-size:15px;line-height:1.6;color:#5c4c3d;">
+              Aqui não tem senha. É só clicar no botão abaixo para entrar — o link
+              vale por pouco tempo e pode ser usado uma vez só.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 32px 0 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center" style="background:#4b3424;border-radius:12px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:block;padding:14px 24px;font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#f5f2e9;text-decoration:none;">
+                    Entrar na minha área
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 32px 0 32px;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#8a7b6c;">
+              Se o botão não abrir, copie e cole este endereço no navegador:
+            </p>
+            <p style="margin:6px 0 0 0;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#4b3424;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 32px 32px 32px;">
+            <p style="margin:0;border-top:1px solid #ede8dc;padding-top:16px;font-size:12px;line-height:1.6;color:#8a7b6c;">
+              Não foi você que pediu? Pode ignorar este e-mail: sem clicar no link,
+              ninguém entra.
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:16px 0 0 0;font-size:11px;color:#af9b87;">
+        La Fortuna Academy · acesso restrito ao time e às mentoradas
+      </p>
+    </td>
+  </tr>
+</table>
