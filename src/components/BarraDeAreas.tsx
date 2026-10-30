@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { rolarAte } from '@/lib/ancora';
 import type { SecaoMenu } from '@/components/MenuMentoradas';
 import { GraduationCap, Home, Search, Settings, Sparkles, Users } from 'lucide-react';
@@ -52,6 +52,7 @@ export function BarraDeAreas({
   fotoId,
   foto,
   comAreas = true,
+  tambemTutora = false,
   secoes = [],
   mentoradas = [],
   base = '/painel',
@@ -61,6 +62,8 @@ export function BarraDeAreas({
   fotoId?: string | null;
   /** Retrato enviado à mão, de quem não tem página na base Tutoras. */
   foto?: string | null;
+  /** Administra e também dá tutoria: pode alternar entre o time e o recorte dela. */
+  tambemTutora?: boolean;
   /** As três áreas do sistema. Só quem administra anda entre elas. */
   comAreas?: boolean;
   /** O que a área atual tem dentro (Início, Mentoradas…), abaixo das áreas. */
@@ -73,7 +76,11 @@ export function BarraDeAreas({
   secoesDaMentorada?: SecaoMenu[];
 }) {
   const caminho = usePathname();
+  const busca2 = useSearchParams();
   const [busca, setBusca] = useState('');
+
+  // Quem administra e dá tutoria vê as duas leituras da área: o time e a dela.
+  const noRecorteDela = busca2.get('como') === 'tutora';
 
   // São 44 nomes: sem filtro, achar alguém vira rolagem e paciência.
   const visiveis = useMemo(() => {
@@ -153,7 +160,7 @@ export function BarraDeAreas({
     </div>
   );
 
-  const item = (a: ItemDaBarra) => {
+  const item = (a: ItemDaBarra, ehArea = false) => {
     const aqui = caminho === a.base || caminho.startsWith(`${a.base}/`);
     const Icone = ICONES[a.icone];
     // Quem tem lista mostra a busca; quem não tem (a própria mentorada) mostra
@@ -174,6 +181,27 @@ export function BarraDeAreas({
         <span className="min-w-0 truncate text-[14px] leading-snug">{a.rotulo}</span>
       </Link>
     );
+
+    // O que a área tem dentro mora dentro dela, recuado, e só na área aberta:
+    // um bloco "Nesta área" à parte repetia o que a lista de cima já diz.
+    if (ehArea && aqui && (secoes.length > 0 || (a.base === '/painel' && tambemTutora))) {
+      return (
+        <div key={a.base} className="flex min-h-0 flex-1 flex-col">
+          {link}
+          <div className="mt-1 ml-4 flex min-h-0 flex-1 flex-col gap-0.5 border-l border-marca-contraste/15 pl-2">
+            {a.base === '/painel' && tambemTutora ? (
+              <Link
+                href={noRecorteDela ? '/painel/inicio' : '/painel/inicio?como=tutora'}
+                className="block rounded-lg px-2.5 py-1 text-[12px] leading-snug opacity-60 transition hover:bg-marca-contraste/10 hover:opacity-100"
+              >
+                {noRecorteDela ? 'Ver o time' : 'Ver como tutora'}
+              </Link>
+            ) : null}
+            {secoes.map((sec) => item(sec, false))}
+          </div>
+        </div>
+      );
+    }
 
     if (soPartes) {
       return (
@@ -218,17 +246,12 @@ export function BarraDeAreas({
         {comAreas ? (
           <>
             <p className="px-3 pb-2 text-[11px] tracking-[0.18em] uppercase opacity-60">Áreas</p>
-            {AREAS.map(item)}
+            {AREAS.map((a) => item(a, true))}
           </>
         ) : null}
 
-        {secoes.length > 0 ? (
-          <div className={`flex flex-col gap-1 ${comAreas ? 'mt-5' : ''}`}>
-            {comAreas ? (
-              <p className="px-3 pb-2 text-[11px] tracking-[0.18em] uppercase opacity-60">Nesta área</p>
-            ) : null}
-            {secoes.map(item)}
-          </div>
+        {!comAreas && secoes.length > 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-1">{secoes.map((sec) => item(sec))}</div>
         ) : null}
         {/* Quem está logada, o tema e a saída: tudo o que era do cabeçalho
             mora aqui, no pé da barra. */}

@@ -28,6 +28,7 @@ export default async function PainelLayout({ children }: { children: React.React
         fotoId={sessao.tutora.notion_tutora_page_id}
         foto={sessao.tutora.foto}
         comAreas={areasNaBarra}
+        tambemTutora={areasNaBarra && Boolean(sessao.tutora.notion_tutora_page_id)}
         secoes={secoes}
         mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
         base="/painel"

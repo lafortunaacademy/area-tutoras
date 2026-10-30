@@ -25,6 +25,8 @@ export type Sessao = {
   titulo: string;
   data: string | null;
   mentoradaIds: string[];
+  /** Quem deu a sessão: serve ao resumo do time, onde não há recorte por tutora. */
+  tutoraIds: string[];
   /** Mentoria da mentorada atendida ("My Partner", "Pronta Para Fazer Dinheiro"). */
   mentoria: string;
   /** Da tabela de preços, pela mentoria da mentorada atendida. */
@@ -99,6 +101,7 @@ export async function sessoesDaTutora(tutoraPageId: string | null): Promise<Sess
     titulo: t.sessao,
     data: t.data,
     mentoradaIds: t.mentoradaIds,
+    tutoraIds: t.tutoraIds,
     mentoria: t.mentoria.trim() || SEM_MENTORIA,
     valor: valorDaSessao(t.mentoria),
   }));

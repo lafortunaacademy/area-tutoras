@@ -22,6 +22,8 @@ export type Tutoria = {
   sessao: string;
   data: string | null;
   mentoradaIds: string[];
+  /** Quem deu a tutoria. Mais de uma quando a sessão é a quatro mãos. */
+  tutoraIds: string[];
   /** Tema pela fórmula "Tutoria" ("Produto", "Conteúdo"…). */
   tema: string;
   /** Mentoria da mentorada, pelo rollup da própria linha. */
@@ -36,6 +38,8 @@ export type TutoriaAgendada = {
   corStatus: string;
   data: string | null;
   mentoradaIds: string[];
+  /** Quem vai dar a tutoria. */
+  tutoraIds: string[];
   tema: string;
   mentoria: string;
 };
@@ -85,6 +89,7 @@ export async function tutoriasDaTutora(tutoraPageId: string | null): Promise<Tut
       // A data que vale é a da sessão realizada; a prevista é plano.
       data: data(p, TUTORIA.dataRealizada) ?? data(p, TUTORIA.dataPrevista),
       mentoradaIds: relationIds(p, TUTORIA.mentorada),
+      tutoraIds: relationIds(p, TUTORIA.tutoras),
       tema: texto(p, TUTORIA.tema),
       mentoria: texto(p, TUTORIA.mentoria),
     }))
@@ -122,6 +127,7 @@ export async function proximasDaTutora(tutoraPageId: string | null): Promise<Tut
       corStatus: corDaOpcao(p, TUTORIA.status),
       data: data(p, TUTORIA.dataPrevista),
       mentoradaIds: relationIds(p, TUTORIA.mentorada),
+      tutoraIds: relationIds(p, TUTORIA.tutoras),
       tema: texto(p, TUTORIA.tema),
       mentoria: texto(p, TUTORIA.mentoria),
     }))

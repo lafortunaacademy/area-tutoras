@@ -4,6 +4,7 @@ import { exigirSessao } from '@/lib/session';
 import { SEM_MENTORIA, mesSeguinte, emReais, perfilDaTutora, mentoriasDe, porMes, sessoesDaTutora } from '@/lib/notion/tutora';
 import { proximasDaTutora, temUsuarioNoNotion } from '@/lib/notion/tutorias';
 import { carteiraDaTutora, normalizarId } from '@/lib/notion/carteira';
+import { tutorasDoHub } from '@/lib/notion/hub';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
@@ -12,22 +13,33 @@ import { GraficoMeses } from '@/components/GraficoMeses';
 
 export const dynamic = 'force-dynamic';
 
-export default async function InicioPage({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
+export default async function InicioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ano?: string; como?: string }>;
+}) {
   const sessao = await exigirSessao();
-  const { ano: anoPedido } = await searchParams;
-  // Sem página na base Tutoras (quem administra e não dá tutoria) não há
-  // recorte: ela vê o controle inteiro em vez de uma tela zerada.
-  const tutoraId = sessao.tutora.notion_tutora_page_id || null;
+  const { ano: anoPedido, como } = await searchParams;
 
-  let perfil, sessoes, proximas, mentoradas;
+  // Quem administra abre no resumo do time: "as suas tutorias" não quer dizer
+  // nada para quem não dá tutoria, e para quem dá é só um clique de distância.
+  // No "ver como" o recorte é sempre o da tutora, que é o ponto do preview.
+  const daCasa = sessao.real.is_admin && !sessao.verComo;
+  const comoTutora = como === 'tutora' && Boolean(sessao.tutora.notion_tutora_page_id);
+  const tutoraId = daCasa && !comoTutora ? null : sessao.tutora.notion_tutora_page_id || null;
+
+  // Quem não dá tutoria vê o time, e aí precisa da lista de tutoras para
+  // dizer quem fez o quê.
+  let perfil, sessoes, proximas, mentoradas, tutoras;
   try {
-    [perfil, sessoes, proximas, mentoradas] = await Promise.all([
+    [perfil, sessoes, proximas, mentoradas, tutoras] = await Promise.all([
       perfilDaTutora(tutoraId),
       sessoesDaTutora(tutoraId),
       proximasDaTutora(tutoraId),
       // A carteira inteira, não só o modelo novo: é dela que sai o nome da
       // mentorada de cada sessão.
       carteiraDaTutora().catch(() => []),
+      tutoraId ? Promise.resolve([]) : tutorasDoHub().catch(() => []),
     ]);
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
@@ -100,8 +112,34 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
       return { ...t, mentorada: dela?.nome ?? '', mentoradaId: dela?.id ?? null };
     });
 
+  // O ranking do time: quem atendeu quanto no ano, e o que já está marcado.
+  const porTutora = tutoraId
+    ? []
+    : tutoras
+        .map((t) => {
+          const dela = (s: { tutoraIds: string[] }) => s.tutoraIds.some((id) => normalizarId(id) === normalizarId(t.id));
+          return {
+            id: t.id,
+            nome: t.nome,
+            foto: t.foto ?? t.fotoDeReserva,
+            feitas: doAno.filter(dela).length,
+            marcadas: proximas.filter(dela).length,
+          };
+        })
+        .filter((t) => t.feitas > 0 || t.marcadas > 0)
+        .sort((a, b) => b.feitas - a.feitas || b.marcadas - a.marcadas);
+
+  const maior = porTutora[0]?.feitas ?? 0;
+
   return (
     <div>
+      {/* Sem perfil (quem administra e não dá tutoria), o cabeçalho é um olá. */}
+      {tutoraId === null ? (
+        <div className="mb-10 border-b border-borda pb-7">
+          <h1 className="display text-4xl leading-tight italic">Olá, {sessao.real.nome.split(' ')[0]}.</h1>
+          <p className="mt-2 text-sm text-texto-suave">O que o time de tutoras vem entregando.</p>
+        </div>
+      ) : (
       <div className="mb-10 flex items-center gap-5 border-b border-borda pb-7">
         {perfil?.foto ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -130,6 +168,7 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
           ) : null}
         </div>
       </div>
+      )}
 
       <Secao titulo={tutoraId ? 'Suas próximas tutorias' : 'Próximas tutorias do time'}>
         {agenda.length === 0 ? (
@@ -154,6 +193,9 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
         <Numero rotulo={`Tutorias em ${ano}`} valor={String(doAno.length)} nota={`média de ${media} por mês`} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
         <Numero rotulo="Mentoradas atendidas" valor={String(atendidas)} nota={`no ano de ${ano}`} />
+        {tutoraId === null ? (
+          <Numero rotulo="Tutoras atendendo" valor={String(porTutora.length)} nota={`com tutoria em ${ano}`} />
+        ) : null}
         {total !== null ? <Numero rotulo={`Recebido em ${ano}`} valor={emReais(total)} /> : null}
         {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
 
@@ -171,6 +213,46 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
       </div>
+
+      {porTutora.length > 0 ? (
+        <Secao titulo="Quem está atendendo" nota={`Tutorias realizadas em ${ano} e o que já está marcado.`}>
+          <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-superficie">
+            {porTutora.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 px-5 py-3">
+                {t.foto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.foto} alt="" className="size-9 shrink-0 rounded-full object-cover object-top" />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-marca-suave text-[12px] font-medium text-marca"
+                  >
+                    {t.nome.charAt(0)}
+                  </span>
+                )}
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{t.nome}</span>
+                  {/* A barra é a mesma conta do número, só que de relance. */}
+                  <span aria-hidden className="mt-1.5 block h-1.5 w-full max-w-60 overflow-hidden rounded-full bg-superficie-2">
+                    <span
+                      className="block h-full rounded-full bg-marca"
+                      style={{ width: `${maior > 0 ? Math.round((t.feitas / maior) * 100) : 0}%` }}
+                    />
+                  </span>
+                </span>
+
+                <span className="shrink-0 text-right">
+                  <span className="display block text-2xl leading-none">{t.feitas}</span>
+                  <span className="mt-1 block text-[11px] text-texto-suave">
+                    {t.marcadas > 0 ? `${t.marcadas} marcada${t.marcadas > 1 ? 's' : ''}` : 'nada marcado'}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Secao>
+      ) : null}
 
       <Secao titulo="Tutorias realizadas por mês" nota="Cada barra abre por mentoria.">
         {meses.length === 0 ? (
