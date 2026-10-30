@@ -29,7 +29,7 @@ const BOAS_VINDAS: Record<Porta | 'equipe', { rotulo: string; titulo: string; te
     rotulo: 'Área de membros',
     titulo: 'Olá, bem-sucedida. Bem-vinda à área de membros da La Fortuna Academy.',
     texto:
-      'É aqui que ficam os registros das suas sessões e tutorias, o seu acompanhamento financeiro e tudo o que vocês constroem juntas na mentoria.',
+      'É aqui que ficam os registros das suas sessões e tutorias, os marcos e conquistas do seu negócio e tudo o que você e a Fer constroem juntas na mentoria.',
     rodape: 'Acesso das clientes da La Fortuna Academy.',
   },
   equipe: {
