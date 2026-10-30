@@ -121,7 +121,7 @@ export function BarraDeAreas({
   };
 
   const lista = (
-    <div className="mt-1 ml-4 flex min-h-0 flex-1 flex-col border-l border-marca-contraste/15 pl-2">
+    <div className="mt-1 ml-4 flex flex-col border-l border-marca-contraste/15 pl-2">
       <label className="relative mb-2 block">
         <Search aria-hidden size={14} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 opacity-60" />
         <input
@@ -134,7 +134,7 @@ export function BarraDeAreas({
         />
       </label>
 
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+      <ul className="max-h-[45vh] space-y-0.5 overflow-y-auto pr-1">
         {visiveis.map((m) => {
           const aqui = caminho.startsWith(`${base}/${m.id}`);
           return (
@@ -186,9 +186,9 @@ export function BarraDeAreas({
     // um bloco "Nesta área" à parte repetia o que a lista de cima já diz.
     if (ehArea && aqui && (secoes.length > 0 || (a.base === '/painel' && tambemTutora))) {
       return (
-        <div key={a.base} className="flex min-h-0 flex-1 flex-col">
+        <div key={a.base} className="flex flex-col">
           {link}
-          <div className="mt-1 ml-4 flex min-h-0 flex-1 flex-col gap-0.5 border-l border-marca-contraste/15 pl-2">
+          <div className="mt-1 ml-4 flex flex-col gap-0.5 border-l border-marca-contraste/15 pl-2">
             {a.base === '/painel' && tambemTutora ? (
               <Link
                 href={noRecorteDela ? '/painel/inicio' : '/painel/inicio?como=tutora'}
@@ -217,7 +217,7 @@ export function BarraDeAreas({
     // A busca e a lista moram embaixo de "Mentoradas", recuadas: são o que há
     // dentro dele, não outro item do menu.
     return (
-      <div key={a.base} className="flex min-h-0 flex-1 flex-col">
+      <div key={a.base} className="flex flex-col">
         {link}
         {lista}
       </div>
@@ -229,7 +229,7 @@ export function BarraDeAreas({
       aria-label="Áreas do sistema"
       className="hidden w-56 shrink-0 bg-marca text-marca-contraste lg:block"
     >
-      <div className="sticky top-0 flex h-dvh flex-col gap-1 p-3">
+      <div className="sticky top-0 flex h-dvh flex-col gap-1 overflow-y-auto p-3">
         <Link href="/admin" className="px-3 py-5">
           {/* O logotipo é preto sobre transparente: na barra marrom ele inverte
               (vira claro) e, no tema escuro, volta ao normal — lá a barra é bege. */}
@@ -251,7 +251,7 @@ export function BarraDeAreas({
         ) : null}
 
         {!comAreas && secoes.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-1">{secoes.map((sec) => item(sec))}</div>
+          <div className="flex flex-col gap-1">{secoes.map((sec) => item(sec))}</div>
         ) : null}
         {/* Quem está logada, o tema e a saída: tudo o que era do cabeçalho
             mora aqui, no pé da barra. */}
