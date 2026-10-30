@@ -1,4 +1,4 @@
-import { MapPinned, Users } from 'lucide-react';
+import { MapPinned, Smartphone, Users } from 'lucide-react';
 import { exigirAdmin, type Tutora } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Cabecalho } from '@/components/Cabecalho';
@@ -8,6 +8,7 @@ import { respostasSoltas } from '@/lib/notion/mapas';
 import { normalizarId } from '@/lib/notion/carteira';
 import { ListaDeAcessos, NovoAcesso, type Pessoa } from './Acessos';
 import { RespostasDoMapa } from './RespostasDoMapa';
+import { NovoAviso } from './NovoAviso';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPage() {
   const sessao = await exigirAdmin();
 
-  const [{ data: tutoras }, { data: clientes }, doHub, mentoradas, semDono] = await Promise.all([
+  const [{ data: tutoras }, { data: clientes }, doHub, mentoradas, semDono, app] = await Promise.all([
     supabaseAdmin().from('tutoras').select('*').order('nome').returns<Tutora[]>(),
     supabaseAdmin()
       .from('mentoradas_acesso')
@@ -31,6 +32,7 @@ export default async function AdminPage() {
     tutorasDoHub().catch(() => []),
     mentoradasDoModeloNovo().catch(() => []),
     respostasSoltas().catch(() => []),
+    doApp(),
   ]);
 
   const doTime: Pessoa[] = (tutoras ?? []).map((t) => ({
@@ -110,7 +112,83 @@ export default async function AdminPage() {
           <RespostasDoMapa pendentes={semDono} mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome }))} />
         </section>
 
+        <section className="mt-12">
+          <h2 className="flex items-center gap-2 text-lg font-medium">
+            <Smartphone aria-hidden size={18} className="text-marca" />
+            App de celular
+          </h2>
+          <p className="mt-1 mb-4 max-w-2xl text-sm text-texto-suave">
+            {app.celulares} {app.celulares === 1 ? 'celular recebe' : 'celulares recebem'} notificações. Lembretes de
+            sessão e avisos de tarefa ou material novo saem sozinhos; aqui vão os avisos da La Fortuna.
+          </p>
+
+          <div className="space-y-5">
+            <div className="overflow-hidden rounded-xl border border-borda bg-superficie">
+              <div className="border-b border-borda px-5 py-3">
+                <h3 className="text-sm font-medium">Novo aviso</h3>
+              </div>
+              <NovoAviso mentoradas={daCasa.filter((c) => c.ativa).map((c) => ({ id: c.mentoradaId!, nome: c.nome }))} />
+              {app.avisos.length ? (
+                <ul className="divide-y divide-borda border-t border-borda">
+                  {app.avisos.map((a) => (
+                    <li key={a.id} className="px-5 py-3 text-sm">
+                      <p className="font-medium">{a.titulo}</p>
+                      <p className="text-texto-suave">{a.mensagem}</p>
+                      <p className="mt-1 text-xs text-texto-suave">
+                        {new Date(a.enviado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}
+                        {' · '}
+                        {a.mentorada_id ? (daCasa.find((c) => normalizarId(c.mentoradaId!) === a.mentorada_id)?.nome ?? 'uma mentorada') : 'todas'}
+                        {' · '}
+                        {a.celulares} {a.celulares === 1 ? 'celular' : 'celulares'}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+
+            {app.exclusoes.length ? (
+              <div className="overflow-hidden rounded-xl border border-borda bg-superficie">
+                <div className="border-b border-borda px-5 py-3">
+                  <h3 className="text-sm font-medium">Contas excluídas pelo app</h3>
+                  <p className="mt-1 text-xs text-texto-suave">
+                    O acesso já foi desligado. Os registros da mentoria no Notion ficam com vocês: apague o que não
+                    precisar guardar.
+                  </p>
+                </div>
+                <ul className="divide-y divide-borda">
+                  {app.exclusoes.map((e) => (
+                    <li key={e.id} className="flex flex-wrap justify-between gap-2 px-5 py-3 text-sm">
+                      <span>
+                        {e.nome} <span className="text-texto-suave">· {e.email}</span>
+                      </span>
+                      <span className="text-xs text-texto-suave">
+                        {new Date(e.pedido_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
       </div>
     </div>
   );
+}
+
+type Aviso = { id: string; titulo: string; mensagem: string; mentorada_id: string | null; celulares: number; enviado_em: string };
+type Exclusao = { id: string; nome: string; email: string; pedido_em: string };
+
+/** O que o app de celular tem: quantos recebem, os últimos avisos e as contas excluídas. */
+async function doApp(): Promise<{ celulares: number; avisos: Aviso[]; exclusoes: Exclusao[] }> {
+  const db = supabaseAdmin();
+  const [celulares, avisos, exclusoes] = await Promise.all([
+    db.from('dispositivos').select('token', { count: 'exact', head: true }),
+    db.from('avisos').select('*').order('enviado_em', { ascending: false }).limit(10).returns<Aviso[]>(),
+    db.from('exclusoes_de_conta').select('*').order('pedido_em', { ascending: false }).limit(50).returns<Exclusao[]>(),
+  ]);
+  // Antes da migração 0009 as tabelas não existem: a seção aparece vazia em vez de derrubar a página.
+  return { celulares: celulares.count ?? 0, avisos: avisos.data ?? [], exclusoes: exclusoes.data ?? [] };
 }

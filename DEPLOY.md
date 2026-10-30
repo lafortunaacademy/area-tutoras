@@ -56,3 +56,29 @@ tem plano grátis.
   Fernanda. O certo é conectá-la só nas bases que o app usa.
 - **Conferir o `PREVIEW_COOKIE_SECRET`** — ele assina o cookie do "ver como". Em
   produção, use um valor diferente do local: `openssl rand -hex 32`.
+
+## App de celular (la-fortuna-app)
+
+O app das mentoradas abre este site; o que é dele aqui:
+
+1. **Banco:** rodar `supabase/migrations/0009_app_celular.sql` (celulares, avisos,
+   exclusões de conta).
+2. **E-mail de acesso:** colar de novo `supabase/emails/magic-link.html` no
+   Supabase. Ele agora traz o código de 6 dígitos (`{{ .Token }}`), que é como a
+   mentorada entra pelo app. Em Authentication > Providers > Email, deixar o
+   tamanho do código em 6.
+3. **Variáveis** (as do push só existem depois das contas Apple e Firebase;
+   sem elas o site funciona igual, só aquela plataforma não recebe):
+   - `CRON_SECRET`: `openssl rand -hex 32`; protege o lembrete diário.
+   - iPhone, chave .p8 de developer.apple.com > Keys (Apple Push Notifications
+     service): `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY` (o conteúdo do .p8) e
+     `APNS_BUNDLE_ID=com.lafortunaacademy.app`. `APNS_AMBIENTE=desenvolvimento`
+     só para build rodando direto pelo Xcode; TestFlight e loja usam produção.
+   - Android: `FCM_CONTA_DE_SERVICO`, o JSON inteiro da conta de serviço
+     (Firebase > Configurações do projeto > Contas de serviço > Gerar chave).
+4. **Lembrete de sessão:** `vercel.json` agenda `/api/cron/lembretes` todo dia às
+   8h (11h UTC), avisando das sessões de hoje e de amanhã. No plano Pro da Vercel
+   dá para rodar de hora em hora e avisar mais perto da sessão.
+5. **Lojas:** a política de privacidade é `/privacidade` e a exclusão de conta é
+   `/conta/excluir`. Conferir em `src/app/privacidade/page.tsx` o nome da
+   empresa e o e-mail de contato antes de publicar.

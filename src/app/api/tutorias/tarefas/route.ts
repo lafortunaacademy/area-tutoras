@@ -1,8 +1,9 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { after, NextResponse, type NextRequest } from 'next/server';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 import { criarTarefa, tarefasDaMentorada } from '@/lib/notion/tarefas';
 import { getAcessoMentorada, getSessao } from '@/lib/session';
 import { normalizarId } from '@/lib/notion/carteira';
+import { avisarSeFoiAEquipe } from '@/lib/push';
 
 /**
  * As Tarefas da mentoria (base do Notion), para os "Próximos passos" dentro de
@@ -60,6 +61,14 @@ export async function POST(request: NextRequest) {
       observacoes: (corpo.observacoes ?? '').trim().slice(0, 2000),
     });
     if (!criada) return NextResponse.json({ erro: 'sem base de tarefas' }, { status: 404 });
+    const mentoradaId = normalizarId(corpo.mentorada);
+    after(() =>
+      avisarSeFoiAEquipe(mentoradaId, {
+        titulo: 'Nova tarefa da mentoria',
+        corpo: prazo ? `${tarefa} (até ${prazo.split('-').reverse().join('/')})` : tarefa,
+        url: `/mentoradas/${mentoradaId}#tarefas`,
+      }),
+    );
     return NextResponse.json({
       ok: true,
       tarefa: {

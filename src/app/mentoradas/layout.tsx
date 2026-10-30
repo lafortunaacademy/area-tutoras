@@ -7,6 +7,7 @@ import { Cabecalho } from '@/components/Cabecalho';
 import type { SecaoMenu } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
 import { AtalhosNoCelular } from '@/components/area-mentorada/AtalhosNoCelular';
+import { NotificacoesNoApp } from '@/components/area-mentorada/NotificacoesNoApp';
 
 /**
  * Área das mentoradas.
@@ -67,6 +68,8 @@ export default async function MentoradasLayout({ children }: { children: React.R
 
       <div className="min-w-0 flex-1">
         {visitante.verComo ? <BarraVerComo nome={visitante.nome} /> : null}
+        {/* Só a própria mentorada liga as notificações do app: nunca quem administra. */}
+        {visitante.admin || visitante.verComo ? null : <NotificacoesNoApp />}
 
         {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
             onde a barra não cabe. */}
@@ -83,6 +86,18 @@ export default async function MentoradasLayout({ children }: { children: React.R
           </main>
           <RolarParaAncora />
         </div>
+
+        {/* As lojas de app exigem que a exclusão da conta seja achável de dentro dela. */}
+        {visitante.admin || visitante.verComo ? null : (
+          <footer className="mx-auto flex max-w-6xl gap-4 px-4 pb-10 text-xs text-texto-suave sm:px-6">
+            <a href="/privacidade" className="underline-offset-2 hover:underline">
+              Privacidade
+            </a>
+            <a href="/conta/excluir" className="underline-offset-2 hover:underline">
+              Excluir minha conta
+            </a>
+          </footer>
+        )}
       </div>
     </div>
   );

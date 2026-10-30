@@ -1,11 +1,12 @@
 'use server';
 
 import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { caminhoSeguro, COOKIE_DEPOIS_DO_LOGIN } from '@/lib/depoisDoLogin';
 import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
-export type EstadoLogin = { erro?: string; enviado?: boolean };
+export type EstadoLogin = { erro?: string; enviado?: boolean; email?: string };
 
 export async function enviarMagicLink(
   _anterior: EstadoLogin,
@@ -27,7 +28,7 @@ export async function enviarMagicLink(
     db.from('mentoradas_acesso').select('id').eq('email', email).eq('ativa', true).maybeSingle(),
   ]);
 
-  if (!tutora && !mentorada) return { enviado: true };
+  if (!tutora && !mentorada) return { enviado: true, email };
 
   // Veio de um formulário: guarda para onde voltar quando ela clicar no link do e-mail.
   const proximo = caminhoSeguro(String(form.get('proximo') ?? ''));
@@ -59,5 +60,29 @@ export async function enviarMagicLink(
     return { erro: 'Não consegui enviar o link agora. Tente de novo em instantes.' };
   }
 
-  return { enviado: true };
+  return { enviado: true, email };
+}
+
+/**
+ * Entrar com o código de 6 dígitos do mesmo e-mail. É o caminho do app de
+ * celular: o botão do e-mail abriria o navegador, fora do app, e a sessão
+ * ficaria lá. Digitado aqui, o código loga na própria tela em que foi pedido.
+ */
+export async function entrarComCodigo(_anterior: EstadoLogin, form: FormData): Promise<EstadoLogin> {
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const codigo = String(form.get('codigo') ?? '').replace(/\D/g, '');
+  if (!email) return { erro: 'Peça o código de novo.' };
+  if (codigo.length < 6) return { enviado: true, email, erro: 'Digite os números do código que chegou no e-mail.' };
+
+  const supabase = await supabaseServer();
+  const { error } = await supabase.auth.verifyOtp({ email, token: codigo, type: 'email' });
+  if (error) {
+    return { enviado: true, email, erro: 'Esse código não vale: confira os números ou peça um novo.' };
+  }
+
+  // A página inicial manda cada uma para a própria área; o formulário de onde ela veio tem prioridade.
+  const jar = await cookies();
+  const guardado = caminhoSeguro(jar.get(COOKIE_DEPOIS_DO_LOGIN)?.value);
+  if (guardado) jar.delete(COOKIE_DEPOIS_DO_LOGIN);
+  redirect(guardado ?? '/');
 }

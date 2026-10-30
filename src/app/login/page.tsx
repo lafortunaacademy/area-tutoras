@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { destinoDepoisDoLogin, getAcessoMentorada, getSessao, supabaseConfigurado } from '@/lib/session';
 
 // Depende da sessão do request: nunca pode virar HTML estático.
@@ -22,6 +23,9 @@ export default async function LoginPage({
   const { erro, proximo } = await searchParams;
   const voltarPara = caminhoSeguro(proximo);
   if ((await getSessao()) || (await getAcessoMentorada())) redirect(voltarPara ?? (await destinoDepoisDoLogin()));
+
+  // O app de celular (la-fortuna-app) se identifica no user agent; quem usa é mentorada.
+  const noApp = /LaFortunaApp/.test((await headers()).get('user-agent') ?? '');
 
   const aviso = erro ? (MENSAGENS[erro] ?? 'Não consegui te autenticar. Peça um novo link.') : null;
 
@@ -50,7 +54,14 @@ export default async function LoginPage({
             className="logo-marca mx-auto h-16 w-auto sm:h-20"
           />
           {/* Quem chega por um formulário é mentorada: o texto é para ela. */}
-          {voltarPara?.startsWith('/formulario/') ? (
+          {noApp ? (
+            <>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">Área da mentorada</p>
+              <p className="mt-3 text-sm text-texto-suave sm:text-base">
+                Entre com o e-mail cadastrado na La Fortuna. O código de acesso chega na sua caixa de entrada.
+              </p>
+            </>
+          ) : voltarPara?.startsWith('/formulario/') ? (
             <>
               <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">Formulário da tutoria</p>
               <p className="mt-3 text-sm text-texto-suave sm:text-base">
