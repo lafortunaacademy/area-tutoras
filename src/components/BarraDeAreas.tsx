@@ -96,7 +96,7 @@ export function BarraDeAreas({
     if (secoesDaMentorada.length === 0) return null;
 
     return (
-      <ul className="my-1 ml-4 space-y-px border-l border-marca-contraste/15 pl-2">
+      <ul className="my-1 ml-3 space-y-px">
         {secoesDaMentorada.map((sec) => {
           const destino = `${raiz}${sec.rota ? `/${sec.rota}` : ''}${sec.ancora ? `#${sec.ancora}` : ''}`;
           const naRota = sec.rota ? caminho.startsWith(`${raiz}/${sec.rota}`) : false;
@@ -123,7 +123,7 @@ export function BarraDeAreas({
   };
 
   const lista = (
-    <div className="mt-1 ml-4 flex flex-col border-l border-marca-contraste/15 pl-2">
+    <div className="mt-1 flex flex-col">
       <label className="relative mb-2 block">
         <Search aria-hidden size={14} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 opacity-60" />
         <input
@@ -192,7 +192,7 @@ export function BarraDeAreas({
       return (
         <div key={a.base} className="flex flex-col">
           {link}
-          <div className="mt-1 ml-4 flex flex-col gap-0.5 border-l border-marca-contraste/15 pl-2">
+          <div className="mt-1 flex flex-col gap-0.5">
             {a.base === '/painel' && tambemTutora ? (
               <Link
                 href={noRecorteDela ? '/painel/inicio' : '/painel/inicio?como=tutora'}
