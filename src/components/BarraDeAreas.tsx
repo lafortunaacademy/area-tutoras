@@ -21,9 +21,9 @@ import { iniciais } from '@/lib/iniciais';
  * cabeçalho.
  */
 const AREAS: ItemDaBarra[] = [
-  { href: '/admin', base: '/admin', rotulo: 'Área inicial', detalhe: 'Configurações', icone: 'configuracoes' },
-  { href: '/painel/inicio', base: '/painel', rotulo: 'Área de tutoras', detalhe: 'Como as tutoras veem', icone: 'tutoras' },
-  { href: '/mentoradas', base: '/mentoradas', rotulo: 'Área das mentoradas', detalhe: 'A área de membros', icone: 'membros' },
+  { href: '/admin', base: '/admin', rotulo: 'Área inicial', icone: 'configuracoes' },
+  { href: '/painel/inicio', base: '/painel', rotulo: 'Área de tutoras', icone: 'tutoras' },
+  { href: '/mentoradas', base: '/mentoradas', rotulo: 'Área das mentoradas', icone: 'membros' },
 ];
 
 /**
@@ -42,7 +42,6 @@ export type ItemDaBarra = {
   href: string;
   base: string;
   rotulo: string;
-  detalhe?: string;
   icone: keyof typeof ICONES;
   /** Pendura a busca e a lista de mentoradas embaixo deste item. */
   comLista?: boolean;
@@ -164,15 +163,12 @@ export function BarraDeAreas({
         key={a.base}
         href={a.href}
         aria-current={aqui ? 'page' : undefined}
-        className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition ${
+        className={`flex items-center gap-2.5 rounded-xl px-3 py-2 transition ${
           aqui ? 'bg-marca-contraste/15 font-medium' : 'opacity-70 hover:bg-marca-contraste/10 hover:opacity-100'
         }`}
       >
-        <Icone aria-hidden size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" />
-        <span className="min-w-0">
-          <span className="block text-[14px] leading-snug">{a.rotulo}</span>
-          {a.detalhe ? <span className="mt-0.5 block text-[12px] leading-snug opacity-60">{a.detalhe}</span> : null}
-        </span>
+        <Icone aria-hidden size={16} strokeWidth={1.8} className="shrink-0" />
+        <span className="min-w-0 truncate text-[14px] leading-snug">{a.rotulo}</span>
       </Link>
     );
 

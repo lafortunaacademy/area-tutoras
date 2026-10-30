@@ -47,12 +47,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
   }
 
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
-  // Falta tutoria, falta sessão com a Fernanda, ou as duas: quem marca é gente
-  // diferente, então basta faltar uma para a mentorada entrar na lista.
-  const semAgenda = mentoradas.filter((m) => m.faltaAgendar.length > 0);
   const aAgendar = soma((m) => m.paraAgendar.length);
-  const naFila = mentoradas.filter((m) => m.paraAgendar.length > 0);
-  const semBriefing = mentoradas.filter((m) => m.semBriefing.length > 0);
   const briefings = soma((m) => m.semBriefing.length);
   // Na tabela entram os dois motivos: falta marcar ou falta o briefing de uma
   // tutoria já marcada.
@@ -63,25 +58,9 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
   return (
     <>
       <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} detalhe="no ciclo de cada uma" />
-        <Numero
-          rotulo="Sessões para agendar"
-          valor={aAgendar}
-          detalhe={
-            naFila.length
-              ? `em ${naFila.length} ${naFila.length === 1 ? 'mentorada' : 'mentoradas'}`
-              : 'nada esperando data'
-          }
-        />
-        <Numero
-          rotulo="Briefings pendentes"
-          valor={briefings}
-          detalhe={
-            semBriefing.length
-              ? `em ${semBriefing.length} ${semBriefing.length === 1 ? 'tutoria marcada' : 'mentoradas com tutoria marcada'}`
-              : 'nenhuma tutoria marcada sem briefing'
-          }
-        />
+        <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} />
+        <Numero rotulo="Sessões para agendar" valor={aAgendar} />
+        <Numero rotulo="Briefings pendentes" valor={briefings} />
       </ul>
 
       <Secao
@@ -203,12 +182,11 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
 const fracao = (m: ResumoDaMentorada) => (m.total ? m.realizadas / m.total : 0);
 
-function Numero({ rotulo, valor, detalhe }: { rotulo: string; valor: number; detalhe: string }) {
+function Numero({ rotulo, valor }: { rotulo: string; valor: number }) {
   return (
     <li className="rounded-xl border border-borda bg-superficie px-4 py-3">
       <p className="text-[11.5px] tracking-[0.12em] text-texto-suave uppercase">{rotulo}</p>
       <p className="display mt-1 text-3xl tabular-nums">{valor}</p>
-      <p className="text-xs text-texto-suave">{detalhe}</p>
     </li>
   );
 }
