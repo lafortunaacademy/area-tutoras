@@ -1,16 +1,12 @@
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
-import {
-  comoRecebimento,
-  mesSeguinte,
-  emReais,
-  perfilDaTutora,
-  mentoriasDe,
-  porMes,
-  sessoesDaTutora,
-} from '@/lib/notion/tutora';
-import { temUsuarioNoNotion } from '@/lib/notion/tutorias';
+import { mesSeguinte, emReais, perfilDaTutora, mentoriasDe, porMes, sessoesDaTutora } from '@/lib/notion/tutora';
+import { proximasDaTutora, temUsuarioNoNotion } from '@/lib/notion/tutorias';
+import { carteiraDaTutora, normalizarId } from '@/lib/notion/carteira';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
+import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { GraficoMeses } from '@/components/GraficoMeses';
 
 export const dynamic = 'force-dynamic';
@@ -19,11 +15,15 @@ export default async function InicioPage() {
   const sessao = await exigirSessao();
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
-  let perfil, sessoes;
+  let perfil, sessoes, proximas, mentoradas;
   try {
-    [perfil, sessoes] = await Promise.all([
+    [perfil, sessoes, proximas, mentoradas] = await Promise.all([
       perfilDaTutora(tutoraId),
       sessoesDaTutora(tutoraId),
+      proximasDaTutora(tutoraId),
+      // A carteira inteira, não só o modelo novo: é dela que sai o nome da
+      // mentorada de cada sessão.
+      carteiraDaTutora().catch(() => []),
     ]);
   } catch (erro) {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
@@ -39,7 +39,6 @@ export default async function InicioPage() {
 
   const cronologico = [...meses].reverse();
   // O pagamento cai no mês seguinte ao da sessão.
-  const recebimentos = comoRecebimento(cronologico);
   const aReceber = esteMes?.valorEmReais ?? null;
   const mesQueVem = rotuloCurtoDoMes(mesSeguinte(agora));
 
@@ -63,6 +62,13 @@ export default async function InicioPage() {
   ].filter((c) => c.valor);
   const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
 
+  // O nome da mentorada de cada sessão: a sessão guarda só o ID da página dela.
+  const nomes = new Map(mentoradas.map((m) => [normalizarId(m.id), m]));
+  const agenda = proximas.slice(0, 6).map((t) => {
+    const dela = t.mentoradaIds.map((id) => nomes.get(normalizarId(id))).find(Boolean);
+    return { ...t, mentorada: dela?.nome ?? '', mentoradaId: dela?.id ?? null };
+  });
+
   return (
     <div>
       <div className="mb-10 flex items-center gap-4 border-b border-borda pb-6">
@@ -85,6 +91,20 @@ export default async function InicioPage() {
         </div>
       </div>
 
+      <Secao titulo="Suas próximas tutorias">
+        {agenda.length === 0 ? (
+          <Vazio>Nada agendado por enquanto.</Vazio>
+        ) : (
+          <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-superficie">
+            {agenda.map((t) => (
+              <li key={t.id}>
+                <Agendada tutoria={t} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Secao>
+
       {atuacao.length > 0 ? (
         <Secao titulo="Onde você atua">
           <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -105,7 +125,7 @@ export default async function InicioPage() {
         {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
       </div>
 
-      <Secao titulo="Recebido mês a mês" nota="O valor de cada mês cai no mês seguinte; o gráfico já mostra no mês do recebimento.">
+      <Secao titulo="Tutorias por mês">
         {meses.length === 0 ? (
           <Vazio>
             {semUsuario
@@ -113,15 +133,9 @@ export default async function InicioPage() {
               : 'Nenhuma tutoria realizada ainda.'}
           </Vazio>
         ) : (
-          <GraficoMeses meses={recebimentos} tipo="reais" mentorias={mentorias} />
+          <GraficoMeses meses={cronologico} tipo="volume" mentorias={mentorias} />
         )}
       </Secao>
-
-      {meses.length > 0 ? (
-        <Secao titulo="Tutorias por mês">
-          <GraficoMeses meses={cronologico} tipo="volume" mentorias={mentorias} />
-        </Secao>
-      ) : null}
     </div>
   );
 }
@@ -159,5 +173,36 @@ function Vazio({ children }: { children: React.ReactNode }) {
     <p className="rounded-xl border border-dashed border-borda px-4 py-6 text-center text-sm text-texto-suave">
       {children}
     </p>
+  );
+}
+
+/** Uma sessão que ainda vai acontecer: quando, com quem e o que é. */
+function Agendada({
+  tutoria,
+}: {
+  tutoria: { sessao: string; status: string; corStatus: string; data: string | null; mentorada: string; mentoradaId: string | null };
+}) {
+  const miolo = (
+    <>
+      <span className="w-24 shrink-0 text-sm tabular-nums">
+        {tutoria.data ? tutoria.data.slice(0, 10).split('-').reverse().join('/') : 'sem data'}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{tutoria.mentorada || tutoria.sessao}</span>
+        {tutoria.mentorada ? <span className="block text-xs text-texto-suave">{tutoria.sessao}</span> : null}
+      </span>
+      <EtiquetaNotion texto={tutoria.status} cor={tutoria.corStatus} />
+    </>
+  );
+
+  if (!tutoria.mentoradaId) {
+    return <span className="flex items-center gap-3 px-5 py-3">{miolo}</span>;
+  }
+
+  return (
+    <Link href={`/painel/${tutoria.mentoradaId}`} className="flex items-center gap-3 px-5 py-3 transition hover:bg-fundo">
+      {miolo}
+      <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave" />
+    </Link>
   );
 }
