@@ -6,13 +6,15 @@ import { proximasDaTutora, temUsuarioNoNotion } from '@/lib/notion/tutorias';
 import { carteiraDaTutora, normalizarId } from '@/lib/notion/carteira';
 import { AvisoNotion } from '@/components/AvisoNotion';
 import { Etiqueta } from '@/components/Etiqueta';
+import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { GraficoMeses } from '@/components/GraficoMeses';
 
 export const dynamic = 'force-dynamic';
 
-export default async function InicioPage() {
+export default async function InicioPage({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
   const sessao = await exigirSessao();
+  const { ano: anoPedido } = await searchParams;
   const tutoraId = sessao.tutora.notion_tutora_page_id;
 
   let perfil, sessoes, proximas, mentoradas;
@@ -29,10 +31,17 @@ export default async function InicioPage() {
     return <AvisoNotion erro={erro} detalhar={sessao.real.is_admin} />;
   }
 
-  const meses = porMes(sessoes);
-  const mentorias = mentoriasDe(sessoes);
-  const comValor = sessoes.some((s) => s.valor !== null);
-  const total = comValor ? sessoes.reduce((soma, s) => soma + (s.valor ?? 0), 0) : null;
+  // Os botões de ano vêm do que ela já fez; o padrão é o ano corrente, e sem
+  // tutoria nele, o último em que houve.
+  const anos = [...new Set(sessoes.map((s) => s.data?.slice(0, 4)).filter(Boolean) as string[])].sort().reverse();
+  const anoAtual = new Date().getFullYear().toString();
+  const ano = anoPedido && anos.includes(anoPedido) ? anoPedido : (anos.includes(anoAtual) ? anoAtual : (anos[0] ?? anoAtual));
+
+  const doAno = sessoes.filter((s) => s.data?.startsWith(ano));
+  const meses = porMes(doAno);
+  const mentorias = mentoriasDe(doAno);
+  const comValor = doAno.some((s) => s.valor !== null);
+  const total = comValor ? doAno.reduce((soma, s) => soma + (s.valor ?? 0), 0) : null;
 
   const agora = new Date().toISOString().slice(0, 7);
   const esteMes = meses.find((m) => m.chave === agora);
@@ -41,6 +50,11 @@ export default async function InicioPage() {
   // O pagamento cai no mês seguinte ao da sessão.
   const aReceber = esteMes?.valorEmReais ?? null;
   const mesQueVem = rotuloCurtoDoMes(mesSeguinte(agora));
+
+  // Quantas mentoradas diferentes ela atendeu no ano, e a média por mês dos
+  // meses em que houve tutoria (dividir pelo ano inteiro esconderia o ritmo).
+  const atendidas = new Set(doAno.flatMap((s) => s.mentoradaIds)).size;
+  const media = meses.length ? Math.round((doAno.length / meses.length) * 10) / 10 : 0;
 
   // Programa e Mentoria são a mesma pergunta feita duas vezes ("de que produto
   // você é tutora?"), e vinham repetindo item. Viram um campo só, sem repetição.
@@ -121,14 +135,20 @@ export default async function InicioPage() {
         )}
       </Secao>
 
-      <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="rotulo text-[13px] text-texto-suave">Seu ano</h2>
+        <SeletorDeAno anos={anos} selecionado={ano} caminho="/painel/inicio" mesmoComUm />
+      </div>
+
+      <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Numero rotulo={`Tutorias em ${ano}`} valor={String(doAno.length)} nota={`média de ${media} por mês`} />
         <Numero rotulo="Neste mês" valor={String(esteMes?.sessoes ?? 0)} />
-        {total !== null ? <Numero rotulo="Total recebido" valor={emReais(total)} /> : null}
+        <Numero rotulo="Mentoradas atendidas" valor={String(atendidas)} nota={`no ano de ${ano}`} />
+        {total !== null ? <Numero rotulo={`Recebido em ${ano}`} valor={emReais(total)} /> : null}
         {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
       </div>
 
-      <Secao titulo="Tutorias por mês">
+      <Secao titulo="Tutorias realizadas por mês" nota="Cada barra abre por mentoria.">
         {meses.length === 0 ? (
           <Vazio>
             {semUsuario

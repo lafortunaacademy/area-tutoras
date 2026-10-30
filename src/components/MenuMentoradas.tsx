@@ -30,12 +30,15 @@ export function MenuMentoradas({
   base,
   inicio,
   secoes = [],
+  semTopo,
 }: {
   mentoradas: ItemMenu[];
   base: string;
   inicio: { href: string; rotulo: string };
   /** Mostradas embaixo da mentorada aberta. */
   secoes?: SecaoMenu[];
+  /** O começo e a lista de mentoradas já estão na barra marrom: aqui fica só a busca. */
+  semTopo?: boolean;
 }) {
   const [busca, setBusca] = useState('');
   const caminho = usePathname();
@@ -51,20 +54,24 @@ export function MenuMentoradas({
 
   return (
     <nav aria-label="Navegação" className="flex h-full flex-col">
-      <Link
-        href={inicio.href}
-        aria-current={noInicio ? 'page' : undefined}
-        className={`${ITEM} ${noInicio ? ITEM_ATIVO : ITEM_INATIVO}`}
-      >
-        <Home aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
-        {inicio.rotulo}
-      </Link>
+      {semTopo ? null : (
+        <>
+          <Link
+            href={inicio.href}
+            aria-current={noInicio ? 'page' : undefined}
+            className={`${ITEM} ${noInicio ? ITEM_ATIVO : ITEM_INATIVO}`}
+          >
+            <Home aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
+            {inicio.rotulo}
+          </Link>
 
-      {/* A lista fica sempre aberta: quem está aqui veio para escolher alguém. */}
-      <p className={`mt-1 ${ITEM} ${naMentorada ? ITEM_ATIVO : 'border-transparent text-texto'}`}>
-        <Users aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
-        <span className="flex-1 text-left">Mentoradas</span>
-      </p>
+          {/* A lista fica sempre aberta: quem está aqui veio para escolher alguém. */}
+          <p className={`mt-1 ${ITEM} ${naMentorada ? ITEM_ATIVO : 'border-transparent text-texto'}`}>
+            <Users aria-hidden size={18} strokeWidth={1.6} className="shrink-0" />
+            <span className="flex-1 text-left">Mentoradas</span>
+          </p>
+        </>
+      )}
 
       <div className="mt-2 flex min-h-0 flex-1 flex-col">
           <div className="relative mb-2">
