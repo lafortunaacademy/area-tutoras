@@ -53,14 +53,15 @@ export default async function InicioPage() {
     ),
   ].join(', ');
 
-  // Onde ela atua, tudo junto do nome: área do método, especialidades e
-  // programas viram etiquetas, na ordem do geral para o específico.
+  // Onde ela atua, junto do nome: as especialidades como etiqueta e, ao lado,
+  // os produtos de que ela é tutora, que são marcas e aparecem como marcas.
   const emLista = (valor: string) =>
     valor
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);
-  const atuacao = [...new Set([...emLista(perfil?.areaDoMetodo ?? ''), ...emLista(perfil?.especialidades ?? ''), ...emLista(tutoraDe)])];
+  const especialidades = emLista(perfil?.especialidades ?? '');
+  const programas = emLista(tutoraDe);
   const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
 
   // O nome da mentorada de cada sessão: a sessão guarda só o ID da página dela.
@@ -91,10 +92,18 @@ export default async function InicioPage() {
           {/* O que ela faz, não como o cadastro dela está: a área do método e
               as especialidades. O status fica para o administrativo. */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {atuacao.map((e) => (
+            {especialidades.map((e) => (
               <Etiqueta key={e} texto={e} />
             ))}
           </div>
+
+          {programas.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              {programas.map((p) => (
+                <Programa key={p} nome={p} />
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -198,5 +207,33 @@ function Agendada({
       {miolo}
       <ChevronRight aria-hidden size={14} className="shrink-0 text-texto-suave" />
     </Link>
+  );
+}
+
+/**
+ * Um produto de que ela é tutora: My Partner, Pronta Para Fazer Dinheiro.
+ *
+ * Cada um tem a própria marca, e é ela que a tutora reconhece. Enquanto os
+ * arquivos não chegam, fica o monograma: a inicial no círculo da marca.
+ */
+function Programa({ nome }: { nome: string }) {
+  const sigla = nome
+    .split(/\s+/)
+    .filter((p) => p.length > 2)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <span className="flex items-center gap-2 text-sm">
+      <span
+        aria-hidden
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-marca text-[11px] font-medium text-marca-contraste"
+      >
+        {sigla}
+      </span>
+      {nome}
+    </span>
   );
 }
