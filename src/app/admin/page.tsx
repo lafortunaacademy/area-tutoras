@@ -59,7 +59,7 @@ export default async function AdminPage() {
       </div>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <h1 className="display text-3xl">Olá, {sessao.real.nome.split(' ')[0]}.</h1>
+        <h1 className="display text-3xl italic">Olá, {sessao.real.nome.split(' ')[0]}.</h1>
 
         <section className="mt-8">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
