@@ -1,12 +1,12 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Loader2, Plus, X } from 'lucide-react';
-import { alternarAcesso, liberarAcesso, liberarAcessoTutora, removerAcesso, type EstadoAcesso } from '../actions';
+import { Eye, Loader2, Plus, X } from 'lucide-react';
+import { alternarAcesso, liberarAcesso, liberarAcessoTutora, removerAcesso, verComo, type EstadoAcesso } from './actions';
 
 const inicial: EstadoAcesso = {};
 
-export type Pessoa = { id: string; nome: string; email: string; ativa: boolean; marca?: string };
+export type Pessoa = { id: string; nome: string; email: string; ativa: boolean; marca?: string; euMesma?: boolean };
 
 /**
  * O interruptor de acesso: ligado, a pessoa entra; desligado, o cadastro
@@ -44,11 +44,14 @@ export function ListaDeAcessos({
   tabela,
   pessoas,
   removivel,
+  comVerComo,
 }: {
   tabela: 'tutoras' | 'mentoradas_acesso';
   pessoas: Pessoa[];
   /** Clientes podem sair da lista de vez; o time interno só liga e desliga. */
   removivel?: boolean;
+  /** No time interno, o atalho para abrir a área como aquela tutora. */
+  comVerComo?: boolean;
 }) {
   if (pessoas.length === 0) {
     return <p className="px-5 py-6 text-center text-sm text-texto-suave">Ninguém liberado ainda.</p>;
@@ -67,6 +70,20 @@ export function ListaDeAcessos({
             </p>
             <p className="text-xs break-all text-texto-suave">{p.email}</p>
           </div>
+
+          {comVerComo && !p.euMesma ? (
+            <form action={verComo}>
+              <input type="hidden" name="tutoraId" value={p.id} />
+              <button
+                type="submit"
+                title="Abrir a área como ela vê"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[11px] text-texto-suave transition hover:border-marca hover:text-marca"
+              >
+                <Eye aria-hidden size={13} />
+                <span className="hidden sm:inline">Ver como</span>
+              </button>
+            </form>
+          ) : null}
 
           <span className={`hidden text-[11px] sm:inline ${p.ativa ? 'text-ok' : 'text-texto-suave'}`}>
             {p.ativa ? 'com acesso' : 'sem acesso'}

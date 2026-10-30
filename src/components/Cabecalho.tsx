@@ -37,27 +37,27 @@ export function Cabecalho({
   return (
     <header className="border-b border-borda bg-superficie">
       <div className="mx-auto flex max-w-[110rem] items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href={atual.href} className="flex shrink-0 items-center gap-3">
-          {/* A logo é preta sobre transparente; no escuro ela some, então
-              inverte junto com o tema. */}
-          <Image
-            src="/marca/la-fortuna.png"
-            alt="La Fortuna Academy"
-            width={2369}
-            height={862}
-            priority
-            className="logo-marca h-7 w-auto sm:h-8"
-          />
-          <span className="hidden border-l border-borda pl-3 text-sm text-texto-suave md:inline">
-            {atual.nome}
-          </span>
-        </Link>
+        {/* À esquerda, só o que serve para andar: a marca e, para quem
+            administra, as duas áreas. Quem é tutora ou mentorada tem uma área
+            só — dizer o nome dela no alto era repetir onde a pessoa já está. */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href={atual.href} className="shrink-0">
+            {/* A logo é preta sobre transparente; no escuro ela some, então
+                inverte junto com o tema. */}
+            <Image
+              src="/marca/la-fortuna.png"
+              alt="La Fortuna Academy"
+              width={2369}
+              height={862}
+              priority
+              className="logo-marca h-7 w-auto sm:h-8"
+            />
+          </Link>
 
-        <div className="flex min-w-0 items-center gap-3 text-sm sm:gap-4">
           {/* O administrativo sai do seletor: ele é a casa de quem administra, e
-              fica no nome, ao lado. Aqui ficam só as duas áreas. */}
+              fica no nome, do outro lado. Aqui ficam só as duas áreas. */}
           {admin ? (
-            <nav aria-label="Áreas" className="flex items-center gap-0.5 rounded-lg border border-borda p-0.5">
+            <nav aria-label="Áreas" className="flex min-w-0 items-center gap-0.5 rounded-lg border border-borda p-0.5">
               {AREAS.filter((a) => a.chave !== 'admin').map((a) => (
                 <Link
                   key={a.chave}
@@ -76,11 +76,14 @@ export function Cabecalho({
               ))}
             </nav>
           ) : null}
+        </div>
+
+        <div className="flex min-w-0 items-center gap-3 text-sm sm:gap-4">
 
           {/* Configurações: quem entra no app. Só para quem administra. */}
           {admin ? (
             <Link
-              href="/admin/configuracoes"
+              href="/admin"
               title="Configurações"
               className="rounded-lg p-1.5 text-texto-suave transition hover:bg-superficie-2 hover:text-marca"
             >

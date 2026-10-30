@@ -69,7 +69,6 @@ export async function liberarAcesso(_anterior: EstadoAcesso, form: FormData): Pr
   }
 
   revalidatePath('/admin');
-  revalidatePath('/admin/configuracoes');
   return { ok: `${email} liberado.` };
 }
 
@@ -80,7 +79,6 @@ export async function removerAcesso(form: FormData) {
   if (!id) return;
   await supabaseAdmin().from('mentoradas_acesso').delete().eq('id', id);
   revalidatePath('/admin');
-  revalidatePath('/admin/configuracoes');
 }
 
 /**
@@ -99,7 +97,7 @@ export async function alternarAcesso(form: FormData) {
     .from(tabela)
     .update({ ativa: String(form.get('ativa') ?? '') === 'true' })
     .eq('id', id);
-  revalidatePath('/admin/configuracoes');
+  revalidatePath('/admin');
 }
 
 /**
@@ -132,6 +130,6 @@ export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormDat
     return { erro: 'Acesso liberado, mas o login não foi criado. Tente de novo.' };
   }
 
-  revalidatePath('/admin/configuracoes');
+  revalidatePath('/admin');
   return { ok: `${email} liberado.` };
 }
