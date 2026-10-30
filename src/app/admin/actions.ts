@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { assinarPreview, COOKIE_VER_COMO, exigirAdmin } from '@/lib/session';
+import { assinarPreview, COOKIE_VER_COMO, COOKIE_VER_COMO_MENTORADA, exigirAdmin } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizarId } from '@/lib/notion/carteira';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
@@ -174,4 +174,24 @@ export async function removerDoTime(form: FormData) {
 
   await supabaseAdmin().from('tutoras').delete().eq('id', id);
   revalidatePath('/admin');
+}
+
+/**
+ * O mesmo "ver como", do lado das clientes: abre a área de membros como a
+ * mentorada a vê, com o menu dela e sem nada do administrativo.
+ */
+export async function verComoMentorada(form: FormData) {
+  await exigirAdmin();
+  const mentoradaId = String(form.get('mentoradaId') ?? '');
+  if (!mentoradaId) return;
+
+  (await cookies()).set(COOKIE_VER_COMO_MENTORADA, assinarPreview(mentoradaId), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 60 * 60 * 8,
+  });
+
+  redirect(`/mentoradas/${mentoradaId}`);
 }

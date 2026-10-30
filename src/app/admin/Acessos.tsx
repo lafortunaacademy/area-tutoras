@@ -11,6 +11,7 @@ import {
   removerAcesso,
   removerDoTime,
   verComo,
+  verComoMentorada,
   type EstadoAcesso,
 } from './actions';
 
@@ -23,6 +24,10 @@ export type Pessoa = {
   ativa: boolean;
   /** Time interno: administradora vê tudo e mexe nas configurações. */
   admin?: boolean;
+  /** Clientes: a página dela no Notion, para abrir a área como ela vê. */
+  mentoradaId?: string;
+  /** A página dela não está mais no Notion: não há área para abrir. */
+  semPagina?: boolean;
   euMesma?: boolean;
 };
 
@@ -111,6 +116,26 @@ export function ListaDeAcessos({
           </div>
 
           {tabela === 'tutoras' ? <TipoDeAcesso pessoa={p} /> : null}
+
+          {tabela === 'mentoradas_acesso' && p.semPagina ? (
+            <span className="shrink-0 text-[12px] text-texto-suave italic" title="A página dela saiu do Notion ou foi para a lixeira.">
+              sem página no Notion
+            </span>
+          ) : null}
+
+          {tabela === 'mentoradas_acesso' && p.mentoradaId && !p.semPagina ? (
+            <form action={verComoMentorada}>
+              <input type="hidden" name="mentoradaId" value={p.mentoradaId} />
+              <button
+                type="submit"
+                title="Abrir a área como ela vê"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-borda px-2.5 py-1 text-[12px] text-texto-suave transition hover:border-marca hover:text-marca"
+              >
+                <Eye aria-hidden size={13} />
+                <span className="hidden sm:inline">Ver como</span>
+              </button>
+            </form>
+          ) : null}
 
           {/* "Ver como" é para tutora: quem administra já enxerga tudo, e o
               recorte de tutora dela viria vazio. */}

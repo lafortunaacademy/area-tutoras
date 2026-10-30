@@ -6,6 +6,8 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const COOKIE_VER_COMO = 'ver_como';
+/** O mesmo "ver como", do outro lado: a área de membros pelos olhos da cliente. */
+export const COOKIE_VER_COMO_MENTORADA = 'ver_como_mentorada';
 
 export type Tutora = {
   id: string;
@@ -140,6 +142,8 @@ export async function getAcessoMentorada(): Promise<AcessoMentorada | null> {
 export type Visitante = {
   nome: string;
   admin: boolean;
+  /** Está vendo a área como uma mentorada, sem ser ela. */
+  verComo?: boolean;
   /** Preenchido só quando quem entrou é a própria mentorada. */
   mentoradaId: string | null;
 };
@@ -147,7 +151,22 @@ export type Visitante = {
 export async function getVisitante(): Promise<Visitante | null> {
   const sessao = await getSessao();
   if (sessao) {
-    return sessao.real.is_admin ? { nome: sessao.real.nome, admin: true, mentoradaId: null } : null;
+    if (!sessao.real.is_admin) return null;
+
+    // "Ver como" uma cliente: a tela inteira passa a ser a dela, inclusive o
+    // que ela não vê. A assinatura do cookie é conferida como a das tutoras.
+    const preview = lerPreview((await cookies()).get(COOKIE_VER_COMO_MENTORADA)?.value);
+    if (preview) {
+      const { data: alvo } = await supabaseAdmin()
+        .from('mentoradas_acesso')
+        .select('nome, notion_page_id')
+        .eq('notion_page_id', preview)
+        .maybeSingle<{ nome: string; notion_page_id: string }>();
+
+      if (alvo) return { nome: alvo.nome, admin: false, mentoradaId: alvo.notion_page_id, verComo: true };
+    }
+
+    return { nome: sessao.real.nome, admin: true, mentoradaId: null };
   }
 
   const acesso = await getAcessoMentorada();

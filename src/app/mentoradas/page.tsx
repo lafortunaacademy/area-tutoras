@@ -47,37 +47,54 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
   }
 
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
-  const comAtraso = mentoradas.filter((m) => m.tarefasAtrasadas > 0).length;
   // Falta tutoria, falta sessão com a Fernanda, ou as duas: quem marca é gente
   // diferente, então basta faltar uma para a mentorada entrar na lista.
   const semAgenda = mentoradas.filter((m) => m.faltaAgendar.length > 0);
+  const aAgendar = soma((m) => m.faltaAgendar.length);
+  const semBriefing = mentoradas.filter((m) => m.semBriefing.length > 0);
+  const briefings = soma((m) => m.semBriefing.length);
+  // Na tabela entram os dois motivos: falta marcar ou falta o briefing de uma
+  // tutoria já marcada.
+  const alertas = mentoradas.filter((m) => m.faltaAgendar.length > 0 || m.semBriefing.length > 0);
 
   return (
     <>
       <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <Numero rotulo="Mentoradas" valor={mentoradas.length} detalhe="no modelo novo" />
         <Numero rotulo="Sessões a realizar" valor={soma((m) => m.aRealizar)} detalhe="no ciclo de cada uma" />
         <Numero
-          rotulo="Tarefas atrasadas"
-          valor={soma((m) => m.tarefasAtrasadas)}
-          detalhe={comAtraso ? `em ${comAtraso} ${comAtraso === 1 ? 'mentorada' : 'mentoradas'}` : 'nenhuma mentorada'}
+          rotulo="Sessões para agendar"
+          valor={aAgendar}
+          detalhe={
+            semAgenda.length
+              ? `em ${semAgenda.length} ${semAgenda.length === 1 ? 'mentorada' : 'mentoradas'}, neste mês`
+              : 'o mês está fechado'
+          }
+        />
+        <Numero
+          rotulo="Briefings pendentes"
+          valor={briefings}
+          detalhe={
+            semBriefing.length
+              ? `em ${semBriefing.length} ${semBriefing.length === 1 ? 'tutoria marcada' : 'mentoradas com tutoria marcada'}`
+              : 'nenhuma tutoria marcada sem briefing'
+          }
         />
       </ul>
 
       <Secao
         titulo="Alertas de acompanhamento"
-        descricao="Quem ainda tem o que marcar no ciclo em que está: tutoria com a tutora, sessão com a Fernanda, ou as duas. Conta como marcada a sessão com status Agendado ou com data prevista de hoje em diante."
+        descricao="O combinado do mês é no mínimo uma tutoria e uma sessão com a Fernanda. Quem ainda não tem as duas, realizadas ou marcadas, aparece aqui — e também quem tem tutoria marcada sem briefing."
       >
-        {semAgenda.length === 0 ? (
+        {alertas.length === 0 ? (
           <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
-            Todas as mentoradas estão com a próxima sessão agendada.
+            Todas as mentoradas já têm a tutoria e a sessão deste mês, com briefing feito.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
             <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Situação', 'Mentorada', 'O que falta marcar', 'Faltam no ciclo', 'Última sessão'].map((c) => (
+                  {['Situação', 'Mentorada', 'O que falta marcar no mês', 'Briefing', 'Última sessão'].map((c) => (
                     <th key={c} className="px-4 py-2.5 text-[12px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
@@ -85,7 +102,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                 </tr>
               </thead>
               <tbody>
-                {semAgenda.map((m) => (
+                {alertas.map((m) => (
                   <tr key={m.mentorada.id} className="border-b border-borda/60 last:border-0">
                     <td className="px-4 py-2.5 whitespace-nowrap">
                       <EtiquetaNotion
@@ -104,6 +121,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                     </td>
                     <td className="px-4 py-2.5">
                       <span className="flex flex-wrap items-center gap-1.5">
+                        {m.faltaAgendar.length === 0 ? <span className="text-texto-suave">nada</span> : null}
                         {m.faltaAgendar.map((o) => (
                           <span
                             key={o}
@@ -115,8 +133,17 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                         {m.proximaAAgendar ? <span className="text-texto-suave">{m.proximaAAgendar}</span> : null}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
-                      {m.aRealizar} {m.aRealizar === 1 ? 'sessão' : 'sessões'}
+                    <td className="px-4 py-2.5 text-[13px]">
+                      {m.semBriefing.length === 0 ? (
+                        <span className="text-texto-suave">em dia</span>
+                      ) : (
+                        m.semBriefing.map((b) => (
+                          <span key={`${b.sessao}-${b.tutora}`} className="block whitespace-nowrap">
+                            falta o de {b.tutora}
+                            <span className="block text-xs text-texto-suave">{b.sessao}</span>
+                          </span>
+                        ))
+                      )}
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
                       {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : ''}

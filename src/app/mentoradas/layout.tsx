@@ -1,6 +1,7 @@
 import { exigirVisitante } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraDeAreas, type ItemDaBarra } from '@/components/BarraDeAreas';
+import { BarraVerComo } from '@/components/BarraVerComo';
 import { FaixaDaMarca } from '@/components/FaixaDaMarca';
 import { Cabecalho } from '@/components/Cabecalho';
 import type { SecaoMenu } from '@/components/MenuMentoradas';
@@ -65,6 +66,8 @@ export default async function MentoradasLayout({ children }: { children: React.R
       />
 
       <div className="min-w-0 flex-1">
+        {visitante.verComo ? <BarraVerComo nome={visitante.nome} /> : null}
+
         {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
             onde a barra não cabe. */}
         <div className="lg:hidden">

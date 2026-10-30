@@ -1,6 +1,10 @@
 import 'server-only';
 import type { Mentorada } from './carteira';
-import { TUTORIA_A_REALIZAR, TUTORIA_REALIZADA } from './config';
+import { BRIEFINGS, TUTORIA_A_REALIZAR, TUTORIA_REALIZADA } from './config';
+import { queryDatabase } from './client';
+import { relationIds } from './props';
+import { resolverDatabaseId } from './resolver';
+import { normalizarId } from './carteira';
 import { cicloMaisRecente } from './sessoesDaMentorada';
 import { mentoradasDoModeloNovo } from './modelo';
 import { sessoesPorCiclo } from './sessoesDaMentorada';
@@ -11,6 +15,10 @@ import { tarefasDaMentorada } from './tarefas';
  * ponto cada uma está no ciclo atual. Só lê, das mesmas bases das páginas de
  * cada mentorada (sessões e tarefas).
  *
+ * A conta do mês: cada mentorada precisa ter, no mês corrente, pelo menos uma
+ * tutoria e uma sessão com a Fernanda — realizada ou já marcada. O que faltar
+ * aparece como "para agendar".
+ *
  * Precisa agendar: ainda tem sessão a realizar no ciclo, mas nenhuma agendada —
  * nem com status "Agendado", nem com data prevista de hoje em diante.
  */
@@ -18,8 +26,10 @@ import { tarefasDaMentorada } from './tarefas';
 export type ResumoDaMentorada = {
   mentorada: Pick<Mentorada, 'id' | 'nome' | 'foto' | 'mentoria' | 'situacao' | 'corSituacao'>;
   precisaAgendar: boolean;
-  /** O que falta marcar: tutoria (com as tutoras), sessão (com a Fernanda) ou as duas. */
+  /** O que falta no mês: tutoria (com as tutoras), sessão (com a Fernanda) ou as duas. */
   faltaAgendar: ('tutoria' | 'sessao')[];
+  /** Tutorias já marcadas que ainda não têm briefing da tutora. */
+  semBriefing: { sessao: string; tutora: string }[];
   /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
   proximaAAgendar: string | null;
   realizadas: number;
@@ -48,10 +58,13 @@ export async function visaoGeral(): Promise<VisaoGeral> {
   const mentoradas = await mentoradasDoModeloNovo();
   const hoje = hojeEmSaoPaulo();
   const ciclo = await cicloMaisRecente();
+  const briefings = await paresComBriefing().catch(() => new Set<string>());
 
   const resumos: ResumoDaMentorada[] = [];
   for (let i = 0; i < mentoradas.length; i += EM_PARALELO) {
-    resumos.push(...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ciclo)))));
+    resumos.push(
+      ...(await Promise.all(mentoradas.slice(i, i + EM_PARALELO).map((m) => resumir(m, hoje, ciclo, briefings)))),
+    );
   }
 
   // Sempre pela situação: em risco, depois atenção, depois fluindo (o resto no fim).
@@ -65,7 +78,31 @@ export async function visaoGeral(): Promise<VisaoGeral> {
   return { ciclo, mentoradas: resumos };
 }
 
-async function resumir(m: Mentorada, hoje: string, cicloDoControle: string): Promise<ResumoDaMentorada> {
+/**
+ * Quem já tem briefing, por par mentorada + tutora. Uma consulta só: olhar
+ * briefing de uma em uma seria uma ida ao Notion por mentorada.
+ */
+async function paresComBriefing(): Promise<Set<string>> {
+  const dbId = await resolverDatabaseId('briefings');
+  const linhas = await queryDatabase(dbId, { limite: 500 });
+
+  const pares = new Set<string>();
+  for (const p of linhas) {
+    for (const mentorada of relationIds(p, BRIEFINGS.mentorada)) {
+      for (const tutora of relationIds(p, BRIEFINGS.paraATutora)) {
+        pares.add(`${normalizarId(mentorada)}|${normalizarId(tutora)}`);
+      }
+    }
+  }
+  return pares;
+}
+
+async function resumir(
+  m: Mentorada,
+  hoje: string,
+  cicloDoControle: string,
+  briefings: Set<string>,
+): Promise<ResumoDaMentorada> {
   const [sessoes, tarefas] = await Promise.all([
     sessoesPorCiclo(m).catch(() => null),
     tarefasDaMentorada(m.id).catch(() => null),
@@ -82,16 +119,29 @@ async function resumir(m: Mentorada, hoje: string, cicloDoControle: string): Pro
   const agendada = aRealizar.some(temHora);
 
   // Quem marca cada coisa é gente diferente: a tutoria é com a tutora, o resto
-  // (check-in, planejamento, call SOS) é com a Fernanda. Por isso a falta é
-  // apurada separada, pelo tipo da sessão.
-  const ehTutoria = (s: (typeof aRealizar)[number]) => s.tipo.toLowerCase().startsWith('tutoria');
+  // (check-in, planejamento, call SOS) é com a Fernanda. E o combinado é uma de
+  // cada por mês: a falta é apurada no mês corrente, separada por tipo.
+  const ehTutoria = (s: { tipo: string }) => s.tipo.toLowerCase().startsWith('tutoria');
+  const mes = hoje.slice(0, 7);
+  const noMes = (s: { dataRealizada: string | null; dataPrevista: string | null }) =>
+    s.dataRealizada?.startsWith(mes) || s.dataPrevista?.startsWith(mes);
+
   const faltaAgendar: ('tutoria' | 'sessao')[] = [];
   for (const [chave, dessas] of [
-    ['tutoria', aRealizar.filter(ehTutoria)],
-    ['sessao', aRealizar.filter((s) => !ehTutoria(s))],
+    ['tutoria', doCiclo.filter(ehTutoria)],
+    ['sessao', doCiclo.filter((s) => !ehTutoria(s))],
   ] as const) {
-    if (dessas.length > 0 && !dessas.some(temHora)) faltaAgendar.push(chave);
+    if (!dessas.some(noMes)) faltaAgendar.push(chave);
   }
+
+  // Tutoria já marcada e sem briefing: é o que trava a tutora antes da sessão.
+  const semBriefing = aRealizar
+    .filter((s) => ehTutoria(s) && temHora(s))
+    .flatMap((s) =>
+      s.equipe
+        .filter((t) => !briefings.has(`${normalizarId(m.id)}|${normalizarId(t.id)}`))
+        .map((t) => ({ sessao: s.sessao || s.tipo, tutora: t.nome })),
+    );
 
   const ultimaSessao =
     (sessoes?.sessoes ?? [])
@@ -106,6 +156,7 @@ async function resumir(m: Mentorada, hoje: string, cicloDoControle: string): Pro
     mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, situacao: m.situacao, corSituacao: m.corSituacao },
     precisaAgendar: aRealizar.length > 0 && !agendada,
     faltaAgendar,
+    semBriefing,
     proximaAAgendar: aRealizar[0]?.sessao || null,
     realizadas: realizadas.length,
     aRealizar: aRealizar.length,

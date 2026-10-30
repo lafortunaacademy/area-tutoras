@@ -5,6 +5,7 @@ import { Cabecalho } from '@/components/Cabecalho';
 import { tutorasDoHub } from '@/lib/notion/hub';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { respostasSoltas } from '@/lib/notion/mapas';
+import { normalizarId } from '@/lib/notion/carteira';
 import { ListaDeAcessos, NovoAcesso, type Pessoa } from './Acessos';
 import { RespostasDoMapa } from './RespostasDoMapa';
 
@@ -24,9 +25,9 @@ export default async function AdminPage() {
     supabaseAdmin().from('tutoras').select('*').order('nome').returns<Tutora[]>(),
     supabaseAdmin()
       .from('mentoradas_acesso')
-      .select('id, nome, email, ativa')
+      .select('id, nome, email, ativa, notion_page_id')
       .order('nome')
-      .returns<{ id: string; nome: string; email: string; ativa: boolean }[]>(),
+      .returns<{ id: string; nome: string; email: string; ativa: boolean; notion_page_id: string }[]>(),
     tutorasDoHub().catch(() => []),
     mentoradasDoModeloNovo().catch(() => []),
     respostasSoltas().catch(() => []),
@@ -40,7 +41,14 @@ export default async function AdminPage() {
     admin: t.is_admin,
     euMesma: t.id === sessao.real.id,
   }));
-  const daCasa: Pessoa[] = clientes ?? [];
+  // Quem foi apagada do Notion continua no cadastro daqui: a página some, o
+  // acesso fica. Marcar isso é o que evita mandar o "ver como" para um 404.
+  const noNotion = new Set(mentoradas.map((m) => normalizarId(m.id)));
+  const daCasa: Pessoa[] = (clientes ?? []).map((c) => ({
+    ...c,
+    mentoradaId: c.notion_page_id,
+    semPagina: mentoradas.length > 0 && !noNotion.has(normalizarId(c.notion_page_id)),
+  }));
 
   return (
     <div className="min-h-dvh">
