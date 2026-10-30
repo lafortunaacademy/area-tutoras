@@ -50,12 +50,15 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
   // Falta tutoria, falta sessão com a Fernanda, ou as duas: quem marca é gente
   // diferente, então basta faltar uma para a mentorada entrar na lista.
   const semAgenda = mentoradas.filter((m) => m.faltaAgendar.length > 0);
-  const aAgendar = soma((m) => m.faltaAgendar.length);
+  const aAgendar = soma((m) => m.paraAgendar.length);
+  const naFila = mentoradas.filter((m) => m.paraAgendar.length > 0);
   const semBriefing = mentoradas.filter((m) => m.semBriefing.length > 0);
   const briefings = soma((m) => m.semBriefing.length);
   // Na tabela entram os dois motivos: falta marcar ou falta o briefing de uma
   // tutoria já marcada.
-  const alertas = mentoradas.filter((m) => m.faltaAgendar.length > 0 || m.semBriefing.length > 0);
+  const alertas = mentoradas.filter(
+    (m) => m.paraAgendar.length > 0 || m.faltaAgendar.length > 0 || m.semBriefing.length > 0,
+  );
 
   return (
     <>
@@ -65,9 +68,9 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
           rotulo="Sessões para agendar"
           valor={aAgendar}
           detalhe={
-            semAgenda.length
-              ? `em ${semAgenda.length} ${semAgenda.length === 1 ? 'mentorada' : 'mentoradas'}, neste mês`
-              : 'o mês está fechado'
+            naFila.length
+              ? `em ${naFila.length} ${naFila.length === 1 ? 'mentorada' : 'mentoradas'}`
+              : 'nada esperando data'
           }
         />
         <Numero
@@ -83,18 +86,18 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 
       <Secao
         titulo="Alertas de acompanhamento"
-        descricao="O combinado do mês é no mínimo uma tutoria e uma sessão com a Fernanda. Quem ainda não tem as duas, realizadas ou marcadas, aparece aqui — e também quem tem tutoria marcada sem briefing."
+        descricao="As sessões marcadas como Agendar no Notion, mais o combinado do mês: no mínimo uma tutoria e uma sessão com a Fernanda, realizadas ou marcadas. Quem tem tutoria marcada sem briefing também aparece."
       >
         {alertas.length === 0 ? (
           <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
-            Todas as mentoradas já têm a tutoria e a sessão deste mês, com briefing feito.
+            Nada esperando data: o mês de todas está fechado e os briefings, feitos.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
             <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Situação', 'Mentorada', 'O que falta marcar no mês', 'Briefing', 'Última sessão'].map((c) => (
+                  {['Situação', 'Mentorada', 'O que falta marcar', 'Briefing', 'Última sessão'].map((c) => (
                     <th key={c} className="px-4 py-2.5 text-[12px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
@@ -121,16 +124,26 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                     </td>
                     <td className="px-4 py-2.5">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        {m.faltaAgendar.length === 0 ? <span className="text-texto-suave">nada</span> : null}
+                        {m.paraAgendar.length + m.faltaAgendar.length === 0 ? (
+                          <span className="text-texto-suave">nada</span>
+                        ) : null}
+                        {/* O que o Notion já marcou como Agendar vem primeiro: é a fila real. */}
+                        {m.paraAgendar.map((s, i) => (
+                          <span
+                            key={`${s.sessao}-${i}`}
+                            className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-andamento"
+                          >
+                            {s.sessao}
+                          </span>
+                        ))}
                         {m.faltaAgendar.map((o) => (
                           <span
                             key={o}
-                            className="inline-block rounded-full bg-andamento-suave px-2 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-andamento"
+                            className="inline-block rounded-full border border-borda px-2 py-0.5 text-[11.5px] whitespace-nowrap text-texto-suave"
                           >
-                            {o === 'tutoria' ? 'Tutoria' : 'Sessão com a Fernanda'}
+                            sem {o === 'tutoria' ? 'tutoria' : 'sessão com a Fernanda'} no mês
                           </span>
                         ))}
-                        {m.proximaAAgendar ? <span className="text-texto-suave">{m.proximaAAgendar}</span> : null}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-[13px]">

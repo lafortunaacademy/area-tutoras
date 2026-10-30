@@ -28,6 +28,8 @@ export type ResumoDaMentorada = {
   precisaAgendar: boolean;
   /** O que falta no mês: tutoria (com as tutoras), sessão (com a Fernanda) ou as duas. */
   faltaAgendar: ('tutoria' | 'sessao')[];
+  /** As sessões que o Notion já marcou como "Agendar": a fila de marcação dela. */
+  paraAgendar: { sessao: string; tipo: string }[];
   /** Tutorias já marcadas que ainda não têm briefing da tutora. */
   semBriefing: { sessao: string; tutora: string }[];
   /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
@@ -53,6 +55,8 @@ export type VisaoGeral = {
 
 const EM_PARALELO = 3;
 const AGENDADO = 'Agendado';
+/** O status com que a Fernanda marca, no Notion, a sessão que ainda precisa de data. */
+const AGENDAR = 'Agendar';
 
 export async function visaoGeral(): Promise<VisaoGeral> {
   const mentoradas = await mentoradasDoModeloNovo();
@@ -126,6 +130,12 @@ async function resumir(
   const noMes = (s: { dataRealizada: string | null; dataPrevista: string | null }) =>
     s.dataRealizada?.startsWith(mes) || s.dataPrevista?.startsWith(mes);
 
+  // A fila de marcação vem pronta do Notion: status "Agendar" quer dizer
+  // exatamente isto, e é o que a Fernanda vê na base.
+  const paraAgendar = doCiclo
+    .filter((s) => s.status === AGENDAR)
+    .map((s) => ({ sessao: s.sessao || s.tipo, tipo: s.tipo }));
+
   const faltaAgendar: ('tutoria' | 'sessao')[] = [];
   for (const [chave, dessas] of [
     ['tutoria', doCiclo.filter(ehTutoria)],
@@ -156,6 +166,7 @@ async function resumir(
     mentorada: { id: m.id, nome: m.nome, foto: m.foto, mentoria: m.mentoria, situacao: m.situacao, corSituacao: m.corSituacao },
     precisaAgendar: aRealizar.length > 0 && !agendada,
     faltaAgendar,
+    paraAgendar,
     semBriefing,
     proximaAAgendar: aRealizar[0]?.sessao || null,
     realizadas: realizadas.length,
