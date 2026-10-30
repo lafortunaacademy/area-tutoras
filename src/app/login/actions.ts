@@ -41,8 +41,7 @@ export async function enviarMagicLink(
   const daPorta = portaDoHost((await headers()).get('host'));
 
   if (daPorta && daPorta !== daPessoa) {
-    const url = urlDaPorta(daPessoa, email);
-    if (url) return { portaCerta: { nome: NOME_DA_PORTA[daPessoa], url } };
+    return { portaCerta: { nome: NOME_DA_PORTA[daPessoa], url: urlDaPorta(daPessoa, email) } };
   }
 
   // Veio de um formulário: guarda para onde voltar quando ela clicar no link do e-mail.
