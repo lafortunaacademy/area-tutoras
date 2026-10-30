@@ -120,9 +120,16 @@ export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormDat
 
   // `upsert` por e-mail: só as colunas enviadas mudam, então quem já era admin
   // continua sendo.
-  const { error } = await db
-    .from('tutoras')
-    .upsert({ email, nome: tutora.nome, notion_tutora_page_id: tutoraId, ativa: true }, { onConflict: 'email' });
+  const { error } = await db.from('tutoras').upsert(
+    {
+      email,
+      nome: tutora.nome,
+      notion_tutora_page_id: tutoraId,
+      ativa: true,
+      is_admin: String(form.get('tipo') ?? '') === 'admin',
+    },
+    { onConflict: 'email' },
+  );
   if (error) return { erro: 'Não foi possível liberar agora.' };
 
   const { error: erroAuth } = await db.auth.admin.createUser({ email, email_confirm: true });
@@ -132,4 +139,33 @@ export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormDat
 
   revalidatePath('/admin');
   return { ok: `${email} liberado.` };
+}
+
+/**
+ * Troca o tipo de acesso de alguém do time: administradora vê tudo e mexe nas
+ * configurações; tutora vê só as mentoradas dela.
+ *
+ * Ninguém muda o próprio tipo — tirar o próprio acesso de administradora
+ * trancaria a porta por dentro, e o app não tem outra chave.
+ */
+export async function alternarTipo(form: FormData) {
+  const sessao = await exigirAdmin();
+  const id = String(form.get('id') ?? '');
+  if (!id || id === sessao.real.id) return;
+
+  await supabaseAdmin()
+    .from('tutoras')
+    .update({ is_admin: String(form.get('tipo') ?? '') === 'admin' })
+    .eq('id', id);
+  revalidatePath('/admin');
+}
+
+/** Apaga o cadastro de alguém do time. Para quem só saiu, o interruptor basta. */
+export async function removerDoTime(form: FormData) {
+  const sessao = await exigirAdmin();
+  const id = String(form.get('id') ?? '');
+  if (!id || id === sessao.real.id) return;
+
+  await supabaseAdmin().from('tutoras').delete().eq('id', id);
+  revalidatePath('/admin');
 }

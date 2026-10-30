@@ -240,6 +240,23 @@ body {
   display: block;
 }
 
+/* Na barra marrom das áreas o logotipo preto sumiria: ele inverte no tema
+   claro e fica como é no escuro, onde a barra é bege. */
+.logo-na-barra {
+  display: block;
+  filter: invert(1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) .logo-na-barra {
+    filter: none;
+  }
+}
+
+:root[data-tema="escuro"] .logo-na-barra {
+  filter: none;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema="claro"]) .logo-marca {
     filter: invert(1);

@@ -1,5 +1,6 @@
 import { exigirVisitante } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
+import { BarraDeAreas } from '@/components/BarraDeAreas';
 import { Cabecalho } from '@/components/Cabecalho';
 import { MenuMentoradas, type SecaoMenu } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
@@ -30,30 +31,35 @@ export default async function MentoradasLayout({ children }: { children: React.R
   const mentoradas = visitante.admin ? todas : todas.filter((m) => m.id === visitante.mentoradaId);
 
   return (
-    <div className="min-h-dvh">
-      <Cabecalho visitante={visitante} area="mentoradas" />
+    <div className="flex min-h-dvh">
+      {/* A mentorada tem uma área só: a barra das áreas é de quem administra. */}
+      {visitante.admin ? <BarraDeAreas /> : null}
 
-      <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-4 py-8 sm:px-6">
-        <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-8 h-[calc(100dvh-6rem)]">
-            <MenuMentoradas
-              base="/mentoradas"
-              inicio={
-                visitante.admin
-                  ? { href: '/mentoradas', rotulo: 'Visão geral' }
-                  : { href: `/mentoradas/${visitante.mentoradaId}`, rotulo: 'Minha área' }
-              }
-              secoes={SECOES}
-              mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
-            />
-          </div>
-        </aside>
+      <div className="min-w-0 flex-1">
+        <Cabecalho visitante={visitante} area="mentoradas" />
 
-        <main className="min-w-0 flex-1">
-          <AtalhosNoCelular base="/mentoradas" secoes={SECOES} />
-          {children}
-        </main>
-        <RolarParaAncora />
+        <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-4 py-8 sm:px-6">
+          <aside className="hidden w-60 shrink-0 lg:block">
+            <div className="sticky top-8 h-[calc(100dvh-6rem)]">
+              <MenuMentoradas
+                base="/mentoradas"
+                inicio={
+                  visitante.admin
+                    ? { href: '/mentoradas', rotulo: 'Visão geral' }
+                    : { href: `/mentoradas/${visitante.mentoradaId}`, rotulo: 'Minha área' }
+                }
+                secoes={SECOES}
+                mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
+              />
+            </div>
+          </aside>
+
+          <main className="min-w-0 flex-1">
+            <AtalhosNoCelular base="/mentoradas" secoes={SECOES} />
+            {children}
+          </main>
+          <RolarParaAncora />
+        </div>
       </div>
     </div>
   );

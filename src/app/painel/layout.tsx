@@ -1,6 +1,7 @@
 import { exigirSessao } from '@/lib/session';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraVerComo } from '@/components/BarraVerComo';
+import { BarraDeAreas } from '@/components/BarraDeAreas';
 import { Cabecalho } from '@/components/Cabecalho';
 import { MenuMentoradas } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
@@ -13,35 +14,40 @@ export default async function PainelLayout({ children }: { children: React.React
   const mentoradas = await mentoradasDoModeloNovo().catch(() => []);
 
   return (
-    <div className="min-h-dvh">
-      {sessao.verComo ? <BarraVerComo nome={sessao.tutora.nome} /> : null}
+    <div className="flex min-h-dvh">
+      {/* Só quem administra anda entre as áreas; para a tutora esta é a única. */}
+      {sessao.real.is_admin ? <BarraDeAreas /> : null}
 
-      <Cabecalho sessao={sessao} area="tutoras" />
+      <div className="min-w-0 flex-1">
+        {sessao.verComo ? <BarraVerComo nome={sessao.tutora.nome} /> : null}
 
-      <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-6 py-8">
-        {/* Abaixo de lg o menu sai: em tela estreita ele comeria a página toda,
-            e a tabela do painel já lista as mesmas mentoradas. */}
-        <aside className="hidden w-60 shrink-0 lg:block">
-          {/* Altura fixa, não máxima: sem ela o `h-full` do menu não tem de
-              quem herdar, a lista cresce e a rolagem nunca acontece. */}
-          <div className="sticky top-8 h-[calc(100dvh-6rem)]">
-            <MenuMentoradas
-              base="/painel"
-              inicio={{ href: '/painel/inicio', rotulo: 'Início' }}
-              secoes={[
-                { rotulo: 'Mapa da cliente', ancora: 'mapa' },
-                { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
-                { rotulo: 'Briefings', ancora: 'briefings' },
-                { rotulo: 'Hands-off', ancora: 'hands-off' },
-                { rotulo: 'Tutorias', ancora: 'tutorias' },
-              ]}
-              mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
-            />
-          </div>
-        </aside>
+        <Cabecalho sessao={sessao} area="tutoras" />
 
-        <main className="min-w-0 flex-1">{children}</main>
-        <RolarParaAncora />
+        <div className="mx-auto flex w-full max-w-[110rem] gap-10 px-6 py-8">
+          {/* Abaixo de lg o menu sai: em tela estreita ele comeria a página toda,
+              e a tabela do painel já lista as mesmas mentoradas. */}
+          <aside className="hidden w-60 shrink-0 lg:block">
+            {/* Altura fixa, não máxima: sem ela o `h-full` do menu não tem de
+                quem herdar, a lista cresce e a rolagem nunca acontece. */}
+            <div className="sticky top-8 h-[calc(100dvh-6rem)]">
+              <MenuMentoradas
+                base="/painel"
+                inicio={{ href: '/painel/inicio', rotulo: 'Início' }}
+                secoes={[
+                  { rotulo: 'Mapa da cliente', ancora: 'mapa' },
+                  { rotulo: 'Planejamento estratégico', ancora: 'planejamento' },
+                  { rotulo: 'Briefings', ancora: 'briefings' },
+                  { rotulo: 'Hands-off', ancora: 'hands-off' },
+                  { rotulo: 'Tutorias', ancora: 'tutorias' },
+                ]}
+                mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
+              />
+            </div>
+          </aside>
+
+          <main className="min-w-0 flex-1">{children}</main>
+          <RolarParaAncora />
+        </div>
       </div>
     </div>
   );

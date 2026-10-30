@@ -2,11 +2,54 @@
 
 import { useActionState } from 'react';
 import { Eye, Loader2, Plus, X } from 'lucide-react';
-import { alternarAcesso, liberarAcesso, liberarAcessoTutora, removerAcesso, verComo, type EstadoAcesso } from './actions';
+import {
+  alternarAcesso,
+  alternarTipo,
+  liberarAcesso,
+  liberarAcessoTutora,
+  removerAcesso,
+  removerDoTime,
+  verComo,
+  type EstadoAcesso,
+} from './actions';
 
 const inicial: EstadoAcesso = {};
 
-export type Pessoa = { id: string; nome: string; email: string; ativa: boolean; marca?: string; euMesma?: boolean };
+export type Pessoa = {
+  id: string;
+  nome: string;
+  email: string;
+  ativa: boolean;
+  /** Time interno: administradora vê tudo e mexe nas configurações. */
+  admin?: boolean;
+  euMesma?: boolean;
+};
+
+/**
+ * O tipo de acesso de quem é do time. Troca na hora: o `select` manda o
+ * formulário sozinho, sem botão de salvar.
+ */
+function TipoDeAcesso({ pessoa }: { pessoa: Pessoa }) {
+  if (pessoa.euMesma) {
+    return <span className="shrink-0 text-[11px] text-texto-suave">você · administradora</span>;
+  }
+
+  return (
+    <form action={alternarTipo}>
+      <input type="hidden" name="id" value={pessoa.id} />
+      <select
+        name="tipo"
+        defaultValue={pessoa.admin ? 'admin' : 'tutora'}
+        aria-label={`Tipo de acesso de ${pessoa.nome}`}
+        onChange={(e) => e.currentTarget.form?.requestSubmit()}
+        className="shrink-0 rounded-lg border border-borda bg-superficie px-2 py-1 text-[11px] outline-none focus:border-marca"
+      >
+        <option value="admin">Administradora</option>
+        <option value="tutora">Tutora</option>
+      </select>
+    </form>
+  );
+}
 
 /**
  * O interruptor de acesso: ligado, a pessoa entra; desligado, o cadastro
@@ -62,14 +105,11 @@ export function ListaDeAcessos({
       {pessoas.map((p) => (
         <li key={p.id} className="flex items-center gap-3 px-5 py-2.5">
           <div className="min-w-0 flex-1">
-            <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
-              {p.nome}
-              {p.marca ? (
-                <span className="rounded-full bg-marca-suave px-2 py-0.5 text-[10px] font-medium text-marca">{p.marca}</span>
-              ) : null}
-            </p>
+            <p className="text-sm font-medium">{p.nome}</p>
             <p className="text-xs break-all text-texto-suave">{p.email}</p>
           </div>
+
+          {tabela === 'tutoras' ? <TipoDeAcesso pessoa={p} /> : null}
 
           {comVerComo && !p.euMesma ? (
             <form action={verComo}>
@@ -90,8 +130,8 @@ export function ListaDeAcessos({
           </span>
           <Interruptor tabela={tabela} pessoa={p} />
 
-          {removivel ? (
-            <form action={removerAcesso}>
+          {removivel && !p.euMesma ? (
+            <form action={tabela === 'tutoras' ? removerDoTime : removerAcesso}>
               <input type="hidden" name="id" value={p.id} />
               <button
                 type="submit"
@@ -142,6 +182,18 @@ export function NovoAcesso({
           </option>
         ))}
       </select>
+
+      {daTutora ? (
+        <select
+          name="tipo"
+          defaultValue="tutora"
+          aria-label="Tipo de acesso"
+          className="shrink-0 rounded-lg border border-borda bg-superficie px-3 py-1.5 text-sm outline-none focus:border-marca"
+        >
+          <option value="tutora">Tutora</option>
+          <option value="admin">Administradora</option>
+        </select>
+      ) : null}
 
       <input
         type="email"

@@ -1,4 +1,4 @@
-import { KeyRound, MapPinned, Users } from 'lucide-react';
+import { MapPinned, Users } from 'lucide-react';
 import { exigirAdmin, type Tutora } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { Cabecalho } from '@/components/Cabecalho';
@@ -37,7 +37,7 @@ export default async function AdminPage() {
     nome: t.nome,
     email: t.email,
     ativa: t.ativa,
-    marca: t.is_admin ? 'administradora' : undefined,
+    admin: t.is_admin,
     euMesma: t.id === sessao.real.id,
   }));
   const daCasa: Pessoa[] = clientes ?? [];
@@ -68,7 +68,7 @@ export default async function AdminPage() {
                   {doTime.filter((p) => p.ativa).length} com acesso · {doTime.length} no total
                 </p>
               </div>
-              <ListaDeAcessos tabela="tutoras" pessoas={doTime} comVerComo />
+              <ListaDeAcessos tabela="tutoras" pessoas={doTime} comVerComo removivel />
               <NovoAcesso tipo="tutora" pessoas={doHub.map((t) => ({ id: t.id, nome: t.nome }))} />
             </div>
 
@@ -98,26 +98,6 @@ export default async function AdminPage() {
           <RespostasDoMapa pendentes={semDono} mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome }))} />
         </section>
 
-        <section className="mt-12">
-          <h2 className="flex items-center gap-2 text-lg font-medium">
-            <KeyRound aria-hidden size={18} className="text-marca" />
-            Como o app está ligado
-          </h2>
-
-          <dl className="mt-4 grid gap-px overflow-hidden rounded-xl border border-borda bg-borda sm:grid-cols-2">
-            {[
-              ['Endereço', 'tutorias.lafortunaacademy.com.br'],
-              ['Conteúdo', 'Notion — nada é guardado em outro lugar'],
-              ['Entrada', 'link por e-mail, sem senha'],
-              ['Remetente', 'La Fortuna Academy · acesso@lafortunaacademy.com.br'],
-            ].map(([rotulo, valor]) => (
-              <div key={rotulo} className="bg-superficie px-5 py-3">
-                <dt className="text-[11px] tracking-wide text-texto-suave uppercase">{rotulo}</dt>
-                <dd className="mt-0.5 text-sm break-words">{valor}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
       </div>
     </div>
   );
