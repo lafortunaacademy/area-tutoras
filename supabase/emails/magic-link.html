@@ -5,8 +5,14 @@
   Assunto: Seu link de acesso — La Fortuna Academy
 
   Só funciona com SMTP próprio configurado (Resend); sem ele o Supabase usa o
-  texto padrão, em inglês, e nem deixa editar. `{{ .ConfirmationURL }}` é o
-  link que entra; o Supabase troca na hora do envio.
+  texto padrão, em inglês, e nem deixa editar.
+
+  O link é montado à mão com `{{ .TokenHash }}`, e não com
+  `{{ .ConfirmationURL }}`, de propósito. O ConfirmationURL passa pelo
+  verificador do Supabase e devolve um código que só fecha no navegador que
+  pediu o link: quem pede no computador e abre o e-mail no celular, ou em outro
+  perfil do Chrome, cai em "link expirado". O token_hash é conferido pelo nosso
+  próprio /auth/callback e vale em qualquer navegador.
 
   HTML de e-mail é antiquado de propósito: tabela em vez de grade, estilo em
   cada tag em vez de folha de estilo. É o que o Gmail e o Outlook entendem.
@@ -46,7 +52,7 @@
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td align="center" style="background:#4b3424;border-radius:12px;">
-                  <a href="{{ .ConfirmationURL }}"
+                  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink"
                      style="display:block;padding:14px 24px;font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#f5f2e9;text-decoration:none;">
                     Entrar na minha área
                   </a>
@@ -62,7 +68,7 @@
               Se o botão não abrir, copie e cole este endereço no navegador:
             </p>
             <p style="margin:6px 0 0 0;font-size:12px;line-height:1.5;word-break:break-all;">
-              <a href="{{ .ConfirmationURL }}" style="color:#4b3424;">{{ .ConfirmationURL }}</a>
+              <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink" style="color:#4b3424;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=magiclink</a>
             </p>
           </td>
         </tr>
