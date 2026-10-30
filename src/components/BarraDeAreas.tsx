@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo, useState } from 'react';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GraduationCap, Home, Settings, Sparkles, Users } from 'lucide-react';
+import { GraduationCap, Home, Search, Settings, Sparkles, Users } from 'lucide-react';
 import { BotaoTema } from '@/components/BotaoTema';
 import { FotoDaTutora } from '@/components/area-mentorada/FotoDaTutora';
 import { iniciais } from '@/lib/iniciais';
@@ -40,6 +42,8 @@ export type ItemDaBarra = {
   rotulo: string;
   detalhe?: string;
   icone: keyof typeof ICONES;
+  /** Pendura a busca e a lista de mentoradas embaixo deste item. */
+  comLista?: boolean;
 };
 
 export function BarraDeAreas({
@@ -47,6 +51,8 @@ export function BarraDeAreas({
   fotoId,
   comAreas = true,
   secoes = [],
+  mentoradas = [],
+  base = '/painel',
 }: {
   nome: string;
   fotoId?: string | null;
@@ -54,13 +60,65 @@ export function BarraDeAreas({
   comAreas?: boolean;
   /** O que a área atual tem dentro (Início, Mentoradas…), abaixo das áreas. */
   secoes?: ItemDaBarra[];
+  /** A lista de mentoradas, com busca, quando a área tem uma. */
+  mentoradas?: { id: string; nome: string; foto: string | null }[];
+  /** Onde mora a página de cada mentorada ("/painel", "/mentoradas"). */
+  base?: string;
 }) {
   const caminho = usePathname();
+  const [busca, setBusca] = useState('');
+
+  // São 44 nomes: sem filtro, achar alguém vira rolagem e paciência.
+  const visiveis = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return mentoradas;
+    return mentoradas.filter((m) => m.nome.toLowerCase().includes(termo));
+  }, [busca, mentoradas]);
+
+  const lista = (
+    <div className="mt-1 ml-4 flex min-h-0 flex-1 flex-col border-l border-marca-contraste/15 pl-2">
+      <label className="relative mb-2 block">
+        <Search aria-hidden size={14} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 opacity-60" />
+        <input
+          type="search"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar mentorada"
+          aria-label="Buscar mentorada"
+          className="w-full rounded-lg border border-marca-contraste/20 bg-marca-contraste/10 py-1.5 pr-3 pl-8 text-[13px] text-marca-contraste outline-none placeholder:text-marca-contraste/50 focus:border-marca-contraste/50"
+        />
+      </label>
+
+      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+        {visiveis.map((m) => {
+          const aqui = caminho.startsWith(`${base}/${m.id}`);
+          return (
+            <li key={m.id}>
+              <Link
+                href={`${base}/${m.id}`}
+                aria-current={aqui ? 'page' : undefined}
+                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] leading-snug transition ${
+                  aqui ? 'bg-marca-contraste/15 font-medium' : 'opacity-70 hover:bg-marca-contraste/10 hover:opacity-100'
+                }`}
+              >
+                <Retrato nome={m.nome} foto={m.foto} />
+                <span className="min-w-0 flex-1 truncate">{m.nome}</span>
+              </Link>
+            </li>
+          );
+        })}
+
+        {visiveis.length === 0 ? <li className="px-3 py-2 text-[12px] opacity-60">Ninguém com esse nome.</li> : null}
+      </ul>
+    </div>
+  );
 
   const item = (a: ItemDaBarra) => {
     const aqui = caminho === a.base || caminho.startsWith(`${a.base}/`);
     const Icone = ICONES[a.icone];
-    return (
+    const comLista = a.comLista && mentoradas.length > 0;
+
+    const link = (
       <Link
         key={a.base}
         href={a.href}
@@ -75,6 +133,17 @@ export function BarraDeAreas({
           {a.detalhe ? <span className="mt-0.5 block text-[12px] leading-snug opacity-60">{a.detalhe}</span> : null}
         </span>
       </Link>
+    );
+
+    if (!comLista) return link;
+
+    // A busca e a lista moram embaixo de "Mentoradas", recuadas: são o que há
+    // dentro dele, não outro item do menu.
+    return (
+      <div key={a.base} className="flex min-h-0 flex-1 flex-col">
+        {link}
+        {lista}
+      </div>
     );
   };
 
@@ -140,5 +209,22 @@ export function BarraDeAreas({
         </div>
       </div>
     </nav>
+  );
+}
+
+/** Foto pequena ao lado do nome; sem foto, as iniciais seguram o alinhamento. */
+function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
+  if (foto) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={foto} alt="" className="size-5 shrink-0 rounded-full object-cover" />;
+  }
+
+  return (
+    <span
+      aria-hidden
+      className="flex size-5 shrink-0 items-center justify-center rounded-full bg-marca-contraste/20 text-[9px] font-medium"
+    >
+      {iniciais(nome)}
+    </span>
   );
 }

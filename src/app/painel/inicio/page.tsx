@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
-import { mesSeguinte, emReais, perfilDaTutora, mentoriasDe, porMes, sessoesDaTutora } from '@/lib/notion/tutora';
+import { SEM_MENTORIA, mesSeguinte, emReais, perfilDaTutora, mentoriasDe, porMes, sessoesDaTutora } from '@/lib/notion/tutora';
 import { proximasDaTutora, temUsuarioNoNotion } from '@/lib/notion/tutorias';
 import { carteiraDaTutora, normalizarId } from '@/lib/notion/carteira';
 import { AvisoNotion } from '@/components/AvisoNotion';
@@ -54,6 +54,14 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
   // Quantas mentoradas diferentes ela atendeu no ano, e a média por mês dos
   // meses em que houve tutoria (dividir pelo ano inteiro esconderia o ritmo).
   const atendidas = new Set(doAno.flatMap((s) => s.mentoradaIds)).size;
+
+  // Quantas tutorias em cada produto, da maior para a menor.
+  // Sessão sem mentoria preenchida no controle não vira produto: viraria um
+  // cartão dizendo "sem mentoria", que não informa nada.
+  const porProduto = mentorias
+    .filter((m) => m !== SEM_MENTORIA)
+    .map((nome) => ({ nome, total: doAno.filter((s) => s.mentoria === nome).length }))
+    .sort((a, b) => b.total - a.total);
   const media = meses.length ? Math.round((doAno.length / meses.length) * 10) / 10 : 0;
 
   // Programa e Mentoria são a mesma pergunta feita duas vezes ("de que produto
@@ -146,6 +154,20 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
         <Numero rotulo="Mentoradas atendidas" valor={String(atendidas)} nota={`no ano de ${ano}`} />
         {total !== null ? <Numero rotulo={`Recebido em ${ano}`} valor={emReais(total)} /> : null}
         {aReceber ? <Numero rotulo={`A receber em ${mesQueVem}`} valor={aReceber} nota="das sessões deste mês" /> : null}
+
+        {porProduto.length > 0 ? (
+          <div className="rounded-xl border border-borda bg-superficie p-5 sm:col-span-2 xl:col-span-1">
+            <p className="rotulo text-[12px] text-destaque">Tutorias por produto</p>
+            <ul className="mt-3 space-y-2.5">
+              {porProduto.map((p) => (
+                <li key={p.nome} className="flex items-center gap-3">
+                  <Programa nome={p.nome} />
+                  <span className="display ml-auto text-2xl leading-none">{p.total}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <Secao titulo="Tutorias realizadas por mês" nota="Cada barra abre por mentoria.">
