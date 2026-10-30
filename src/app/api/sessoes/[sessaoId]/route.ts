@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { normalizarId } from '@/lib/notion/carteira';
-import { SessaoInvalida, blocoDaSessao, conteudoDaSessao, salvarParteDaSessao } from '@/lib/notion/sessoesDaMentorada';
+import {
+  SessaoInvalida,
+  anexarNaSessao,
+  blocoDaSessao,
+  conteudoDaSessao,
+  salvarParteDaSessao,
+} from '@/lib/notion/sessoesDaMentorada';
 import { responderNoBloco, type RespostaEmBloco } from '@/lib/notion/blocos';
 import { permissaoNasTutorias } from '@/lib/tutorias/acesso';
 
@@ -47,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const corpo = multipart
     ? await request
         .formData()
-        .then((f) => ({ parte: f.get('parte'), valor: f.get('arquivo') }) as Record<string, unknown>)
+        .then((f) => ({ parte: f.get('parte'), bloco: f.get('bloco'), valor: f.get('arquivo') }) as Record<string, unknown>)
         .catch(() => null)
     : ((await request.json().catch(() => null)) as Record<string, unknown> | null);
 
@@ -61,6 +67,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const conteudo = await salvarParteDaSessao(normalizarId(mentoradaId), normalizarId(sessaoId), 'gravacao', valor);
       if (!conteudo) return NextResponse.json({ erro: 'Sessão não encontrada.' }, { status: 404 });
       return NextResponse.json({ ok: true });
+    } catch (e) {
+      if (e instanceof SessaoInvalida) return NextResponse.json({ erro: e.message }, { status: 400 });
+      return NextResponse.json({ erro: 'Não foi possível salvar agora.' }, { status: 502 });
+    }
+  }
+
+  // Mais um link ou arquivo no quadro "Links e arquivos" da sessão.
+  if (corpo && corpo.parte === 'anexo') {
+    const { bloco, valor } = corpo;
+    if (typeof bloco !== 'string' || (typeof valor !== 'string' && !(valor instanceof File))) {
+      return NextResponse.json({ erro: 'Pedido inválido.' }, { status: 400 });
+    }
+    try {
+      const filhos = await anexarNaSessao(
+        normalizarId(mentoradaId),
+        normalizarId(sessaoId),
+        normalizarId(bloco),
+        valor,
+      );
+      if (!filhos) return NextResponse.json({ erro: 'Esse quadro não é desta sessão.' }, { status: 404 });
+      return NextResponse.json({ filhos });
     } catch (e) {
       if (e instanceof SessaoInvalida) return NextResponse.json({ erro: e.message }, { status: 400 });
       return NextResponse.json({ erro: 'Não foi possível salvar agora.' }, { status: 502 });

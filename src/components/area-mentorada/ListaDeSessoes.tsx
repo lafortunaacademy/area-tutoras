@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Check, ChevronRight, FileText, Info, Link2, Loader2, Upload, X } from 'lucide-react';
+import { Check, ChevronRight, FileText, Info, Link2, Loader2, Plus, Upload, X } from 'lucide-react';
 import type { SessaoDaLista } from '@/lib/notion/sessoesDaMentorada';
 import type { BlocoSimples } from '@/lib/notion/blocks';
 import { BlocosNotion } from '@/components/BlocosNotion';
@@ -313,6 +313,8 @@ export function CartaoSessao({
 const ehTarefas = (b: BlocoSimples) => /^(tarefas|pr[óo]ximos passos)/i.test(b.texto.trim());
 /** E a pergunta "Gravação" vira o player, com link ou arquivo para quem edita. */
 const ehGravacao = (b: BlocoSimples) => /^grava[çc][ãa]o/i.test(b.texto.trim());
+/** O quadro onde a tutora guarda o que fez para a mentorada. */
+const ehAnexos = (b: BlocoSimples) => /^(links? e arquivos|arquivos e links|arquivos|links)\b/i.test(b.texto.trim());
 
 /**
  * O que a sessão tem dentro.
@@ -360,7 +362,12 @@ function ConteudoDaSessao({
     </section>
   );
 
-  const proprio = (b: BlocoSimples) => (ehTarefas(b) ? tarefas(b) : ehGravacao(b) ? gravacao(b) : undefined);
+  const anexos = (b: BlocoSimples) => (
+    <Anexos key={b.id} bloco={b} endereco={endereco} podeEditar={podeEditar} />
+  );
+
+  const proprio = (b: BlocoSimples) =>
+    ehTarefas(b) ? tarefas(b) : ehGravacao(b) ? gravacao(b) : ehAnexos(b) ? anexos(b) : undefined;
 
   const paginaFilha = (b: BlocoSimples) => (
     <PaginaDaSessao
@@ -815,6 +822,113 @@ function Placar({ itens }: { itens: { nome: string; total: number }[] }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/**
+ * O quadro "Links e arquivos" da sessão: o que a tutora fez para a mentorada.
+ *
+ * Tudo o que entra aqui vai para o mesmo quadro no Notion — link vira marcador,
+ * arquivo vira anexo. O modelo traz alguns espaços em branco; depois que eles
+ * acabam, o quadro cresce, então não há limite de quantos cabem.
+ */
+function Anexos({
+  bloco,
+  endereco,
+  podeEditar,
+}: {
+  bloco: BlocoSimples;
+  /** A rota da sessão: é por ela que o anexo vai para o Notion. */
+  endereco: string;
+  podeEditar: boolean;
+}) {
+  const [filhos, setFilhos] = useState(bloco.filhos);
+  const [link, setLink] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const arquivo = useRef<HTMLInputElement>(null);
+
+  // Os espaços em branco do modelo não aparecem para quem só lê.
+  const postos = filhos.filter((f) => f.url || f.texto.trim());
+
+  async function enviar(valor: string | File) {
+    if (typeof valor === 'string' && !valor.trim()) return;
+    if (valor instanceof File && valor.size > LIMITE_DO_VIDEO_MB * 1024 * 1024) {
+      setErro(`Esse arquivo passa de ${LIMITE_DO_VIDEO_MB} MB. Suba no Drive e cole o link aqui.`);
+      return;
+    }
+    setSalvando(true);
+    setErro(null);
+
+    const form = new FormData();
+    form.append('parte', 'anexo');
+    form.append('bloco', bloco.id);
+    form.append('arquivo', valor);
+    const r = await fetch(endereco, { method: 'PATCH', body: form }).catch(() => null);
+    const j = await r?.json().catch(() => ({}));
+    setSalvando(false);
+
+    if (!r?.ok) return setErro(j?.erro ?? 'Não foi possível salvar agora.');
+    setFilhos((j as { filhos: BlocoSimples[] }).filhos);
+    setLink('');
+  }
+
+  return (
+    <section className="rounded-xl border border-borda px-4 py-3">
+      <h3 className="mb-2 text-sm font-medium">{bloco.texto || 'Links e arquivos'}</h3>
+
+      {postos.length ? (
+        <BlocosNotion blocos={postos} />
+      ) : (
+        <p className="text-sm text-texto-suave">Nada por aqui ainda.</p>
+      )}
+
+      {podeEditar ? (
+        <div className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="url"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void enviar(link);
+              }}
+              placeholder="Cole aqui um link (Drive, Canva, YouTube…)"
+              className="min-w-0 flex-1 rounded-lg border border-borda bg-fundo px-3 py-1.5 text-sm outline-none focus:border-marca"
+            />
+            <button
+              type="button"
+              onClick={() => void enviar(link)}
+              disabled={salvando || !link.trim()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-marca px-3 py-1.5 text-xs font-medium text-marca-contraste transition hover:opacity-90 disabled:opacity-60"
+            >
+              {salvando ? <Loader2 aria-hidden size={12} className="animate-spin" /> : <Plus aria-hidden size={12} />}
+              Adicionar link
+            </button>
+            <button
+              type="button"
+              onClick={() => arquivo.current?.click()}
+              disabled={salvando}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-borda px-3 py-1.5 text-xs text-texto-suave transition hover:bg-superficie-2 hover:text-texto disabled:opacity-60"
+            >
+              <Upload aria-hidden size={12} />
+              Enviar arquivo (até {LIMITE_DO_VIDEO_MB} MB)
+            </button>
+            <input
+              ref={arquivo}
+              type="file"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = '';
+                if (f) void enviar(f);
+              }}
+            />
+          </div>
+          {erro ? <p className="text-xs text-parado">{erro}</p> : null}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -545,6 +545,52 @@ export async function salvarParteDaSessao(
   return separar(await lerBlocos(pagina.id, 3));
 }
 
+/**
+ * Põe mais um link ou arquivo dentro de um quadro da sessão — o "Links e
+ * arquivos", onde a tutora guarda o que fez para a mentorada.
+ *
+ * O modelo do Notion vem com alguns espaços de arquivo em branco: cada anexo
+ * novo ocupa um deles, e quando acabam o quadro simplesmente cresce. Devolve o
+ * quadro inteiro já atualizado, ou `null` se o bloco não for desta sessão.
+ */
+export async function anexarNaSessao(
+  mentoradaId: string,
+  sessaoId: string,
+  blocoId: string,
+  valor: string | File,
+): Promise<BlocoSimples[] | null> {
+  const pagina = await sessaoDaMentorada(mentoradaId, sessaoId);
+  if (!pagina) return null;
+
+  const bloco = await getBlock(blocoId).catch(() => null);
+  if (!bloco || !(await moraNaPagina(bloco.parent, pagina.id))) return null;
+
+  let novo: unknown;
+  if (typeof valor === 'string') {
+    const url = valor.trim();
+    if (!/^https?:\/\/\S+$/.test(url)) throw new SessaoInvalida('Cole um link que comece com https://');
+    novo = { object: 'block', type: 'bookmark', bookmark: { url } };
+  } else {
+    if (valor.size > LIMITE_DO_VIDEO) {
+      throw new SessaoInvalida('O arquivo passa de 4 MB. Suba no Drive e cole o link aqui.');
+    }
+    const id = await enviarArquivo(valor, valor.name || 'arquivo');
+    novo = { object: 'block', type: 'file', file: { type: 'file_upload', file_upload: { id } } };
+  }
+
+  await appendChildren(bloco.id, [novo]);
+
+  // Gasta um espaço em branco do modelo, se ainda houver: assim o quadro não
+  // fica com os anexos embaixo de uma fileira de espaços vazios.
+  const filhos = await lerBlocos(bloco.id, 1);
+  const vazio = filhos.find((f) => (f.tipo === 'file' || f.tipo === 'embed') && !f.url);
+  if (vazio) {
+    await deleteBlock(vazio.id);
+    return lerBlocos(bloco.id, 1);
+  }
+  return filhos;
+}
+
 function acharVideo(blocos: BlocoSimples[]): string | null {
   for (const b of blocos) {
     if ((b.tipo === 'video' || b.tipo === 'embed' || b.tipo === 'bookmark' || b.tipo === 'file') && b.url) return b.url;
