@@ -7,6 +7,7 @@ import { assinarPreview, COOKIE_VER_COMO, exigirAdmin } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { normalizarId } from '@/lib/notion/carteira';
 import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
+import { tutorasDoHub } from '@/lib/notion/hub';
 
 /**
  * Liga o preview de uma tutora.
@@ -68,6 +69,7 @@ export async function liberarAcesso(_anterior: EstadoAcesso, form: FormData): Pr
   }
 
   revalidatePath('/admin');
+  revalidatePath('/admin/configuracoes');
   return { ok: `${email} liberado.` };
 }
 
@@ -78,4 +80,58 @@ export async function removerAcesso(form: FormData) {
   if (!id) return;
   await supabaseAdmin().from('mentoradas_acesso').delete().eq('id', id);
   revalidatePath('/admin');
+  revalidatePath('/admin/configuracoes');
+}
+
+/**
+ * Liga e desliga o acesso de alguém sem apagar o cadastro.
+ *
+ * Desligar é o caminho normal quando alguém sai: o e-mail continua na lista,
+ * ligado à mesma página do Notion, e volta a funcionar com um clique.
+ */
+export async function alternarAcesso(form: FormData) {
+  await exigirAdmin();
+  const tabela = String(form.get('tabela') ?? '');
+  const id = String(form.get('id') ?? '');
+  if ((tabela !== 'tutoras' && tabela !== 'mentoradas_acesso') || !id) return;
+
+  await supabaseAdmin()
+    .from(tabela)
+    .update({ ativa: String(form.get('ativa') ?? '') === 'true' })
+    .eq('id', id);
+  revalidatePath('/admin/configuracoes');
+}
+
+/**
+ * Libera o acesso de alguém do time interno. Quem é a pessoa vem da base
+ * Tutoras do Notion — é o ID dela lá que recorta tudo o que ela vê — e o
+ * e-mail é o que ela usa para entrar, que não precisa ser o mesmo do Notion.
+ */
+export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormData): Promise<EstadoAcesso> {
+  await exigirAdmin();
+  const tutoraId = normalizarId(String(form.get('tutoraId') ?? ''));
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: 'Digite um e-mail válido.' };
+
+  const tutora = (await tutorasDoHub()).find((t) => normalizarId(t.id) === tutoraId);
+  if (!tutora) return { erro: 'Escolha na lista quem é.' };
+
+  const db = supabaseAdmin();
+  const { data: cliente } = await db.from('mentoradas_acesso').select('id').eq('email', email).maybeSingle();
+  if (cliente) return { erro: 'Esse e-mail já é de uma cliente.' };
+
+  // `upsert` por e-mail: só as colunas enviadas mudam, então quem já era admin
+  // continua sendo.
+  const { error } = await db
+    .from('tutoras')
+    .upsert({ email, nome: tutora.nome, notion_tutora_page_id: tutoraId, ativa: true }, { onConflict: 'email' });
+  if (error) return { erro: 'Não foi possível liberar agora.' };
+
+  const { error: erroAuth } = await db.auth.admin.createUser({ email, email_confirm: true });
+  if (erroAuth && !/already|exists|registered/i.test(erroAuth.message)) {
+    return { erro: 'Acesso liberado, mas o login não foi criado. Tente de novo.' };
+  }
+
+  revalidatePath('/admin/configuracoes');
+  return { ok: `${email} liberado.` };
 }

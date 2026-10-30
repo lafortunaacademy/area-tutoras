@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
 import type { Sessao, Visitante } from '@/lib/session';
 import { BotaoTema } from '@/components/BotaoTema';
 
@@ -74,6 +75,18 @@ export function Cabecalho({
                 </Link>
               ))}
             </nav>
+          ) : null}
+
+          {/* Configurações: quem entra no app. Só para quem administra. */}
+          {admin ? (
+            <Link
+              href="/admin/configuracoes"
+              title="Configurações"
+              className="rounded-lg p-1.5 text-texto-suave transition hover:bg-superficie-2 hover:text-marca"
+            >
+              <Settings aria-hidden size={16} />
+              <span className="sr-only">Configurações</span>
+            </Link>
           ) : null}
 
           <BotaoTema />
