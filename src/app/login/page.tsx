@@ -89,14 +89,14 @@ export default async function LoginPage({
           {/* Quem chega por um formulário é mentorada: o texto é para ela. */}
           {voltarPara?.startsWith('/formulario/') ? (
             <>
-              <p className="mt-6 text-[12px] tracking-[0.35em] text-texto uppercase">Formulário da tutoria</p>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-marca uppercase">Formulário da tutoria</p>
               <p className="mt-3 text-sm text-texto-suave sm:text-base">
                 Entre com o seu e-mail para responder. O link de acesso chega na sua caixa de entrada.
               </p>
             </>
           ) : (
             <>
-              <p className="mt-6 text-[12px] tracking-[0.35em] text-texto uppercase">{recepcao.rotulo}</p>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-marca uppercase">{recepcao.rotulo}</p>
               {recepcao.titulo ? (
                 <h1 className="display mt-4 text-2xl leading-snug text-balance sm:text-[28px]">{recepcao.titulo}</h1>
               ) : null}
