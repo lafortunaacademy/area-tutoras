@@ -53,40 +53,47 @@ export default async function InicioPage() {
     ),
   ].join(', ');
 
-  // Campo vazio não vira linha com travessão: some.
-  const atuacao = [
-    { rotulo: 'Área do método', valor: perfil?.areaDoMetodo ?? '' },
-    { rotulo: 'Especialidades', valor: perfil?.especialidades ?? '' },
-    { rotulo: 'Programas', valor: tutoraDe },
-    { rotulo: 'Principais tópicos', valor: perfil?.topicos ?? '' },
-  ].filter((c) => c.valor);
+  // Onde ela atua, tudo junto do nome: área do método, especialidades e
+  // programas viram etiquetas, na ordem do geral para o específico.
+  const emLista = (valor: string) =>
+    valor
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+  const atuacao = [...new Set([...emLista(perfil?.areaDoMetodo ?? ''), ...emLista(perfil?.especialidades ?? ''), ...emLista(tutoraDe)])];
   const semUsuario = sessoes.length === 0 && (await temUsuarioNoNotion(sessao.tutora.email)) === false;
 
   // O nome da mentorada de cada sessão: a sessão guarda só o ID da página dela.
   const nomes = new Map(mentoradas.map((m) => [normalizarId(m.id), m]));
-  const agenda = proximas.slice(0, 6).map((t) => {
-    const dela = t.mentoradaIds.map((id) => nomes.get(normalizarId(id))).find(Boolean);
-    return { ...t, mentorada: dela?.nome ?? '', mentoradaId: dela?.id ?? null };
-  });
+  // Sessão sem mentorada não é tutoria de ninguém (as da própria Fernanda, por
+  // exemplo): fica de fora da agenda da tutora.
+  const agenda = proximas
+    .filter((t) => t.mentoradaIds.length > 0)
+    .slice(0, 6)
+    .map((t) => {
+      const dela = t.mentoradaIds.map((id) => nomes.get(normalizarId(id))).find(Boolean);
+      return { ...t, mentorada: dela?.nome ?? '', mentoradaId: dela?.id ?? null };
+    });
 
   return (
     <div>
-      <div className="mb-10 flex items-center gap-4 border-b border-borda pb-6">
+      <div className="mb-10 flex items-center gap-5 border-b border-borda pb-7">
         {perfil?.foto ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={perfil.foto}
             alt=""
-            className="size-14 shrink-0 rounded-full border border-borda object-cover"
+            className="size-20 shrink-0 rounded-full border border-borda object-cover"
           />
         ) : null}
         <div className="min-w-0">
-          <h1 className="display text-2xl leading-tight">
-            {perfil?.nome || sessao.tutora.nome}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {perfil?.status ? <Etiqueta texto={perfil.status} /> : null}
-            {perfil?.areaDoMetodo ? <Etiqueta texto={perfil.areaDoMetodo} /> : null}
+          <h1 className="display text-4xl leading-tight italic">{perfil?.nome || sessao.tutora.nome}</h1>
+          {/* O que ela faz, não como o cadastro dela está: a área do método e
+              as especialidades. O status fica para o administrativo. */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {atuacao.map((e) => (
+              <Etiqueta key={e} texto={e} />
+            ))}
           </div>
         </div>
       </div>
@@ -104,19 +111,6 @@ export default async function InicioPage() {
           </ul>
         )}
       </Secao>
-
-      {atuacao.length > 0 ? (
-        <Secao titulo="Onde você atua">
-          <dl className="grid gap-x-10 gap-y-4 rounded-xl border border-borda bg-superficie p-6 sm:grid-cols-2 xl:grid-cols-3">
-            {atuacao.map((c) => (
-              <div key={c.rotulo}>
-                <dt className="rotulo text-[11px] text-destaque">{c.rotulo}</dt>
-                <dd className="mt-1 text-sm leading-relaxed">{c.valor}</dd>
-              </div>
-            ))}
-          </dl>
-        </Secao>
-      ) : null}
 
       <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Numero rotulo="Tutorias realizadas" valor={String(sessoes.length)} />
