@@ -46,14 +46,16 @@ export default async function MentoradasLayout({ children }: { children: React.R
         secoes={
           visitante.admin
             ? ([
-                // "Área das mentoradas" já abre na visão geral: repetir o item
-                // embaixo dela levava ao mesmo lugar.
+                // A busca e a lista vêm direto embaixo da área: um item
+                // "Mentoradas" por cima repetiria o nome dela e, de quebra,
+                // levava para a primeira da lista, que não é lugar nenhum.
                 {
-                  href: `/mentoradas/${mentoradas[0]?.id ?? ''}`,
+                  href: '/mentoradas',
                   base: '/mentoradas/',
                   rotulo: 'Mentoradas',
                   icone: 'mentoradas',
                   comLista: true,
+                  semRotulo: true,
                 },
               ] as ItemDaBarra[])
             : ([

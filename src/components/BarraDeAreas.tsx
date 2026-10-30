@@ -45,6 +45,8 @@ export type ItemDaBarra = {
   icone: keyof typeof ICONES;
   /** Pendura a busca e a lista de mentoradas embaixo deste item. */
   comLista?: boolean;
+  /** Só a lista, sem um item por cima: quando o rótulo repetiria o da área. */
+  semRotulo?: boolean;
 };
 
 export function BarraDeAreas({
@@ -165,6 +167,8 @@ export function BarraDeAreas({
     const Icone = ICONES[a.icone];
     // Quem tem lista mostra a busca; quem não tem (a própria mentorada) mostra
     // direto as partes da área dela.
+    if (a.semRotulo) return <div key={a.base}>{lista}</div>;
+
     const comLista = a.comLista && mentoradas.length > 0;
     const soPartes = a.comLista && mentoradas.length === 0;
 
