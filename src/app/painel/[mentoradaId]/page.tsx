@@ -27,7 +27,8 @@ export default async function MentoradaPage({
   const sessao = await exigirSessao();
   const { mentoradaId } = await params;
   const { ano: anoPedido } = await searchParams;
-  const tutoraId = sessao.tutora.notion_tutora_page_id;
+  // Vazio quer dizer "não é tutora": aí os briefings vêm todos.
+  const tutoraId = sessao.tutora.notion_tutora_page_id || null;
 
   // 404 se a mentorada não estiver na carteira desta tutora.
   const mentorada = await exigirMentorada(mentoradaId);

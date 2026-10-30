@@ -72,11 +72,13 @@ const usuariosPorEmail = cache(async (): Promise<Map<string, string>> => {
 });
 
 /** As sessões realizadas dela, pela relation `Tutoras`. */
-export async function tutoriasDaTutora(tutoraPageId: string): Promise<Tutoria[]> {
+export async function tutoriasDaTutora(tutoraPageId: string | null): Promise<Tutoria[]> {
   const linhas = await todasRealizadas();
 
+  // Sem página na base Tutoras não há recorte possível: quem administra e não
+  // dá tutoria vê o controle inteiro, que é o que ela precisa acompanhar.
   return linhas
-    .filter((p) => relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
+    .filter((p) => tutoraPageId === null || relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
     .map((p) => ({
       id: p.id,
       sessao: texto(p, TUTORIA.sessao),
@@ -108,11 +110,11 @@ const todasARealizar = cache(async (): Promise<NotionPage[]> => {
  * As próximas sessões da tutora, da mais próxima para a mais distante. Sem data
  * marcada entram no fim: são as que faltam agendar.
  */
-export async function proximasDaTutora(tutoraPageId: string): Promise<TutoriaAgendada[]> {
+export async function proximasDaTutora(tutoraPageId: string | null): Promise<TutoriaAgendada[]> {
   const linhas = await todasARealizar();
 
   return linhas
-    .filter((p) => relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
+    .filter((p) => tutoraPageId === null || relationIds(p, TUTORIA.tutoras).includes(tutoraPageId))
     .map((p) => ({
       id: p.id,
       sessao: texto(p, TUTORIA.sessao),

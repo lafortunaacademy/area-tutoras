@@ -63,7 +63,8 @@ const nomesGuardados = guardado('nomes-tutoras', async (): Promise<[string, stri
 // O que fica guardado é uma lista: Mapa não sobrevive à ida e volta do cache.
 export const nomesDasTutoras = cache(async (): Promise<Map<string, string>> => new Map(await nomesGuardados()));
 
-export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora | null> {
+export async function perfilDaTutora(tutoraPageId: string | null): Promise<PerfilTutora | null> {
+  if (!tutoraPageId) return null;
   const page = await getPage(tutoraPageId).catch(() => null);
   if (!page) return null;
 
@@ -90,7 +91,7 @@ export async function perfilDaTutora(tutoraPageId: string): Promise<PerfilTutora
  * própria linha — sem depender da carteira, que não cobre sessão sem mentorada
  * preenchida. O valor sai dessa mentoria.
  */
-export async function sessoesDaTutora(tutoraPageId: string): Promise<Sessao[]> {
+export async function sessoesDaTutora(tutoraPageId: string | null): Promise<Sessao[]> {
   const tutorias = await tutoriasDaTutora(tutoraPageId);
 
   return tutorias.map((t) => ({

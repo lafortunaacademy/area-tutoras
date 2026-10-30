@@ -15,7 +15,9 @@ export const dynamic = 'force-dynamic';
 export default async function InicioPage({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
   const sessao = await exigirSessao();
   const { ano: anoPedido } = await searchParams;
-  const tutoraId = sessao.tutora.notion_tutora_page_id;
+  // Sem página na base Tutoras (quem administra e não dá tutoria) não há
+  // recorte: ela vê o controle inteiro em vez de uma tela zerada.
+  const tutoraId = sessao.tutora.notion_tutora_page_id || null;
 
   let perfil, sessoes, proximas, mentoradas;
   try {
@@ -129,7 +131,7 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
         </div>
       </div>
 
-      <Secao titulo="Suas próximas tutorias">
+      <Secao titulo={tutoraId ? 'Suas próximas tutorias' : 'Próximas tutorias do time'}>
         {agenda.length === 0 ? (
           <Vazio>Nada agendado por enquanto.</Vazio>
         ) : (
@@ -144,7 +146,7 @@ export default async function InicioPage({ searchParams }: { searchParams: Promi
       </Secao>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="rotulo text-[13px] text-texto-suave">Seu ano</h2>
+        <h2 className="rotulo text-[13px] text-texto-suave">{tutoraId ? 'Seu ano' : 'O ano do time'}</h2>
         <SeletorDeAno anos={anos} selecionado={ano} caminho="/painel/inicio" mesmoComUm />
       </div>
 

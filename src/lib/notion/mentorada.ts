@@ -203,18 +203,18 @@ export async function planejamento(
 
 export async function briefings(
   mentorada: Mentorada,
-  tutoraPageId: string,
+  /** `null` traz os briefings de todas as tutoras: é o que quem administra vê. */
+  tutoraPageId: string | null,
 ): Promise<ItemBriefing[]> {
   const dbId = await resolverDatabaseId('briefings');
   if (mentorada.areaDaClienteIds.length === 0) return [];
 
+  const daTutora = tutoraPageId
+    ? [{ property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } }]
+    : [];
+
   const linhas = await queryDatabase(dbId, {
-    filter: {
-      and: [
-        daMentorada(mentorada, BRIEFINGS.mentorada),
-        { property: BRIEFINGS.paraATutora, relation: { contains: tutoraPageId } },
-      ],
-    },
+    filter: { and: [daMentorada(mentorada, BRIEFINGS.mentorada), ...daTutora] },
     sorts: [{ property: BRIEFINGS.data, direction: 'descending' }],
   });
 
@@ -233,7 +233,7 @@ export async function briefings(
 
 export async function handsoffs(
   mentorada: Mentorada,
-  tutoraPageId: string,
+  tutoraPageId: string | null,
 ): Promise<ItemHandsoff[]> {
   const dbId = await resolverDatabaseId('handsoff');
   if (mentorada.areaDaClienteIds.length === 0) return [];
@@ -257,9 +257,12 @@ export async function handsoffs(
       relationIds(p, HANDSOFF.feitoPelaTutora)
         .map((id) => nomes.get(id))
         .find(Boolean) ?? '',
-    minha: relationIds(p, HANDSOFF.feitoPelaTutora).some(
-      (id) => id.replace(/-/g, '') === tutoraPageId.replace(/-/g, ''),
-    ),
+    // Sem página na base Tutoras, nenhum registro é "meu": quem administra lê
+    // o que as tutoras escreveram, não assina por elas.
+    minha: Boolean(tutoraPageId) &&
+      relationIds(p, HANDSOFF.feitoPelaTutora).some(
+        (id) => id.replace(/-/g, '') === tutoraPageId!.replace(/-/g, ''),
+      ),
     url: p.url,
   }));
 }
