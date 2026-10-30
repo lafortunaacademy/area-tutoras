@@ -112,7 +112,9 @@ export function ListaDeAcessos({
 
           {tabela === 'tutoras' ? <TipoDeAcesso pessoa={p} /> : null}
 
-          {comVerComo && !p.euMesma ? (
+          {/* "Ver como" é para tutora: quem administra já enxerga tudo, e o
+              recorte de tutora dela viria vazio. */}
+          {comVerComo && !p.euMesma && !p.admin ? (
             <form action={verComo}>
               <input type="hidden" name="tutoraId" value={p.id} />
               <button
