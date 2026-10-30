@@ -72,6 +72,28 @@ export function supabaseConfigurado(): boolean {
   );
 }
 
+/**
+ * Uma falha de rede não é um "você não tem acesso".
+ *
+ * Confundir as duas coisas derrubava quem já estava logada: o banco piscava, a
+ * consulta voltava vazia e o app mandava a pessoa para a tela de login como se
+ * ela nunca tivesse entrado. Agora tenta de novo e, se ainda falhar, estoura
+ * um erro de verdade, que vira uma tela dizendo o que houve.
+ */
+async function lerDoBanco<T>(
+  consulta: () => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+): Promise<T | null> {
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const { data, error } = await consulta();
+    if (!error) return data;
+
+    console.error('[session] leitura falhou:', error.message);
+    if (tentativa === 0) await new Promise((r) => setTimeout(r, 300));
+  }
+
+  throw new Error('NAO_CONSEGUI_CONFERIR_O_ACESSO');
+}
+
 export async function getSessao(): Promise<Sessao | null> {
   // Sem credenciais não há sessão possível — a tela de login diz o que falta
   // em vez de estourar um stack trace.
@@ -85,11 +107,9 @@ export async function getSessao(): Promise<Sessao | null> {
   if (!user?.email) return null;
 
   const db = supabaseAdmin();
-  const { data: real } = await db
-    .from('tutoras')
-    .select('*')
-    .eq('email', user.email.toLowerCase())
-    .maybeSingle<Tutora>();
+  const real = await lerDoBanco<Tutora>(() =>
+    db.from('tutoras').select('*').eq('email', user.email!.toLowerCase()).maybeSingle<Tutora>(),
+  );
 
   if (!real || !real.ativa) return null;
 
@@ -128,11 +148,13 @@ export async function getAcessoMentorada(): Promise<AcessoMentorada | null> {
   } = await supabase.auth.getUser();
   if (!user?.email) return null;
 
-  const { data } = await supabaseAdmin()
-    .from('mentoradas_acesso')
-    .select('*')
-    .eq('email', user.email.toLowerCase())
-    .maybeSingle<AcessoMentorada>();
+  const data = await lerDoBanco<AcessoMentorada>(() =>
+    supabaseAdmin()
+      .from('mentoradas_acesso')
+      .select('*')
+      .eq('email', user.email!.toLowerCase())
+      .maybeSingle<AcessoMentorada>(),
+  );
 
   return data?.ativa ? data : null;
 }
