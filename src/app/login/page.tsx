@@ -1,5 +1,7 @@
 import Image from 'next/image';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { portaDoHost, type Porta } from '@/lib/portas';
 import { destinoDepoisDoLogin, getAcessoMentorada, getSessao, supabaseConfigurado } from '@/lib/session';
 
 // Depende da sessão do request: nunca pode virar HTML estático.
@@ -7,6 +9,36 @@ export const dynamic = 'force-dynamic';
 import { FormularioLogin } from './FormularioLogin';
 import { BotaoTema } from '@/components/BotaoTema';
 import { caminhoSeguro } from '@/lib/depoisDoLogin';
+
+/**
+ * Cada porta fala com quem bate nela.
+ *
+ * O endereço já diz de quem é a entrada, então a tela não precisa ser neutra:
+ * a tutora é recebida como tutora, a cliente como bem-sucedida. A porta da
+ * equipe é a de casa e continua sóbria.
+ */
+const BOAS_VINDAS: Record<Porta | 'equipe', { rotulo: string; titulo: string; texto: string; rodape: string }> = {
+  tutoras: {
+    rotulo: 'Área das tutoras',
+    titulo: 'Olá, tutora. Seja bem-vinda à La Fortuna Academy.',
+    texto:
+      'Aqui você faz a gestão das suas tutorias, acompanha o andamento de cada mentorada e encontra tudo o que já está no sistema dela.',
+    rodape: 'Acesso das tutoras da La Fortuna Academy.',
+  },
+  clientes: {
+    rotulo: 'Área de membros',
+    titulo: 'Olá, bem-sucedida. Bem-vinda à área de membros da La Fortuna Academy.',
+    texto:
+      'É aqui que ficam os registros das suas sessões e tutorias, o seu acompanhamento financeiro e tudo o que vocês constroem juntas na mentoria.',
+    rodape: 'Acesso das clientes da La Fortuna Academy.',
+  },
+  equipe: {
+    rotulo: 'Painel interno',
+    titulo: '',
+    texto: 'Área da equipe. Entre pelo link que chega no seu e-mail.',
+    rodape: 'Acesso restrito ao time da La Fortuna Academy.',
+  },
+};
 
 const MENSAGENS: Record<string, string> = {
   link_invalido: 'Esse link não veio completo. Peça um novo abaixo.',
@@ -20,6 +52,8 @@ export default async function LoginPage({
   searchParams: Promise<{ erro?: string; proximo?: string; email?: string }>;
 }) {
   const { erro, proximo, email } = await searchParams;
+  const porta = portaDoHost((await headers()).get('host')) ?? 'equipe';
+  const recepcao = BOAS_VINDAS[porta];
   const voltarPara = caminhoSeguro(proximo);
   if ((await getSessao()) || (await getAcessoMentorada())) redirect(voltarPara ?? (await destinoDepoisDoLogin()));
 
@@ -59,10 +93,11 @@ export default async function LoginPage({
             </>
           ) : (
             <>
-              <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">Painel interno</p>
-              <p className="mt-3 text-sm text-texto-suave sm:text-base">
-                Área da equipe. Entre pelo link que chega no seu e-mail.
-              </p>
+              <p className="mt-6 text-[12px] tracking-[0.35em] text-destaque uppercase">{recepcao.rotulo}</p>
+              {recepcao.titulo ? (
+                <h1 className="display mt-4 text-2xl leading-snug text-balance sm:text-[28px]">{recepcao.titulo}</h1>
+              ) : null}
+              <p className="mt-3 text-sm text-texto-suave sm:text-base">{recepcao.texto}</p>
             </>
           )}
         </div>
@@ -83,9 +118,7 @@ export default async function LoginPage({
         </div>
 
         <p className="mt-6 text-center text-xs text-texto-suave">
-          {voltarPara?.startsWith('/formulario/')
-            ? 'Acesso das mentoradas da La Fortuna Academy.'
-            : 'Acesso restrito ao time da La Fortuna Academy.'}
+          {voltarPara?.startsWith('/formulario/') ? 'Acesso das mentoradas da La Fortuna Academy.' : recepcao.rodape}
         </p>
       </div>
     </main>
