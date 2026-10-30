@@ -14,6 +14,10 @@
   perfil do Chrome, cai em "link expirado". O token_hash é conferido pelo nosso
   próprio /auth/callback e vale em qualquer navegador.
 
+  `{{ .RedirectTo }}` é o endereço de onde a pessoa pediu o link, e não um
+  endereço fixo: com três portas (tutoras, equipe e clientes), o e-mail devolve
+  cada uma para a porta de onde ela saiu.
+
   HTML de e-mail é antiquado de propósito: tabela em vez de grade, estilo em
   cada tag em vez de folha de estilo. É o que o Gmail e o Outlook entendem.
 -->
@@ -52,7 +56,7 @@
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td align="center" style="background:#4b3424;border-radius:12px;">
-                  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink"
+                  <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=magiclink"
                      style="display:block;padding:14px 24px;font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#f5f2e9;text-decoration:none;">
                     Entrar na minha área
                   </a>
@@ -68,7 +72,7 @@
               Se o botão não abrir, copie e cole este endereço no navegador:
             </p>
             <p style="margin:6px 0 0 0;font-size:12px;line-height:1.5;word-break:break-all;">
-              <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink" style="color:#4b3424;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=magiclink</a>
+              <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=magiclink" style="color:#4b3424;">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=magiclink</a>
             </p>
           </td>
         </tr>

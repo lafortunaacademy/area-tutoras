@@ -17,9 +17,9 @@ const MENSAGENS: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string; proximo?: string }>;
+  searchParams: Promise<{ erro?: string; proximo?: string; email?: string }>;
 }) {
-  const { erro, proximo } = await searchParams;
+  const { erro, proximo, email } = await searchParams;
   const voltarPara = caminhoSeguro(proximo);
   if ((await getSessao()) || (await getAcessoMentorada())) redirect(voltarPara ?? (await destinoDepoisDoLogin()));
 
@@ -73,7 +73,7 @@ export default async function LoginPage({
 
         <div className="rounded-2xl border border-borda bg-superficie p-6 shadow-[var(--sombra)] sm:p-8">
           {supabaseConfigurado() ? (
-            <FormularioLogin proximo={voltarPara} />
+            <FormularioLogin proximo={voltarPara} email={email} />
           ) : (
             <p className="text-sm text-texto-suave">
               Faltam as credenciais do Supabase. Copie <code>.env.local.example</code> para{' '}

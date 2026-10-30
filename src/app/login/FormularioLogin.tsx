@@ -5,8 +5,27 @@ import { enviarMagicLink, type EstadoLogin } from './actions';
 
 const inicial: EstadoLogin = {};
 
-export function FormularioLogin({ proximo }: { proximo?: string | null }) {
+export function FormularioLogin({ proximo, email }: { proximo?: string | null; email?: string | null }) {
   const [estado, acao, enviando] = useActionState(enviarMagicLink, inicial);
+
+  // Bateu na porta errada: em vez de um "não pode", o endereço dela, com o
+  // e-mail já no link para não digitar de novo.
+  if (estado.portaCerta) {
+    return (
+      <div className="text-center">
+        <p className="display text-2xl">Seu acesso é {estado.portaCerta.nome}</p>
+        <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+          Esta entrada não é a sua. Clique abaixo para ir ao endereço certo: o seu e-mail já vai junto.
+        </p>
+        <a
+          href={estado.portaCerta.url}
+          className="mt-5 inline-block rounded-lg bg-marca px-5 py-3 text-sm font-medium tracking-wide text-marca-contraste transition hover:opacity-90"
+        >
+          Ir para a minha entrada
+        </a>
+      </div>
+    );
+  }
 
   if (estado.enviado) {
     return (
@@ -38,6 +57,7 @@ export function FormularioLogin({ proximo }: { proximo?: string | null }) {
           type="email"
           autoComplete="email"
           required
+          defaultValue={email ?? undefined}
           placeholder="o e-mail cadastrado na La Fortuna"
           className="w-full rounded-lg border border-borda bg-superficie-2 px-4 py-3 text-sm outline-none transition placeholder:text-texto-suave focus:border-marca focus:bg-superficie focus:ring-2 focus:ring-marca/20"
         />
