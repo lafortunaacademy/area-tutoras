@@ -59,7 +59,7 @@ export default async function AdminPage() {
       </div>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <h1 className="display text-3xl">Configurações</h1>
+        <h1 className="display text-3xl">Olá, {sessao.real.nome.split(' ')[0]}.</h1>
         <p className="mt-1 text-sm text-texto-suave">Quem entra no app e como ele está ligado ao resto.</p>
 
         <section className="mt-8">
