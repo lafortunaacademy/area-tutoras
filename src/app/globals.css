@@ -330,7 +330,7 @@ body {
   color: var(--texto);
 }
 
-/* A estampa por trás da área da mentorada: marca d'água, não papel de parede.
+/* A estampa por trás da tela de entrada: marca d'água, não papel de parede.
    No tema escuro ela some mais ainda, porque lá o contraste do padrão com o
    fundo já é maior e o mesmo valor pesaria na leitura. */
 .estampa-de-fundo {

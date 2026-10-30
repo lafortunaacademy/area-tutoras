@@ -3,7 +3,6 @@ import { mentoradasDoModeloNovo } from '@/lib/notion/modelo';
 import { BarraDeAreas, type ItemDaBarra } from '@/components/BarraDeAreas';
 import { BarraVerComo } from '@/components/BarraVerComo';
 import { FaixaDaMarca } from '@/components/FaixaDaMarca';
-import { EstampaDeFundo } from '@/components/EstampaDeFundo';
 import { Cabecalho } from '@/components/Cabecalho';
 import type { SecaoMenu } from '@/components/MenuMentoradas';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
@@ -34,10 +33,7 @@ export default async function MentoradasLayout({ children }: { children: React.R
   const mentoradas = visitante.admin ? todas : todas.filter((m) => m.id === visitante.mentoradaId);
 
   return (
-    <div className="relative isolate flex min-h-dvh">
-      {/* A estampa da marca por trás de tudo, bem apagada. */}
-      <EstampaDeFundo />
-
+    <div className="flex min-h-dvh">
       {/* A barra é de todo mundo; só o bloco das áreas é de quem administra. */}
       <BarraDeAreas
         nome={visitante.nome}

@@ -8,6 +8,7 @@ import { destinoDepoisDoLogin, getAcessoMentorada, getSessao, supabaseConfigurad
 export const dynamic = 'force-dynamic';
 import { FormularioLogin } from './FormularioLogin';
 import { BotaoTema } from '@/components/BotaoTema';
+import { EstampaDeFundo } from '@/components/EstampaDeFundo';
 import { caminhoSeguro } from '@/lib/depoisDoLogin';
 
 /**
@@ -61,6 +62,8 @@ export default async function LoginPage({
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-16">
+      <EstampaDeFundo />
+
       {/* Luz suave de fundo, no tom da marca. */}
       <div
         aria-hidden
