@@ -13,19 +13,20 @@ export default async function PainelLayout({ children }: { children: React.React
   // ele envolve dividem a mesma ida ao Notion.
   const mentoradas = await mentoradasDoModeloNovo().catch(() => []);
 
+  // A barra das áreas é de quem administra, e some durante o "ver como": ali a
+  // tela tem de ficar igualzinha à da tutora, com o menu dela e mais nada.
+  const comBarra = sessao.real.is_admin && !sessao.verComo;
+
   return (
     <div className="flex min-h-dvh">
-      {/* Só quem administra anda entre as áreas; para a tutora esta é a única. */}
-      {sessao.real.is_admin ? (
-        <BarraDeAreas nome={sessao.real.nome} fotoId={sessao.real.notion_tutora_page_id} />
-      ) : null}
+      {comBarra ? <BarraDeAreas nome={sessao.real.nome} fotoId={sessao.real.notion_tutora_page_id} /> : null}
 
       <div className="min-w-0 flex-1">
         {sessao.verComo ? <BarraVerComo nome={sessao.tutora.nome} /> : null}
 
         {/* Com a barra à esquerda o cabeçalho vira repetição; ele volta só
             onde a barra não cabe. */}
-        <div className={sessao.real.is_admin ? 'lg:hidden' : ''}>
+        <div className={comBarra ? 'lg:hidden' : ''}>
           <Cabecalho sessao={sessao} area="tutoras" />
         </div>
 
