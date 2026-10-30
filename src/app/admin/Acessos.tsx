@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { Eye, Loader2, Plus, X } from 'lucide-react';
 import {
   alternarAcesso,
@@ -161,32 +161,19 @@ export function NovoAcesso({
   /** As opções do Notion: tutoras do HUB ou mentoradas do modelo novo. */
   pessoas: { id: string; nome: string }[];
 }) {
-  const daTutora = tipo === 'tutora';
-  const [estado, acao, enviando] = useActionState(daTutora ? liberarAcessoTutora : liberarAcesso, inicial);
+  const doTime = tipo === 'tutora';
+  const [estado, acao, enviando] = useActionState(doTime ? liberarAcessoTutora : liberarAcesso, inicial);
+  // No time, quem dá tutoria sai da lista do Notion (é de lá que vem o recorte
+  // dela); quem só administra tem o nome digitado aqui mesmo.
+  const [comoAdmin, setComoAdmin] = useState(false);
 
   return (
     <form action={acao} className="flex flex-wrap items-center gap-2 border-t border-borda px-5 py-3">
-      <select
-        name={daTutora ? 'tutoraId' : 'mentoradaId'}
-        required
-        defaultValue=""
-        aria-label={daTutora ? 'Quem é, no HUB de tutoras' : 'Qual mentorada'}
-        className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-1.5 text-sm outline-none focus:border-marca"
-      >
-        <option value="" disabled>
-          {daTutora ? 'Escolha a tutora' : 'Escolha a mentorada'}
-        </option>
-        {pessoas.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nome}
-          </option>
-        ))}
-      </select>
-
-      {daTutora ? (
+      {doTime ? (
         <select
           name="tipo"
           defaultValue="tutora"
+          onChange={(e) => setComoAdmin(e.currentTarget.value === 'admin')}
           aria-label="Tipo de acesso"
           className="shrink-0 rounded-lg border border-borda bg-superficie px-3 py-1.5 text-sm outline-none focus:border-marca"
         >
@@ -194,6 +181,33 @@ export function NovoAcesso({
           <option value="admin">Administradora</option>
         </select>
       ) : null}
+
+      {doTime && comoAdmin ? (
+        <input
+          type="text"
+          name="nome"
+          required
+          placeholder="nome de quem entra"
+          className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-1.5 text-sm outline-none focus:border-marca"
+        />
+      ) : (
+        <select
+          name={doTime ? 'tutoraId' : 'mentoradaId'}
+          required
+          defaultValue=""
+          aria-label={doTime ? 'Quem é, no HUB de tutoras' : 'Qual mentorada'}
+          className="min-w-0 flex-1 rounded-lg border border-borda bg-superficie px-3 py-1.5 text-sm outline-none focus:border-marca"
+        >
+          <option value="" disabled>
+            {doTime ? 'Escolha a tutora' : 'Escolha a mentorada'}
+          </option>
+          {pessoas.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nome}
+            </option>
+          ))}
+        </select>
+      )}
 
       <input
         type="email"

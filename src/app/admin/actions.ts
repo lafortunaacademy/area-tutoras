@@ -101,18 +101,28 @@ export async function alternarAcesso(form: FormData) {
 }
 
 /**
- * Libera o acesso de alguém do time interno. Quem é a pessoa vem da base
- * Tutoras do Notion — é o ID dela lá que recorta tudo o que ela vê — e o
- * e-mail é o que ela usa para entrar, que não precisa ser o mesmo do Notion.
+ * Libera o acesso de alguém do time interno.
+ *
+ * Tutora precisa existir na base Tutoras do Notion: é o ID dela lá que recorta
+ * tudo o que ela vê. Administradora não — quem administra enxerga tudo por
+ * outro caminho, e o atendimento da Fernanda não é tutora de ninguém. Por isso
+ * o nome dela é digitado aqui, e não escolhido numa lista.
  */
 export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormData): Promise<EstadoAcesso> {
   await exigirAdmin();
+  const admin = String(form.get('tipo') ?? '') === 'admin';
   const tutoraId = normalizarId(String(form.get('tutoraId') ?? ''));
   const email = String(form.get('email') ?? '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: 'Digite um e-mail válido.' };
 
-  const tutora = (await tutorasDoHub()).find((t) => normalizarId(t.id) === tutoraId);
-  if (!tutora) return { erro: 'Escolha na lista quem é.' };
+  let nome = String(form.get('nome') ?? '').trim();
+  if (admin) {
+    if (nome.length < 2) return { erro: 'Escreva o nome de quem vai entrar.' };
+  } else {
+    const tutora = (await tutorasDoHub()).find((t) => normalizarId(t.id) === tutoraId);
+    if (!tutora) return { erro: 'Escolha na lista quem é.' };
+    nome = tutora.nome;
+  }
 
   const db = supabaseAdmin();
   const { data: cliente } = await db.from('mentoradas_acesso').select('id').eq('email', email).maybeSingle();
@@ -121,13 +131,9 @@ export async function liberarAcessoTutora(_anterior: EstadoAcesso, form: FormDat
   // `upsert` por e-mail: só as colunas enviadas mudam, então quem já era admin
   // continua sendo.
   const { error } = await db.from('tutoras').upsert(
-    {
-      email,
-      nome: tutora.nome,
-      notion_tutora_page_id: tutoraId,
-      ativa: true,
-      is_admin: String(form.get('tipo') ?? '') === 'admin',
-    },
+    // Sem página no HUB, o campo fica vazio: é o caso de quem administra sem
+    // dar tutoria. O recorte por tutora simplesmente não encontra nada dela.
+    { email, nome, notion_tutora_page_id: admin ? '' : tutoraId, ativa: true, is_admin: admin },
     { onConflict: 'email' },
   );
   if (error) return { erro: 'Não foi possível liberar agora.' };
