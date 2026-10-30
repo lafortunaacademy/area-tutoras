@@ -1,6 +1,52 @@
 @import "tailwindcss";
 
 /*
+ * As fontes da marca, vindas da pasta da identidade (Pangram Pangram):
+ * PP Editorial New, serifada de alto contraste, nos títulos; PP Neue Montreal,
+ * grotesca, no resto. Os arquivos moram em `public/fontes` e são servidos pelo
+ * próprio app — nada de CDN, que deixaria o texto piscando.
+ */
+@font-face {
+  font-family: 'PP Editorial New';
+  src: url('/fontes/editorial-new-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Editorial New';
+  src: url('/fontes/editorial-new-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fontes/neue-montreal-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fontes/neue-montreal-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Neue Montreal';
+  src: url('/fontes/neue-montreal-700.woff2') format('woff2');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
  * Identidade visual da La Fortuna Academy.
  *
  * Cores oficiais do guia de marca (ELIZBOSSI © 2025, p.13). São seis: três
@@ -187,8 +233,8 @@
   --color-andamento-suave: var(--andamento-suave);
   --color-parado: var(--parado);
   --color-parado-suave: var(--parado-suave);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: 'PP Neue Montreal', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'PP Editorial New', ui-serif, Georgia, serif;
 }
 
 /*
@@ -214,8 +260,9 @@ body {
  * sans, que é o que se lê bem numa tabela densa.
  */
 .display {
-  font-family: var(--font-cormorant), ui-serif, Georgia, serif;
-  font-weight: 600;
+  font-family: 'PP Editorial New', ui-serif, Georgia, serif;
+  /* A Editorial New veio num peso só: pedir mais engrossaria a letra à força. */
+  font-weight: 400;
   letter-spacing: -0.01em;
 }
 
@@ -226,7 +273,7 @@ body {
 }
 
 .rotulo {
-  font-family: var(--font-cormorant), ui-serif, Georgia, serif;
+  font-family: 'PP Editorial New', ui-serif, Georgia, serif;
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
