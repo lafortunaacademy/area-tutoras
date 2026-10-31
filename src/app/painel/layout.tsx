@@ -17,7 +17,14 @@ export default async function PainelLayout({ children }: { children: React.React
   // como" ela fica, mas sem o bloco das áreas: é assim que a tutora vê.
   const areasNaBarra = sessao.real.is_admin && !sessao.verComo;
   const secoes: ItemDaBarra[] = [
-    { href: '/painel/mentoradas', base: '/painel/mentoradas', rotulo: 'Mentoradas', icone: 'mentoradas', comLista: true },
+    {
+      href: '/painel/mentoradas',
+      base: '/painel/mentoradas',
+      rotulo: 'Mentoradas',
+      icone: 'mentoradas',
+      comLista: true,
+      semRotulo: true,
+    },
   ];
 
   return (
