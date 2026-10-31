@@ -92,7 +92,7 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
           rotulo="Briefings pendentes"
           valor={briefings}
           href="#alertas"
-          dica={listar(mentoradas, (m) => m.semBriefing.map((b) => `${b.sessao} (${b.tutora})`))}
+          dica={listar(mentoradas, (m) => m.semBriefing)}
         />
         <Numero
           rotulo="Hands-off pendentes"
@@ -198,10 +198,9 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                       {m.semBriefing.length === 0 ? (
                         <span className="text-texto-suave">em dia</span>
                       ) : (
-                        m.semBriefing.map((b) => (
-                          <span key={`${b.sessao}-${b.tutora}`} className="block whitespace-nowrap">
-                            falta o de {b.tutora}
-                            <span className="block text-xs text-texto-suave">{b.sessao}</span>
+                        m.semBriefing.map((tutora) => (
+                          <span key={tutora} className="block whitespace-nowrap">
+                            falta para {tutora}
                           </span>
                         ))
                       )}

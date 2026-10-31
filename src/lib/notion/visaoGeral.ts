@@ -32,8 +32,12 @@ export type ResumoDaMentorada = {
   paraAgendar: { sessao: string; tipo: string; mes: string }[];
   /** Tutorias já dadas sem o hands-off escrito, com a data e quem deu. */
   semHandsOff: { sessao: string; tutora: string; data: string }[];
-  /** Tutorias já marcadas que ainda não têm briefing da tutora. */
-  semBriefing: { sessao: string; tutora: string }[];
+  /**
+   * Tutoras com tutoria marcada para quem a Fernanda ainda não escreveu o
+   * briefing. O briefing é da tutora, não da sessão: uma tutora com duas
+   * tutorias marcadas aparece uma vez só.
+   */
+  semBriefing: string[];
   /** A primeira sessão a realizar do ciclo, na ordem da lista de sessões. */
   proximaAAgendar: string | null;
   realizadas: number;
@@ -177,13 +181,16 @@ async function resumir(
   }
 
   // Tutoria já marcada e sem briefing: é o que trava a tutora antes da sessão.
-  const semBriefing = aRealizar
-    .filter((s) => ehTutoria(s) && temHora(s))
-    .flatMap((s) =>
-      s.equipe
-        .filter((t) => !briefings.has(`${normalizarId(m.id)}|${normalizarId(t.id)}`))
-        .map((t) => ({ sessao: s.sessao || s.tipo, tutora: t.nome })),
-    );
+  // A Fernanda escreve o briefing para a tutora, uma vez, e não por sessão.
+  const semBriefing = [
+    ...new Set(
+      aRealizar
+        .filter((s) => ehTutoria(s) && temHora(s))
+        .flatMap((s) =>
+          s.equipe.filter((t) => !briefings.has(`${normalizarId(m.id)}|${normalizarId(t.id)}`)).map((t) => t.nome),
+        ),
+    ),
+  ];
 
   const tutoriasDadas = realizadas
     .filter(ehTutoria)
