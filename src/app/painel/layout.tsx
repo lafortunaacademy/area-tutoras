@@ -4,6 +4,7 @@ import { BarraVerComo } from '@/components/BarraVerComo';
 import { BarraDeAreas, type ItemDaBarra } from '@/components/BarraDeAreas';
 import { FaixaDaMarca } from '@/components/FaixaDaMarca';
 import { Cabecalho } from '@/components/Cabecalho';
+import { MentoradasNoCelular } from '@/components/MentoradasNoCelular';
 import { RolarParaAncora } from '@/components/area-mentorada/RolarParaAncora';
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,8 @@ export default async function PainelLayout({ children }: { children: React.React
   const areasNaBarra = sessao.real.is_admin && !sessao.verComo;
   const secoes: ItemDaBarra[] = [
     {
-      href: '/painel/mentoradas',
-      base: '/painel/mentoradas',
+      href: '/painel/inicio',
+      base: '/painel/inicio',
       rotulo: 'Mentoradas',
       icone: 'mentoradas',
       comLista: true,
@@ -47,6 +48,11 @@ export default async function PainelLayout({ children }: { children: React.React
             onde a barra não cabe. */}
         <div className="lg:hidden">
           <Cabecalho sessao={sessao} area="tutoras" />
+          {/* A lista que mora na barra marrom; no celular a barra não cabe. */}
+          <MentoradasNoCelular
+            mentoradas={mentoradas.map((m) => ({ id: m.id, nome: m.nome, foto: m.foto }))}
+            base="/painel"
+          />
         </div>
 
         {/* A faixa da marca no alto: é o que dá o ar da La Fortuna a uma tela

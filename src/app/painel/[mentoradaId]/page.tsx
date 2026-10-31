@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { exigirSessao } from '@/lib/session';
 import { exigirMentorada } from '@/lib/notion/guard';
 import { briefings, handsoffs, mapaDaCliente, planejamento } from '@/lib/notion/mentorada';
@@ -65,15 +65,6 @@ export default async function MentoradaPage({
 
   return (
     <div>
-      {/* Em telas com o menu lateral, voltar já é clicar em outro nome. */}
-      <Link
-        href="/painel/mentoradas"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-texto-suave transition hover:text-marca lg:hidden"
-      >
-        <ArrowLeft aria-hidden size={14} />
-        Mentoradas
-      </Link>
-
       <div className="mb-10 border-b border-borda pb-6">
         <div className="min-w-0">
           <h1 className="display text-2xl leading-tight">{mentorada.nome}</h1>
