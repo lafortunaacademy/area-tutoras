@@ -87,6 +87,13 @@ function conteudo(nome: string, valor: string): React.ReactNode {
 }
 
 /**
+ * Sempre um quadrado, seja qual for a foto.
+ *
+ * No Notion a imagem vem de qualquer proporção: retrato, paisagem, recorte
+ * apertado. Deixar cada uma com a altura que tem desalinhava o cartão de cada
+ * mentorada. Aqui o espaço é quadrado e a foto preenche pelo centro do topo,
+ * que é onde está o rosto.
+ *
  * Sem foto na base, o monograma segura o lugar — e mantém o desenho de pé em
  * vez de deixar um buraco cinza onde deveria ter um rosto.
  */
@@ -97,7 +104,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
       <img
         src={foto}
         alt={nome}
-        className="h-full max-h-72 min-h-44 w-full rounded-xl border border-borda object-cover"
+        className="aspect-square w-full rounded-xl border border-borda object-cover object-top"
       />
     );
   }
@@ -112,7 +119,7 @@ function Retrato({ nome, foto }: { nome: string; foto: string | null }) {
   return (
     <div
       aria-hidden
-      className="flex h-full max-h-72 min-h-44 w-full items-center justify-center rounded-xl bg-marca-suave"
+      className="flex aspect-square w-full items-center justify-center rounded-xl bg-marca-suave"
     >
       <span className="display text-3xl text-marca">{iniciais}</span>
     </div>

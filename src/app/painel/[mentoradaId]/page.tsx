@@ -13,6 +13,7 @@ import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
 import { sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { ordenarCiclos } from '@/lib/notion/config';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
+import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
 import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
@@ -154,22 +155,36 @@ export default async function MentoradaPage({
         />
       </Secao>
 
-      {/* Respostas da mentorada às tutorias (pré-sessões, 1:1…). A tutora só lê. */}
+      {/* As sessões do ciclo, abertas: é dentro delas que a tutora registra o
+          que fez, anexa o material e lê a pré-sessão respondida. Antes esta
+          página só mostrava os pilares do modelo antigo, e quem está no modelo
+          novo via um "nada por aqui" que não era verdade. */}
       <Secao
-        titulo="Tutorias"
-        ancora="tutorias"
+        titulo="Sessões e tutorias"
+        ancora="sessoes"
         acao={
           <SeletorDeAno anos={todos} selecionado={ciclo} caminho={`/painel/${mentorada.id}`} mesmoComUm />
         }
       >
-        {tutorias === null ? (
-          <Vazio>Não foi possível carregar as tutorias agora.</Vazio>
-        ) : tutorias.length === 0 ? (
-          <Vazio>Nenhuma tutoria da sua área por aqui.</Vazio>
+        {dasSessoes === null ? (
+          <Vazio>Não foi possível carregar as sessões agora.</Vazio>
         ) : (
-          <PilaresDeTutoria key={ciclo} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
+          <SessoesEmAbas
+            key={ciclo}
+            mentoradaId={mentorada.id}
+            sessoes={dasSessoes.sessoes.filter((s) => s.ciclo === ciclo)}
+            dona="Fernanda"
+          />
         )}
       </Secao>
+
+      {/* O modelo antigo, em que as entregas ficavam em pilares fora da sessão.
+          Some para quem já está no novo, em vez de mostrar um bloco vazio. */}
+      {tutorias && tutorias.length > 0 ? (
+        <Secao titulo="Tutorias" ancora="tutorias">
+          <PilaresDeTutoria key={ciclo} pilares={tutorias} mentoradaId={mentorada.id} admin={false} sessoes={sessoesPorPilar} />
+        </Secao>
+      ) : null}
     </div>
   );
 }
