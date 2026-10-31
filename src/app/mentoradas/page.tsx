@@ -49,10 +49,31 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
   const soma = (f: (m: ResumoDaMentorada) => number) => mentoradas.reduce((t, m) => t + f(m), 0);
   const aAgendar = soma((m) => m.paraAgendar.length);
   const briefings = soma((m) => m.semBriefing.length);
-  // Na tabela entram os dois motivos: falta marcar ou falta o briefing de uma
-  // tutoria já marcada.
+  const handsOff = soma((m) => m.semHandsOff.length);
+
+  // Na tabela entram os três motivos: falta marcar, falta o briefing de uma
+  // tutoria marcada ou falta o hands-off de uma já dada.
   const alertas = mentoradas.filter(
-    (m) => m.paraAgendar.length > 0 || m.faltaAgendar.length > 0 || m.semBriefing.length > 0,
+    (m) =>
+      m.paraAgendar.length > 0 ||
+      m.faltaAgendar.length > 0 ||
+      m.semBriefing.length > 0 ||
+      m.semHandsOff.length > 0,
+  );
+
+  // A fila de marcação, mês a mês: é assim que a agenda é feita, não mentorada
+  // a mentorada. O que não tem mês previsto fica num grupo à parte, porque é
+  // justamente o que ninguém consegue planejar.
+  const porMes = new Map<string, { mentorada: string; sessao: string }[]>();
+  for (const m of mentoradas) {
+    for (const s of m.paraAgendar) {
+      const chave = s.mes || 'sem mês';
+      porMes.set(chave, [...(porMes.get(chave) ?? []), { mentorada: m.mentorada.nome, sessao: s.sessao }]);
+    }
+  }
+
+  const meses = [...porMes.entries()].sort(([a], [b]) =>
+    a === 'sem mês' ? 1 : b === 'sem mês' ? -1 : a.localeCompare(b),
   );
 
   return (
@@ -73,23 +94,58 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
           href="#alertas"
           dica={listar(mentoradas, (m) => m.semBriefing.map((b) => `${b.sessao} (${b.tutora})`))}
         />
+        <Numero
+          rotulo="Hands-off pendentes"
+          valor={handsOff}
+          href="#alertas"
+          dica={listar(mentoradas, (m) => m.semHandsOff.map((h) => `${h.sessao} (${h.tutora})`))}
+        />
       </ul>
+
+      {/* A agenda é feita mês a mês, não mentorada a mentorada: aqui está o
+          que falta marcar em cada mês, com o nome de quem espera. */}
+      {meses.length > 0 ? (
+        <Secao
+          id="agendar"
+          titulo="O que falta marcar, mês a mês"
+          descricao="As sessões marcadas como Agendar no Notion, pelo mês previsto de cada uma. Some daqui assim que a data é posta."
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {meses.map(([mes, itens]) => (
+              <div key={mes} className="rounded-xl border border-borda bg-superficie p-4">
+                <div className="flex items-baseline justify-between gap-2 border-b border-borda pb-2">
+                  <p className="text-[11.5px] tracking-[0.12em] text-texto-suave uppercase">{nomeDoMes(mes)}</p>
+                  <p className="display text-xl tabular-nums">{itens.length}</p>
+                </div>
+                <ul className="mt-2 space-y-1.5">
+                  {itens.map((i, n) => (
+                    <li key={`${i.mentorada}-${n}`} className="text-[13px] leading-snug">
+                      <span className="font-medium">{i.mentorada}</span>
+                      <span className="block text-texto-suave">{i.sessao}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Secao>
+      ) : null}
 
       <Secao
         id="alertas"
         titulo="Alertas de acompanhamento"
-        descricao="As sessões marcadas como Agendar no Notion, mais o combinado do mês: no mínimo uma tutoria e uma sessão com a Fernanda, realizadas ou marcadas. Quem tem tutoria marcada sem briefing também aparece."
+        descricao="Quem está devendo alguma coisa: data para marcar, briefing de uma tutoria já marcada ou hands-off de uma já dada."
       >
         {alertas.length === 0 ? (
           <p className="rounded-xl border border-borda bg-superficie px-4 py-6 text-center text-sm text-texto-suave">
-            Nada esperando data: o mês de todas está fechado e os briefings, feitos.
+            Nada pendente: o mês de todas está fechado, os briefings e os hands-off também.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-borda bg-superficie">
             <table className="w-full text-[14px]">
               <thead>
                 <tr className="border-b border-borda text-left">
-                  {['Situação', 'Mentorada', 'O que falta marcar', 'Briefing', 'Última sessão'].map((c) => (
+                  {['Situação', 'Mentorada', 'O que falta marcar', 'Briefing', 'Hands-off', 'Última sessão'].map((c) => (
                     <th key={c} className="px-4 py-2.5 text-[12px] font-medium tracking-wide whitespace-nowrap text-texto-suave uppercase">
                       {c}
                     </th>
@@ -150,6 +206,19 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
                         ))
                       )}
                     </td>
+                    <td className="px-4 py-2.5 text-[13px]">
+                      {m.semHandsOff.length === 0 ? (
+                        <span className="text-texto-suave">em dia</span>
+                      ) : (
+                        m.semHandsOff.map((h, n) => (
+                          <span key={`${h.sessao}-${n}`} className="block whitespace-nowrap">
+                            falta o de {h.tutora}
+                            <span className="block text-xs text-texto-suave">{h.sessao}</span>
+                          </span>
+                        ))
+                      )}
+                    </td>
+
                     <td className="px-4 py-2.5 whitespace-nowrap text-texto-suave tabular-nums">
                       {m.ultimaSessao ? `${m.ultimaSessao.split('-').reverse().join('/')} · há ${m.diasSemSessao} dias` : ''}
                       {m.incompleto ? <span className="block text-xs">Parte dos dados não carregou agora.</span> : null}
@@ -162,15 +231,23 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
         )}
       </Secao>
 
-      <Secao titulo="Onde cada mentorada está" descricao="Sessões realizadas no ciclo de cada uma, de todas as previstas.">
+      <Secao titulo="Onde cada mentorada está" descricao="Sessões realizadas no ciclo de cada uma, de todas as previstas. Agrupadas por produto.">
         <ul className="space-y-3 rounded-xl border border-borda bg-superficie p-4 sm:p-5">
-          {/* Aqui a ordem é alfabética; nos alertas, pela situação. */}
+          {/* Por produto, e dentro dele por nome: é assim que a equipe olha a
+              carteira, porque o combinado de sessões é do produto. */}
           {[...mentoradas]
-            .sort((a, b) => a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'))
+            .sort(
+              (a, b) =>
+                (a.mentorada.mentoria || 'zzz').localeCompare(b.mentorada.mentoria || 'zzz', 'pt-BR') ||
+                a.mentorada.nome.localeCompare(b.mentorada.nome, 'pt-BR'),
+            )
             .map((m) => (
               <li key={m.mentorada.id} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[minmax(0,14rem)_1fr_auto]">
-                <Link href={`/mentoradas/${m.mentorada.id}`} className="truncate hover:text-marca">
+                <Link href={`/mentoradas/${m.mentorada.id}`} className="min-w-0 truncate hover:text-marca">
                   {m.mentorada.nome}
+                  {m.mentorada.mentoria ? (
+                    <span className="block truncate text-xs text-texto-suave">{m.mentorada.mentoria}</span>
+                  ) : null}
                 </Link>
                 <div
                   className="h-2 overflow-hidden rounded-full bg-superficie-2"
@@ -194,6 +271,21 @@ async function Conteudo({ detalharErro }: { detalharErro: boolean }) {
 }
 
 const fracao = (m: ResumoDaMentorada) => (m.total ? m.realizadas / m.total : 0);
+
+/**
+ * "2026-11" vira "novembro de 2026". O que vem do campo "Mês previsto" do
+ * Notion já é texto escrito por gente, então passa direto.
+ */
+function nomeDoMes(chave: string): string {
+  const casa = /^(\d{4})-(\d{2})$/.exec(chave);
+  if (!casa) return chave;
+
+  const nomes = [
+    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+  ];
+  return `${nomes[Number(casa[2]) - 1]} de ${casa[1]}`;
+}
 
 /** Uma linha por mentorada, para o balão do cursor: "Teste: Pessoas, Planejamento". */
 function listar(mentoradas: ResumoDaMentorada[], de: (m: ResumoDaMentorada) => string[]): string | undefined {
