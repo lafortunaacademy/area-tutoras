@@ -13,7 +13,7 @@ import { PilaresDeTutoria } from '@/components/area-mentorada/PilaresDeTutoria';
 import { sessoesDosPilares, sessoesPorCiclo } from '@/lib/notion/sessoesDaMentorada';
 import { ordenarCiclos } from '@/lib/notion/config';
 import { SeletorDeAno } from '@/components/area-mentorada/SeletorDeAno';
-import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
+import { ListaDeSessoes } from '@/components/area-mentorada/ListaDeSessoes';
 import { daArea, trechosDaTutora } from '@/lib/tutorias/acesso';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +55,18 @@ export default async function MentoradaPage({
   // Só os ciclos marcados no Notion nas sessões dela viram botão.
   const todos = ordenarCiclos(dasSessoes?.ciclos ?? []);
   const ciclo = anoPedido && todos.includes(anoPedido) ? anoPedido : (todos[0] ?? '');
+
+  // Só as tutorias, da mais antiga para a mais nova: o que é com a Fernanda
+  // (check-in, planejamento, call SOS) não é trabalho da tutora.
+  const ehTutoria = (s: { tipo: string; tutoras: string[] }) =>
+    s.tipo ? s.tipo.toLowerCase().startsWith('tutoria') : s.tutoras.some((t) => !t.toLowerCase().includes('fernanda'));
+
+  const quando = (s: { dataRealizada: string | null; dataPrevista: string | null }) =>
+    s.dataRealizada ?? s.dataPrevista ?? '';
+
+  const tutoriasDoCiclo = (dasSessoes?.sessoes ?? [])
+    .filter((s) => s.ciclo === ciclo && ehTutoria(s))
+    .sort((a, b) => quando(a).localeCompare(quando(b)));
 
   const sessoesPorPilar = tutorias
     ? await sessoesDosPilares(
@@ -155,10 +167,11 @@ export default async function MentoradaPage({
         />
       </Secao>
 
-      {/* As sessões do ciclo, abertas: é dentro delas que a tutora registra o
+      {/* As tutorias do ciclo, abertas: é dentro delas que a tutora registra o
           que fez, anexa o material e lê a pré-sessão respondida. Antes esta
           página só mostrava os pilares do modelo antigo, e quem está no modelo
-          novo via um "nada por aqui" que não era verdade. */}
+          novo via um "nada por aqui" que não era verdade. As sessões com a
+          Fernanda ficam de fora: não são trabalho da tutora. */}
       <Secao
         titulo="Sessões e tutorias"
         ancora="sessoes"
@@ -168,13 +181,10 @@ export default async function MentoradaPage({
       >
         {dasSessoes === null ? (
           <Vazio>Não foi possível carregar as sessões agora.</Vazio>
+        ) : tutoriasDoCiclo.length === 0 ? (
+          <Vazio>Nenhuma tutoria neste ciclo.</Vazio>
         ) : (
-          <SessoesEmAbas
-            key={ciclo}
-            mentoradaId={mentorada.id}
-            sessoes={dasSessoes.sessoes.filter((s) => s.ciclo === ciclo)}
-            dona="Fernanda"
-          />
+          <ListaDeSessoes key={ciclo} mentoradaId={mentorada.id} sessoes={tutoriasDoCiclo} />
         )}
       </Secao>
 
