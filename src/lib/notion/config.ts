@@ -35,6 +35,14 @@ export const DATABASES = {
   tutorias: 'Acompanhamento de clientes',
   briefings: 'Briefings',
   handsoff: 'Hands-off',
+  /**
+   * Desde nov/2026 as tarefas e os projetos são bases únicas, ligadas à cliente
+   * por relação — antes cada mentorada tinha a própria base, dentro da página
+   * dela. O app lê das centrais e só cai nas antigas para quem ainda não
+   * migrou.
+   */
+  tarefas: 'Tarefas',
+  projetos: 'Projetos',
   /** A área individual de cada cliente: é dela que pendura todo o conteúdo. */
   areaClientes: 'Área clientes',
 } as const;
@@ -468,6 +476,19 @@ export const TAREFAS = {
   observacoes: 'Observações',
   /** Caixa de seleção: marcada = feita. */
   feita: 'Status',
+  /** Só na base central: de quem é a tarefa. */
+  cliente: 'Cliente',
+  /** Só na base central: a que projeto ela pertence. */
+  projeto: 'Projeto',
+} as const;
+
+/** Base "Projetos": o guarda-chuva das tarefas, uma linha por projeto da cliente. */
+export const PROJETOS = {
+  nome: 'Projeto',
+  cliente: 'Cliente',
+  status: 'Status',
+  periodo: 'Período',
+  tarefas: 'Tarefas',
 } as const;
 
 /** Base "Cenários": um cartão por ano com o cenário atual × desejado. */

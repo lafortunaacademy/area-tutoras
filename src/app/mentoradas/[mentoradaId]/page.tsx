@@ -20,6 +20,9 @@ import { planejamento } from '@/lib/notion/mentorada';
 import { progressoDaMentoria } from '@/lib/notion/jornada';
 import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao';
 import { tarefasDaMentorada } from '@/lib/notion/tarefas';
+import { projetosDaMentorada } from '@/lib/notion/projetos';
+import { normalizarId } from '@/lib/notion/carteira';
+import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { cartoesDeCenario } from '@/lib/notion/cenarios';
 import { CartoesCenario } from '@/components/area-mentorada/CartoesCenario';
 import { SessoesEmAbas } from '@/components/area-mentorada/SessoesEmAbas';
@@ -367,26 +370,76 @@ async function SecaoPlanejamento({ mentorada, detalhar }: { mentorada: Mentorada
 }
 
 async function SecaoTarefas({ mentoradaId }: { mentoradaId: string }) {
-  const tarefas = await tarefasDaMentorada(mentoradaId).catch(() => null);
+  const [tarefas, projetos] = await Promise.all([
+    tarefasDaMentorada(mentoradaId).catch(() => null),
+    projetosDaMentorada(mentoradaId).catch(() => []),
+  ]);
+
+  if (!tarefas) {
+    return (
+      <Bloco icone={ListChecks} titulo="Tarefas da mentoria">
+        <p className="py-6 text-center text-sm text-texto-suave">Não foi possível carregar as tarefas agora.</p>
+      </Bloco>
+    );
+  }
+
+  const paraTela = (t: (typeof tarefas)[number]) => ({
+    id: t.id,
+    tarefa: t.tarefa,
+    prazo: t.prazo ? t.prazo.slice(0, 10).split('-').reverse().join('/') : '',
+    observacoes: t.observacoes,
+    feita: t.feita,
+  });
+
+  // Um bloco por projeto, na ordem dos projetos, e no fim o que não pertence a
+  // nenhum. Sem projeto cadastrado, a lista fica como sempre foi.
+  const comProjeto = projetos
+    .map((p) => ({ projeto: p, lista: tarefas.filter((t) => normalizarId(t.projetoId ?? '') === normalizarId(p.id)) }))
+    .filter(({ lista }) => lista.length > 0);
+
+  const soltas = tarefas.filter((t) => !comProjeto.some(({ lista }) => lista.includes(t)));
+
+  if (comProjeto.length === 0) {
+    return (
+      <Bloco icone={ListChecks} titulo="Tarefas da mentoria">
+        <Tarefas mentoradaId={mentoradaId} tarefas={tarefas.map(paraTela)} />
+      </Bloco>
+    );
+  }
 
   return (
-    <Bloco icone={ListChecks} titulo="Tarefas da mentoria">
-      {tarefas ? (
-        <Tarefas
-          mentoradaId={mentoradaId}
-          tarefas={tarefas.map((t) => ({
-            id: t.id,
-            tarefa: t.tarefa,
-            prazo: t.prazo ? t.prazo.slice(0, 10).split('-').reverse().join('/') : '',
-            observacoes: t.observacoes,
-            feita: t.feita,
-          }))}
-        />
-      ) : (
-        <p className="py-6 text-center text-sm text-texto-suave">Não foi possível carregar as tarefas agora.</p>
-      )}
+    <Bloco icone={ListChecks} titulo="Tarefas da mentoria" descricao="Agrupadas pelo projeto a que pertencem.">
+      <div className="space-y-6">
+        {comProjeto.map(({ projeto, lista }) => (
+          <div key={projeto.id}>
+            <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h4 className="text-sm font-medium">{projeto.nome}</h4>
+              {projeto.status ? <EtiquetaNotion texto={projeto.status} cor={projeto.corStatus} /> : null}
+              {projeto.inicio ? (
+                <span className="text-xs text-texto-suave">
+                  {periodo(projeto.inicio, projeto.fim)}
+                </span>
+              ) : null}
+            </div>
+            <Tarefas mentoradaId={mentoradaId} tarefas={lista.map(paraTela)} semBotaoAdicionar />
+          </div>
+        ))}
+
+        {soltas.length > 0 ? (
+          <div>
+            <h4 className="mb-2 text-sm font-medium text-texto-suave">Sem projeto</h4>
+            <Tarefas mentoradaId={mentoradaId} tarefas={soltas.map(paraTela)} />
+          </div>
+        ) : null}
+      </div>
     </Bloco>
   );
+}
+
+/** "01/11 a 20/12", ou só o começo quando o projeto não tem fim marcado. */
+function periodo(inicio: string, fim: string | null): string {
+  const curto = (d: string) => d.slice(0, 10).split('-').reverse().slice(0, 2).join('/');
+  return fim ? `${curto(inicio)} a ${curto(fim)}` : `a partir de ${curto(inicio)}`;
 }
 
 async function SecaoDashboard({ mentoradaId, anoPedido }: { mentoradaId: string; anoPedido?: string }) {
