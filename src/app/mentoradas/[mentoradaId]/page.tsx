@@ -21,6 +21,7 @@ import { progressoDaMentoria } from '@/lib/notion/jornada';
 import { gestaoDeResultados, type GestaoDeResultados } from '@/lib/notion/gestao';
 import { tarefasDaMentorada } from '@/lib/notion/tarefas';
 import { projetosDaMentorada } from '@/lib/notion/projetos';
+import { marcosDaMentorada } from '@/lib/notion/marcos';
 import { normalizarId } from '@/lib/notion/carteira';
 import { EtiquetaNotion } from '@/components/EtiquetaNotion';
 import { cartoesDeCenario } from '@/lib/notion/cenarios';
@@ -444,14 +445,21 @@ function periodo(inicio: string, fim: string | null): string {
 
 async function SecaoDashboard({ mentoradaId, anoPedido }: { mentoradaId: string; anoPedido?: string }) {
   // Falhar aqui só apaga os gráficos; o resto da página continua de pé.
-  const gestao = await gestaoDeResultados(mentoradaId).catch(() => null);
+  const [gestao, daBaseUnica] = await Promise.all([
+    gestaoDeResultados(mentoradaId).catch(() => null),
+    marcosDaMentorada(mentoradaId).catch(() => []),
+  ]);
+
+  // A base única manda; a antiga, dentro da página da mentorada, atende quem
+  // ainda não migrou. Mesma regra das tarefas.
+  const marcos = daBaseUnica.length > 0 ? daBaseUnica : (gestao?.marcos ?? []);
 
   return (
     <>
       <div id="marcos" className="scroll-mt-6">
         <Grupo titulo="Marcos & Conquistas">
           <Bloco icone={Flag} titulo="Linha do tempo">
-            <LinhaDoTempo marcos={gestao?.marcos} />
+            <LinhaDoTempo marcos={marcos} />
           </Bloco>
         </Grupo>
       </div>

@@ -43,6 +43,7 @@ export const DATABASES = {
    */
   tarefas: 'Tarefas',
   projetos: 'Projetos',
+  marcos: 'Marcos & Conquistas',
   /** A área individual de cada cliente: é dela que pendura todo o conteúdo. */
   areaClientes: 'Área clientes',
 } as const;
@@ -545,4 +546,6 @@ export const GESTAO_ANO = {
 export const GESTAO_MARCOS = {
   titulo: 'Marco/conquista',
   data: 'Mes',
+  /** Só na base única: de quem é o marco. */
+  cliente: 'Cliente',
 } as const;
