@@ -1,9 +1,59 @@
 'use client';
 
 import { useActionState } from 'react';
-import { enviarMagicLink, type EstadoLogin } from './actions';
+import { enviarMagicLink, entrarComCodigo, type EstadoLogin } from './actions';
 
 const inicial: EstadoLogin = {};
+
+/**
+ * Depois do envio: o aviso do link e, logo abaixo, o campo do código.
+ *
+ * O código vem no mesmo e-mail e serve para onde o link não vai: dentro de um
+ * aplicativo, ou quando o programa de e-mail embrulha o endereço e quebra o
+ * link no caminho.
+ */
+function PassoDoCodigo({ email, erro }: { email: string; erro?: string }) {
+  const [estado, acao, enviando] = useActionState(entrarComCodigo, inicial);
+
+  return (
+    <div className="text-center">
+      <p className="display text-2xl">Link enviado</p>
+      <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+        Se esse e-mail estiver cadastrado, o acesso chegou na caixa de entrada. Clique no botão do e-mail,
+        ou digite aqui o código que veio junto. Não achou? Olhe também no spam.
+      </p>
+
+      <form action={acao} className="mt-6">
+        <input type="hidden" name="email" value={email} />
+        <label htmlFor="codigo" className="sr-only">
+          Código do e-mail
+        </label>
+        <input
+          id="codigo"
+          name="codigo"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          placeholder="000000"
+          className="w-full rounded-lg border border-borda bg-superficie-2 px-4 py-3 text-center font-mono text-xl tracking-[0.4em] outline-none transition placeholder:text-texto-suave focus:border-marca focus:bg-superficie focus:ring-2 focus:ring-marca/20"
+        />
+
+        {estado.erro || erro ? (
+          <p className="mt-3 rounded-lg bg-parado-suave px-3 py-2 text-sm text-parado">{estado.erro || erro}</p>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={enviando}
+          className="mt-4 w-full rounded-lg bg-marca px-4 py-3 text-sm font-medium tracking-wide text-marca-contraste transition hover:opacity-90 disabled:opacity-50"
+        >
+          {enviando ? 'Conferindo…' : 'Entrar com o código'}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export function FormularioLogin({ proximo, email }: { proximo?: string | null; email?: string | null }) {
   const [estado, acao, enviando] = useActionState(enviarMagicLink, inicial);
@@ -28,15 +78,7 @@ export function FormularioLogin({ proximo, email }: { proximo?: string | null; e
   }
 
   if (estado.enviado) {
-    return (
-      <div className="text-center">
-        <p className="display text-2xl">Link enviado</p>
-        <p className="mt-3 text-sm leading-relaxed text-texto-suave">
-          Se esse e-mail estiver cadastrado, o link de acesso chegou na caixa de entrada. Ele vale por uma
-          hora. Não achou? Olhe também no spam.
-        </p>
-      </div>
-    );
+    return <PassoDoCodigo email={estado.email ?? ''} erro={estado.erro} />;
   }
 
   return (

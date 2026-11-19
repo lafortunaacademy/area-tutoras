@@ -14,6 +14,11 @@
   perfil do Chrome, cai em "link expirado". O token_hash é conferido pelo nosso
   próprio /auth/callback e vale em qualquer navegador.
 
+  `{{ .Token }}` é o código de seis dígitos que o Supabase gera junto com o
+  link, com o mesmo prazo e o mesmo uso único. Ele serve onde o link não vai:
+  dentro de um aplicativo, cuja tela é separada do navegador do celular, e
+  quando o programa de e-mail embrulha o endereço e quebra o link.
+
   `{{ .RedirectTo }}` é o endereço de onde a pessoa pediu o link, e não um
   endereço fixo: com três portas (tutoras, equipe e clientes), o e-mail devolve
   cada uma para a porta de onde ela saiu.
@@ -63,6 +68,17 @@
                 </td>
               </tr>
             </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding:22px 32px 0 32px;text-align:center;">
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#5c4c3d;">
+              Ou digite este código na tela de entrada:
+            </p>
+            <p style="margin:8px 0 0 0;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:28px;letter-spacing:8px;color:#2e231c;">
+              {{ .Token }}
+            </p>
           </td>
         </tr>
 
